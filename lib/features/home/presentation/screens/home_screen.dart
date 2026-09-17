@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../../../core/utils/session_manager.dart';
+import '../../../../core/utils/custom_popup.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_dimensions.dart';
 import '../../../../app/theme/app_text_styles.dart';
 import '../widgets/home_slider.dart';
-import '../widgets/section_header.dart';
 import '../widgets/product_card.dart';
 import '../controllers/home_controller.dart';
 import '../../../cart/presentation/controllers/cart_controller.dart';
 import '../../../../core/utils/custom_popup.dart';
+import '../../../../features/main_layout/presentation/controllers/main_layout_controller.dart';
+import 'package:shimmer/shimmer.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -90,28 +93,41 @@ class HomeScreen extends StatelessWidget {
               pinned: true,
               elevation: 0,
               toolbarHeight: 65,
-              title: TextField(
-                decoration: InputDecoration(
-                  hintText: 'Search for products...',
-                  hintStyle: AppTextStyles.medium.copyWith(color: Colors.grey.shade400, fontSize: 14),
-                  prefixIcon: const Icon(Icons.search, color: Colors.grey, size: 22),
-                  filled: true,
-                  fillColor: Colors.white,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(30),
-                    borderSide: BorderSide.none,
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(30),
-                    borderSide: BorderSide.none,
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(30),
-                    borderSide: BorderSide.none,
-                  ),
+              title: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(30),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.04),
+                      blurRadius: 10,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
-                style: AppTextStyles.medium.copyWith(color: AppColors.darkText, fontSize: 14),
+                child: TextField(
+                  decoration: InputDecoration(
+                    hintText: 'Search for products...',
+                    hintStyle: AppTextStyles.medium.copyWith(color: Colors.grey.shade400, fontSize: 14),
+                    prefixIcon: const Icon(Icons.search, color: Colors.grey, size: 22),
+                    filled: true,
+                    fillColor: Colors.transparent,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(30),
+                      borderSide: BorderSide(color: Colors.grey.shade200, width: 1),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(30),
+                      borderSide: BorderSide(color: Colors.grey.shade200, width: 1),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(30),
+                      borderSide: const BorderSide(color: AppColors.primaryPurple, width: 1.5),
+                    ),
+                  ),
+                  style: AppTextStyles.medium.copyWith(color: AppColors.darkText, fontSize: 14),
+                ),
               ),
             ),
             
@@ -120,17 +136,12 @@ class HomeScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: AppDimensions.sm),
-                  // Premium Slider
                   const HomeSlider(),
-                  
                   const SizedBox(height: AppDimensions.md),
-                  
-                  // Clean Categories
                   const _CategorySection(),
-                  
                   const SizedBox(height: AppDimensions.lg),
 
-                  // 1. Top Selling Products (Row)
+                  // 1. Top Selling Products
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: AppDimensions.md),
                     child: Row(
@@ -139,71 +150,75 @@ class HomeScreen extends StatelessWidget {
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              'Top Selling',
-                              style: AppTextStyles.extraBold.copyWith(fontSize: 22, color: AppColors.darkText, fontWeight: FontWeight.w900),
-                            ),
+                            Text('Top Selling', style: AppTextStyles.extraBold.copyWith(fontSize: 22, color: AppColors.darkText, fontWeight: FontWeight.w900)),
                             const SizedBox(height: 4),
-                            Text(
-                              'Our most popular products this week',
-                              style: AppTextStyles.medium.copyWith(fontSize: 12, color: AppColors.hintText),
-                            ),
+                            Text('Our most popular products this week', style: AppTextStyles.medium.copyWith(fontSize: 12, color: AppColors.hintText)),
                           ],
                         ),
-                        TextButton(
-                          onPressed: () {},
-                          child: Text('See All', style: AppTextStyles.bold.copyWith(color: AppColors.primaryPurple, fontSize: 13)),
-                        ),
+                        TextButton(onPressed: () {}, child: Text('See All', style: AppTextStyles.bold.copyWith(color: AppColors.primaryPurple, fontSize: 13))),
                       ],
                     ),
                   ),
                   const SizedBox(height: AppDimensions.md),
-                  
                   Obx(() {
                     if (controller.isLoading.value && controller.trendingProducts.isEmpty) {
-                      return const Center(child: CircularProgressIndicator());
+                      return SizedBox(
+                        height: 290,
+                        child: Shimmer.fromColors(
+                          baseColor: Colors.grey.shade300,
+                          highlightColor: Colors.grey.shade100,
+                          child: ListView.builder(
+                            physics: const NeverScrollableScrollPhysics(),
+                            scrollDirection: Axis.horizontal,
+                            itemCount: 3,
+                            padding: const EdgeInsets.symmetric(horizontal: AppDimensions.md),
+                            itemBuilder: (context, index) {
+                              return const Padding(
+                                padding: EdgeInsets.only(right: AppDimensions.md, bottom: AppDimensions.sm),
+                                child: SizedBox(width: 170, child: ShimmerProductCard()),
+                              );
+                            },
+                          ),
+                        ),
+                      );
                     }
-                    if (controller.trendingProducts.isEmpty) {
-                       return const SizedBox.shrink();
-                    }
+                    if (controller.trendingProducts.isEmpty) return const SizedBox.shrink();
                     return SizedBox(
                       height: 290,
                       child: ListView.builder(
-                          physics: const BouncingScrollPhysics(),
-                          scrollDirection: Axis.horizontal,
-                          itemCount: controller.trendingProducts.length,
-                          padding: const EdgeInsets.symmetric(horizontal: AppDimensions.md),
-                          itemBuilder: (context, index) {
-                            final product = controller.trendingProducts[index];
-                            return Padding(
-                              padding: const EdgeInsets.only(right: AppDimensions.md, bottom: AppDimensions.sm),
-                              child: SizedBox(
-                                width: 170,
-                                child: ProductCard(
-                                  product: product,
-                                  onAddToCart: () {
-                                    final cartCtrl = Get.put(CartController());
-                                    cartCtrl.addToCart(product.id, 1, product.name);
-                                  },
-                                ),
+                        physics: const BouncingScrollPhysics(),
+                        scrollDirection: Axis.horizontal,
+                        itemCount: controller.trendingProducts.length,
+                        padding: const EdgeInsets.symmetric(horizontal: AppDimensions.md),
+                        itemBuilder: (context, index) {
+                          final product = controller.trendingProducts[index];
+                          return Padding(
+                            padding: const EdgeInsets.only(right: AppDimensions.md, bottom: AppDimensions.sm),
+                            child: SizedBox(
+                              width: 170,
+                              child: ProductCard(
+                                product: product,
+                                onAddToCart: (imageKey) {
+                                  if (!SessionManager.isLoggedIn) {
+                                    CustomPopup.showLoginRequired();
+                                    return;
+                                  }
+                                  final mainLayoutCtrl = Get.find<MainLayoutController>();
+                                  mainLayoutCtrl.runAddToCartAnimation(imageKey);
+                                  Get.put(CartController()).addToCart(product.id, 1, product.name);
+                                },
                               ),
-                            );
-                          },
+                            ),
+                          );
+                        },
                       ),
                     );
                   }),
-
                   const SizedBox(height: AppDimensions.lg),
 
-                  // 2. Flash Sale (Row)
+                  // 2. Flash Sale
                   Obx(() {
-                    if (controller.isLoading.value) {
-                       return const SizedBox.shrink(); 
-                    }
-                    if (controller.flashSaleProducts.isEmpty) {
-                       return const SizedBox.shrink(); 
-                    }
-                    
+                    if (controller.isLoading.value || controller.flashSaleProducts.isEmpty) return const SizedBox.shrink();
                     return Column(
                       children: [
                         Padding(
@@ -215,66 +230,54 @@ class HomeScreen extends StatelessWidget {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Row(
-                                      children: [
-                                        Text(
-                                          'Flash Sale',
-                                          style: AppTextStyles.extraBold.copyWith(fontSize: 22, color: AppColors.darkText, fontWeight: FontWeight.w900),
-                                        ),
-                                      ],
-                                    ),
+                                    Text('Flash Sale', style: AppTextStyles.extraBold.copyWith(fontSize: 22, color: AppColors.darkText, fontWeight: FontWeight.w900)),
                                     const SizedBox(height: 4),
-                                    Text(
-                                      'Ends in 02:45:10',
-                                      style: AppTextStyles.bold.copyWith(fontSize: 12, color: AppColors.error),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
+                                    Text('Ends in 02:45:10', style: AppTextStyles.bold.copyWith(fontSize: 12, color: AppColors.error), maxLines: 1, overflow: TextOverflow.ellipsis),
                                   ],
                                 ),
                               ),
                               const SizedBox(width: 8),
-                              TextButton(
-                                onPressed: () {},
-                                child: Text('See All', style: AppTextStyles.bold.copyWith(color: AppColors.primaryPurple, fontSize: 13)),
-                              ),
+                              TextButton(onPressed: () {}, child: Text('See All', style: AppTextStyles.bold.copyWith(color: AppColors.primaryPurple, fontSize: 13))),
                             ],
                           ),
                         ),
                         const SizedBox(height: AppDimensions.md),
-                        
                         SizedBox(
                           height: 290,
                           child: ListView.builder(
-                              physics: const BouncingScrollPhysics(),
-                              scrollDirection: Axis.horizontal,
-                              itemCount: controller.flashSaleProducts.length,
-                              padding: const EdgeInsets.symmetric(horizontal: AppDimensions.md),
-                              itemBuilder: (context, index) {
-                                final product = controller.flashSaleProducts[index];
-                                return Padding(
-                                  padding: const EdgeInsets.only(right: AppDimensions.md, bottom: AppDimensions.sm),
-                                  child: SizedBox(
-                                    width: 170,
-                                    child: ProductCard(
-                                      product: product,
-                                      onAddToCart: () {
-                                        final cartCtrl = Get.put(CartController());
-                                        cartCtrl.addToCart(product.id, 1, product.name);
-                                      },
-                                    ),
+                            physics: const BouncingScrollPhysics(),
+                            scrollDirection: Axis.horizontal,
+                            itemCount: controller.flashSaleProducts.length,
+                            padding: const EdgeInsets.symmetric(horizontal: AppDimensions.md),
+                            itemBuilder: (context, index) {
+                              final product = controller.flashSaleProducts[index];
+                              return Padding(
+                                padding: const EdgeInsets.only(right: AppDimensions.md, bottom: AppDimensions.sm),
+                                child: SizedBox(
+                                  width: 170,
+                                  child: ProductCard(
+                                    product: product,
+                                    onAddToCart: (imageKey) {
+                                      if (!SessionManager.isLoggedIn) {
+                                        CustomPopup.showLoginRequired();
+                                        return;
+                                      }
+                                      final mainLayoutCtrl = Get.find<MainLayoutController>();
+                                      mainLayoutCtrl.runAddToCartAnimation(imageKey);
+                                      Get.put(CartController()).addToCart(product.id, 1, product.name);
+                                    },
                                   ),
-                                );
-                              },
+                                ),
+                              );
+                            },
                           ),
                         ),
                       ],
                     );
                   }),
-
                   const SizedBox(height: AppDimensions.lg),
 
-                  // 3. For You Section (Grid View)
+                  // 3. For You Header
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: AppDimensions.md),
                     child: Row(
@@ -284,82 +287,82 @@ class HomeScreen extends StatelessWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                'For You',
-                                style: AppTextStyles.extraBold.copyWith(fontSize: 22, color: AppColors.darkText, fontWeight: FontWeight.w900),
-                              ),
+                              Text('For You', style: AppTextStyles.extraBold.copyWith(fontSize: 22, color: AppColors.darkText, fontWeight: FontWeight.w900)),
                               const SizedBox(height: 4),
-                              Text(
-                                'Recommended based on your preferences',
-                                style: AppTextStyles.medium.copyWith(fontSize: 12, color: AppColors.hintText),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
+                              Text('Recommended based on your preferences', style: AppTextStyles.medium.copyWith(fontSize: 12, color: AppColors.hintText), maxLines: 1, overflow: TextOverflow.ellipsis),
                             ],
                           ),
                         ),
                         const SizedBox(width: 8),
-                        TextButton(
-                          onPressed: () {},
-                          child: Text('See All', style: AppTextStyles.bold.copyWith(color: AppColors.primaryPurple, fontSize: 12)),
-                        ),
+                        TextButton(onPressed: () {}, child: Text('See All', style: AppTextStyles.bold.copyWith(color: AppColors.primaryPurple, fontSize: 13))),
                       ],
                     ),
                   ),
                   const SizedBox(height: AppDimensions.md),
-                  
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: AppDimensions.md),
-                    child: Obx(() {
-                      if (controller.isLoading.value && controller.products.isEmpty) {
-                        return const Center(child: CircularProgressIndicator());
-                      }
-                      
-                      int crossAxisCount = MediaQuery.of(context).size.width > 1200 
-                          ? 6 
-                          : MediaQuery.of(context).size.width > 900 
-                              ? 5 
-                              : MediaQuery.of(context).size.width > 600 
-                                  ? 4 
-                                  : MediaQuery.of(context).size.width > 400 
-                                      ? 3 
-                                      : 2;
-
-                      if (controller.products.isEmpty) {
-                         return const SizedBox.shrink();
-                      }
-                      
-                      return GridView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: crossAxisCount,
-                          childAspectRatio: 0.58,
-                          crossAxisSpacing: AppDimensions.md,
-                          mainAxisSpacing: AppDimensions.md,
-                        ),
-                        itemCount: controller.products.length,
-                        itemBuilder: (context, index) {
-                          final product = controller.products[index];
-                          return SizedBox(
-                            height: 290,
-                            child: ProductCard(
-                              product: product,
-                              onAddToCart: () {
-                                final cartCtrl = Get.put(CartController());
-                                cartCtrl.addToCart(product.id, 1, product.name);
-                              },
-                            ),
-                          );
-                        },
-                      );
-                    }),
-                  ),
-                  
-                  const SizedBox(height: AppDimensions.xxl),
                 ],
               ),
             ),
+            
+            // For You Grid (Optimized Sliver)
+            Obx(() {
+              if (controller.isLoading.value && controller.products.isEmpty) {
+                return SliverPadding(
+                  padding: const EdgeInsets.symmetric(horizontal: AppDimensions.md),
+                  sliver: SliverGrid(
+                    gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                      maxCrossAxisExtent: 200,
+                      childAspectRatio: 0.58,
+                      crossAxisSpacing: AppDimensions.md,
+                      mainAxisSpacing: AppDimensions.md,
+                    ),
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        return Shimmer.fromColors(
+                          baseColor: Colors.grey.shade300,
+                          highlightColor: Colors.grey.shade100,
+                          child: const ShimmerProductCard(),
+                        );
+                      },
+                      childCount: 4,
+                    ),
+                  ),
+                );
+              }
+              if (controller.products.isEmpty) {
+                return const SliverToBoxAdapter(child: SizedBox.shrink());
+              }
+              return SliverPadding(
+                padding: const EdgeInsets.symmetric(horizontal: AppDimensions.md),
+                sliver: SliverGrid(
+                  gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                    maxCrossAxisExtent: 200,
+                    childAspectRatio: 0.58,
+                    crossAxisSpacing: AppDimensions.md,
+                    mainAxisSpacing: AppDimensions.md,
+                  ),
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                      final product = controller.products[index];
+                      return ProductCard(
+                        product: product,
+                        onAddToCart: (imageKey) {
+                          if (!SessionManager.isLoggedIn) {
+                            CustomPopup.showLoginRequired();
+                            return;
+                          }
+                          final mainLayoutCtrl = Get.find<MainLayoutController>();
+                          mainLayoutCtrl.runAddToCartAnimation(imageKey);
+                          Get.put(CartController()).addToCart(product.id, 1, product.name);
+                        },
+                      );
+                    },
+                    childCount: controller.products.length,
+                  ),
+                ),
+              );
+            }),
+            
+            const SliverToBoxAdapter(child: SizedBox(height: AppDimensions.xxl)),
           ],
         ),
       ),

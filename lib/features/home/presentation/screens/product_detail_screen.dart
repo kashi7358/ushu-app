@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_dimensions.dart';
 import '../../../../app/theme/app_text_styles.dart';
+import '../../../../core/utils/session_manager.dart';
 import '../../../../core/utils/custom_popup.dart';
 import '../controllers/product_detail_controller.dart';
 import '../../../cart/presentation/controllers/cart_controller.dart';
@@ -86,6 +87,10 @@ class ProductDetailScreen extends StatelessWidget {
                 child: GestureDetector(
                   onTap: () {
                     if (controller.product.value != null) {
+                      if (!SessionManager.isLoggedIn) {
+                        CustomPopup.showLoginRequired();
+                        return;
+                      }
                       final cartCtrl = Get.put(CartController());
                       cartCtrl.addToCart(controller.product.value!.id, 1, controller.product.value!.name);
                     }

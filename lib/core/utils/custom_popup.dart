@@ -25,24 +25,18 @@ class CustomPopup {
     );
   }
 
-  static void _showDialog({
-    required String title,
-    required String message,
-    required IconData icon,
-    required Color iconColor,
-    required String emoji,
-  }) {
+  static void showLoginRequired() {
     Get.dialog(
       Dialog(
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
+          borderRadius: BorderRadius.circular(24),
         ),
         elevation: 0,
         backgroundColor: Colors.transparent,
         child: TweenAnimationBuilder(
-          duration: const Duration(milliseconds: 400),
-          curve: Curves.easeOutBack,
-          tween: Tween<double>(begin: 0.5, end: 1.0),
+          duration: const Duration(milliseconds: 500),
+          curve: Curves.elasticOut,
+          tween: Tween<double>(begin: 0.6, end: 1.0),
           builder: (context, double scale, child) {
             return Transform.scale(
               scale: scale,
@@ -50,15 +44,15 @@ class CustomPopup {
             );
           },
           child: Container(
-            padding: const EdgeInsets.all(AppDimensions.lg),
+            padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: AppColors.white,
+              color: Colors.white,
               shape: BoxShape.rectangle,
-              borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
+              borderRadius: BorderRadius.circular(24),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 20,
+                  color: AppColors.primaryPurple.withOpacity(0.15),
+                  blurRadius: 30,
                   offset: const Offset(0, 10),
                 ),
               ],
@@ -69,42 +63,176 @@ class CustomPopup {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: iconColor.withOpacity(0.1),
+                    color: AppColors.primaryPurple.withOpacity(0.1),
                     shape: BoxShape.circle,
                   ),
-                  child: Text(
-                    emoji,
-                    style: const TextStyle(fontSize: 40),
+                  child: const Text(
+                    '🔐',
+                    style: TextStyle(fontSize: 48),
                   ),
                 ),
-                const SizedBox(height: AppDimensions.lg),
+                const SizedBox(height: 20),
+                Text(
+                  'Login Required',
+                  style: AppTextStyles.extraBold.copyWith(fontSize: 22, color: AppColors.darkText),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Please login to perform this action and enjoy full features.',
+                  style: AppTextStyles.medium.copyWith(color: AppColors.hintText, height: 1.5, fontSize: 14),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    Expanded(
+                      child: SizedBox(
+                        height: 50,
+                        child: OutlinedButton(
+                          onPressed: () => Get.back(),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppColors.hintText,
+                            side: BorderSide(color: Colors.grey.shade300),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: Text(
+                            'Cancel',
+                            style: AppTextStyles.bold.copyWith(fontSize: 14),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: SizedBox(
+                        height: 50,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Get.back();
+                            Get.toNamed('/login');
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primaryPurple,
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: Text(
+                            'Login',
+                            style: AppTextStyles.bold.copyWith(fontSize: 14),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+      barrierDismissible: true,
+      transitionDuration: const Duration(milliseconds: 200),
+    );
+  }
+
+  static void _showDialog({
+    required String title,
+    required String message,
+    required IconData icon,
+    required Color iconColor,
+    required String emoji,
+  }) {
+    Get.dialog(
+      Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+        ),
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        child: TweenAnimationBuilder(
+          duration: const Duration(milliseconds: 500),
+          curve: Curves.elasticOut,
+          tween: Tween<double>(begin: 0.6, end: 1.0),
+          builder: (context, double scale, child) {
+            return Transform.scale(
+              scale: scale,
+              child: child,
+            );
+          },
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.rectangle,
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
+                  color: iconColor.withOpacity(0.15),
+                  blurRadius: 30,
+                  offset: const Offset(0, 10),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TweenAnimationBuilder(
+                  duration: const Duration(milliseconds: 600),
+                  curve: Curves.bounceOut,
+                  tween: Tween<double>(begin: -20.0, end: 0.0),
+                  builder: (context, double value, child) {
+                    return Transform.translate(
+                      offset: Offset(0, value),
+                      child: child,
+                    );
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: iconColor.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Text(
+                      emoji,
+                      style: const TextStyle(fontSize: 48),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
                 Text(
                   title,
-                  style: AppTextStyles.bold.copyWith(fontSize: 22, color: AppColors.darkText),
+                  style: AppTextStyles.extraBold.copyWith(fontSize: 22, color: AppColors.darkText),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: AppDimensions.sm),
+                const SizedBox(height: 8),
                 Text(
                   message,
-                  style: AppTextStyles.regular.copyWith(color: AppColors.hintText, height: 1.5),
+                  style: AppTextStyles.medium.copyWith(color: AppColors.hintText, height: 1.5, fontSize: 14),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: AppDimensions.xl),
+                const SizedBox(height: 24),
                 SizedBox(
                   width: double.infinity,
+                  height: 50,
                   child: ElevatedButton(
                     onPressed: () => Get.back(),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: iconColor,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
-                      ),
+                      foregroundColor: Colors.white,
                       elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                     child: Text(
-                      'Got it',
-                      style: AppTextStyles.semiBold.copyWith(color: AppColors.white),
+                      'Okay',
+                      style: AppTextStyles.bold.copyWith(fontSize: 16),
                     ),
                   ),
                 ),

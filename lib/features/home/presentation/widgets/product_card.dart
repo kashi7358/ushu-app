@@ -8,7 +8,7 @@ import '../../../../app/routes/app_routes.dart';
 
 class ProductCard extends StatelessWidget {
   final ProductEntity product;
-  final VoidCallback onAddToCart;
+  final void Function(GlobalKey imageKey) onAddToCart;
 
   const ProductCard({
     super.key,
@@ -18,6 +18,7 @@ class ProductCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final GlobalKey imageKey = GlobalKey();
     String? discountLabel;
     if (product.discountPriceOrg != null && product.discountPriceOrg! > product.price) {
       double discount = ((product.discountPriceOrg! - product.price) / product.discountPriceOrg!) * 100;
@@ -48,6 +49,7 @@ class ProductCard extends StatelessWidget {
               child: Stack(
                 children: [
                   Container(
+                    key: imageKey,
                     height: 140,
                     width: double.infinity,
                     color: Colors.grey.shade50,
@@ -56,6 +58,7 @@ class ProductCard extends StatelessWidget {
                       child: Image.network(
                         product.image,
                         fit: BoxFit.contain,
+                        cacheWidth: 300,
                         errorBuilder: (_, __, ___) => const Center(child: Icon(Icons.broken_image, color: Colors.grey)),
                       ),
                     ),
@@ -166,7 +169,7 @@ class ProductCard extends StatelessWidget {
                     
                     // Add to Cart Button
                     GestureDetector(
-                      onTap: onAddToCart,
+                      onTap: () => onAddToCart(imageKey),
                       child: Container(
                         width: double.infinity,
                         padding: const EdgeInsets.symmetric(vertical: 6),
@@ -193,6 +196,69 @@ class ProductCard extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class ShimmerProductCard extends StatelessWidget {
+  const ShimmerProductCard({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.withOpacity(0.15)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Image Shimmer
+          ClipRRect(
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+            child: Container(
+              height: 140,
+              width: double.infinity,
+              color: Colors.grey.shade100,
+            ),
+          ),
+          // Details Shimmer
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(height: 14, width: double.infinity, color: Colors.grey.shade100),
+                  const SizedBox(height: 6),
+                  Container(height: 14, width: 80, color: Colors.grey.shade100),
+                  const SizedBox(height: 12),
+                  Container(height: 12, width: 50, color: Colors.grey.shade100),
+                  const Spacer(),
+                  Container(height: 16, width: 70, color: Colors.grey.shade100),
+                  const Spacer(),
+                  Container(
+                    width: double.infinity,
+                    height: 26,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade100,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

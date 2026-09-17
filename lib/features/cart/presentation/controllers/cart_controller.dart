@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/network/api_endpoints.dart';
 import '../../../../core/utils/custom_popup.dart';
+import 'package:lottie/lottie.dart';
 
 import '../../data/models/cart_item_model.dart';
 
@@ -33,6 +34,32 @@ class CartController extends GetxController {
   Future<void> addToCart(String productId, int quantity, String productName) async {
     try {
       isAddingToCart.value = true;
+      
+      // Optimistic Popup - Show popup immediately
+      Get.dialog(
+          Center(
+            child: Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Lottie.asset(
+                'assets/lotties/done.json',
+                repeat: false,
+                width: 100,
+                height: 100,
+              ),
+            ),
+          ),
+          barrierColor: Colors.black.withValues(alpha: 0.1),
+        );
+        Future.delayed(const Duration(milliseconds: 1200), () {
+          if (Get.isDialogOpen ?? false) {
+            Get.back();
+          }
+        });
+
       final response = await _apiClient.dio.post(
         ApiEndpoints.addToCart,
         data: {
@@ -45,19 +72,6 @@ class CartController extends GetxController {
       final data = response.data;
       if (data['success'] == true) {
         _updateCartItems(data);
-        Get.snackbar(
-          'Added to Cart',
-          '$productName is in your cart.',
-          snackPosition: SnackPosition.TOP,
-          backgroundColor: Colors.black.withValues(alpha: 0.8),
-          colorText: Colors.white,
-          borderRadius: 16,
-          margin: const EdgeInsets.all(16),
-          icon: const Icon(Icons.shopping_bag_outlined, color: Colors.white),
-          duration: const Duration(seconds: 2),
-          animationDuration: const Duration(milliseconds: 400),
-          forwardAnimationCurve: Curves.easeOutBack,
-        );
       } else {
         CustomPopup.showError('Failed', data['message'] ?? 'Could not add to cart');
       }
@@ -107,39 +121,63 @@ class CartController extends GetxController {
   }
 
   Future<void> updateQuantity(String itemId, int quantity) async {
+    // Optimistic UI Update
+    final index = cartItems.indexWhere((item) => item.id == itemId);
+    if (index != -1) {
+      final oldItem = cartItems[index];
+      cartItems[index] = oldItem.copyWith(quantity: quantity);
+      cartItems.refresh();
+    }
+
     try {
-      final response = await _apiClient.dio.patch(
+      await _apiClient.dio.patch(
         ApiEndpoints.updateCartQuantity(itemId),
         data: {"quantity": quantity},
         options: Options(validateStatus: (status) => true),
       );
-      
-      final data = response.data;
-      if (data != null && data['success'] == true) {
-        _updateCartItems(data);
-      } else {
-        CustomPopup.showError('Failed', data['message'] ?? 'Could not update quantity');
-      }
+      // Fire and forget - DO NOT update from backend here to prevent bouncing UI
     } catch (e) {
-      CustomPopup.showError('Error', 'An error occurred while updating quantity.');
+      print('Error updating quantity: $e');
     }
   }
 
   Future<void> selectCartItem(String itemId) async {
+    // Optimistic UI Update - We only rely on local state for selection to avoid race conditions
+    final index = cartItems.indexWhere((item) => item.id == itemId);
+    if (index != -1) {
+      final oldItem = cartItems[index];
+      cartItems[index] = oldItem.copyWith(isSelected: !oldItem.isSelected);
+      cartItems.refresh();
+    }
+
     try {
-      final response = await _apiClient.dio.patch(
+      await _apiClient.dio.patch(
         ApiEndpoints.selectCartItem,
         data: {"itemId": itemId},
         options: Options(validateStatus: (status) => true),
       );
-      
-      final data = response.data;
-      if (data != null && data['success'] == true) {
-        _updateCartItems(data);
-      }
+      // Removed _updateCartItems(data) here to prevent multiple-select race conditions from backend
     } catch (e) {
       print('Error selecting item: $e');
     }
+  }
+
+  Future<void> toggleSelectAll() async {
+    bool areAllSelected = cartItems.isNotEmpty && cartItems.every((item) => item.isSelected);
+    bool targetState = !areAllSelected;
+
+    for (int i = 0; i < cartItems.length; i++) {
+      if (cartItems[i].isSelected != targetState) {
+        cartItems[i] = cartItems[i].copyWith(isSelected: targetState);
+        // Fire and forget backend updates
+        _apiClient.dio.patch(
+          ApiEndpoints.selectCartItem,
+          data: {"itemId": cartItems[i].id},
+          options: Options(validateStatus: (status) => true),
+        );
+      }
+    }
+    cartItems.refresh();
   }
 
   void _updateCartItems(dynamic data) {

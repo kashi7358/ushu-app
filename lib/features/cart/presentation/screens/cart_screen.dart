@@ -119,6 +119,7 @@ class CartScreen extends StatelessWidget {
                   item.image,
                   width: 75,
                   height: 75,
+                  cacheWidth: 150,
                   fit: BoxFit.cover,
                   errorBuilder: (context, error, stackTrace) => Container(
                     width: 75,
@@ -204,63 +205,80 @@ class CartScreen extends StatelessWidget {
 
   Widget _buildBottomSummary(CartController controller) {
     return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 4,
-            offset: const Offset(0, -2),
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 16,
+            offset: const Offset(0, -4),
           ),
         ],
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: SafeArea(
-        child: SizedBox(
-          height: 60,
-          child: Row(
-            children: [
-              // Select All (Optional visual fake for now, or you can implement logic)
-              const SizedBox(width: 8),
-              Checkbox(
-                value: controller.cartItems.isNotEmpty && controller.cartItems.every((item) => item.isSelected),
-                onChanged: (val) {
-                  // Implement select all if needed
-                },
-                activeColor: AppColors.primaryPurple,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-              ),
-              Text('All', style: AppTextStyles.medium.copyWith(fontSize: 14)),
-              const Spacer(),
-              Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.end,
+        child: Row(
+          children: [
+            // Select All Checkbox
+            GestureDetector(
+              onTap: controller.toggleSelectAll,
+              child: Row(
                 children: [
-                  Text('Total', style: AppTextStyles.regular.copyWith(fontSize: 12, color: AppColors.hintText)),
-                  Text(
-                    'Rs. ${controller.subtotal}',
-                    style: AppTextStyles.bold.copyWith(fontSize: 16, color: AppColors.primaryPurple),
+                  Container(
+                    width: 24,
+                    height: 24,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.grey.shade300, width: 2),
+                    ),
+                    child: controller.cartItems.isNotEmpty && controller.cartItems.every((item) => item.isSelected)
+                        ? const Icon(Icons.check_circle, color: AppColors.primaryPurple, size: 24)
+                        : null,
                   ),
+                  const SizedBox(width: 8),
+                  Text('All', style: AppTextStyles.medium.copyWith(fontSize: 14, color: AppColors.darkText)),
                 ],
               ),
-              const SizedBox(width: 12),
-              SizedBox(
-                height: 60,
-                width: 120,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryPurple, // Or orange like Daraz
-                    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
-                    elevation: 0,
-                  ),
-                  onPressed: () {},
-                  child: Text(
-                    'Check Out',
-                    style: AppTextStyles.bold.copyWith(color: Colors.white, fontSize: 14),
+            ),
+            const Spacer(),
+            // Total & Price
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text('Total Amount', style: AppTextStyles.medium.copyWith(fontSize: 11, color: AppColors.hintText)),
+                const SizedBox(height: 2),
+                Text(
+                  'Rs. ${controller.subtotal}',
+                  style: AppTextStyles.extraBold.copyWith(fontSize: 18, color: AppColors.primaryPurple),
+                ),
+              ],
+            ),
+            const SizedBox(width: 16),
+            // Checkout Button
+            SizedBox(
+              height: 50,
+              width: 130,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryPurple,
+                  shadowColor: AppColors.primaryPurple.withOpacity(0.5),
+                  elevation: 8,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(100),
                   ),
                 ),
+                onPressed: () {
+                  // Proceed to checkout
+                },
+                child: Text(
+                  'Check Out',
+                  style: AppTextStyles.bold.copyWith(color: Colors.white, fontSize: 14),
+                ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

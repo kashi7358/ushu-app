@@ -12,7 +12,7 @@ class UshuApp extends StatelessWidget {
     return GetMaterialApp(
       title: 'USHU',
       theme: AppTheme.lightTheme,
-      initialRoute: SessionManager.isLoggedIn ? AppRoutes.mainLayout : AppRoutes.login,
+      initialRoute: AppRoutes.mainLayout,
       getPages: AppRoutes.routes,
       debugShowCheckedModeBanner: false,
     );

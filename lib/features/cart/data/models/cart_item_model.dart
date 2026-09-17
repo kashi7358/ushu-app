@@ -28,4 +28,24 @@ class CartItemModel {
       isSelected: json['isSelected'] ?? false,
     );
   }
+
+  CartItemModel copyWith({
+    String? id,
+    String? productId,
+    String? name,
+    String? image,
+    num? price,
+    int? quantity,
+    bool? isSelected,
+  }) {
+    return CartItemModel(
+      id: id ?? this.id,
+      productId: productId ?? this.productId,
+      name: name ?? this.name,
+      image: image ?? this.image,
+      price: price ?? this.price,
+      quantity: quantity ?? this.quantity,
+      isSelected: isSelected ?? this.isSelected,
+    );
+  }
 }

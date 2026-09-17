@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:lottie/lottie.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_dimensions.dart';
+import '../../../../core/utils/session_manager.dart';
+import '../../../../core/utils/custom_popup.dart';
+import '../../../../features/home/presentation/widgets/product_card.dart';
+import '../../../../features/main_layout/presentation/controllers/main_layout_controller.dart';
+import '../../../../features/cart/presentation/controllers/cart_controller.dart';
 import '../controllers/chatbot_controller.dart';
-import 'package:lottie/lottie.dart';
 
 class ChatbotScreen extends StatelessWidget {
   const ChatbotScreen({super.key});
@@ -93,12 +98,49 @@ class ChatbotScreen extends StatelessWidget {
                           ),
                         ],
                       ),
-                      child: Text(
-                        message.text,
-                        style: TextStyle(
-                          color: message.isUser ? Colors.white : AppColors.darkText,
-                          fontSize: 14,
-                        ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            message.text,
+                            style: TextStyle(
+                              color: message.isUser ? Colors.white : AppColors.darkText,
+                              fontSize: 14,
+                            ),
+                          ),
+                          if (message.recommendedProducts != null && message.recommendedProducts!.isNotEmpty) ...[
+                            const SizedBox(height: 12),
+                            SizedBox(
+                              height: 290, // same height as trending products
+                              width: MediaQuery.of(context).size.width * 0.75, // don't exceed bubble width too much
+                              child: ListView.builder(
+                                scrollDirection: Axis.horizontal,
+                                itemCount: message.recommendedProducts!.length,
+                                physics: const BouncingScrollPhysics(),
+                                itemBuilder: (context, i) {
+                                  final product = message.recommendedProducts![i];
+                                  return Container(
+                                    width: 170,
+                                    margin: const EdgeInsets.only(right: 12),
+                                    child: ProductCard(
+                                      product: product,
+                                      onAddToCart: (imageKey) {
+                                        if (!SessionManager.isLoggedIn) {
+                                          CustomPopup.showLoginRequired();
+                                          return;
+                                        }
+                                        final mainLayoutCtrl = Get.find<MainLayoutController>();
+                                        mainLayoutCtrl.runAddToCartAnimation(imageKey);
+                                        Get.put(CartController()).addToCart(product.id, 1, product.name);
+                                      },
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                     ),
                   );

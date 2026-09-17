@@ -67,8 +67,9 @@ class ChatbotScreen extends StatelessWidget {
                           ],
                         ),
                         child: const SizedBox(
+                          height: 20,
                           width: 40,
-                          child: LinearProgressIndicator(color: AppColors.primaryPurple),
+                          child: _TypingIndicator(),
                         ),
                       ),
                     );
@@ -81,7 +82,7 @@ class ChatbotScreen extends StatelessWidget {
                       margin: EdgeInsets.only(
                         bottom: AppDimensions.md,
                         left: message.isUser ? 60 : 0,
-                        right: message.isUser ? 0 : 60,
+                        right: message.isUser ? 0 : ((message.recommendedProducts != null && message.recommendedProducts!.isNotEmpty) ? 20 : 60),
                       ),
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       decoration: BoxDecoration(
@@ -113,7 +114,7 @@ class ChatbotScreen extends StatelessWidget {
                             const SizedBox(height: 12),
                             SizedBox(
                               height: 290, // same height as trending products
-                              width: MediaQuery.of(context).size.width * 0.75, // don't exceed bubble width too much
+                              width: double.infinity,
                               child: ListView.builder(
                                 scrollDirection: Axis.horizontal,
                                 itemCount: message.recommendedProducts!.length,
@@ -196,6 +197,59 @@ class ChatbotScreen extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _TypingIndicator extends StatefulWidget {
+  const _TypingIndicator();
+
+  @override
+  State<_TypingIndicator> createState() => _TypingIndicatorState();
+}
+
+class _TypingIndicatorState extends State<_TypingIndicator> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 1200))..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: List.generate(3, (index) {
+        return AnimatedBuilder(
+          animation: _controller,
+          builder: (context, child) {
+            // Staggered bounce effect
+            final offset = index * 0.2;
+            final t = (_controller.value + offset) % 1.0;
+            final value = (t < 0.5) ? (t * 2) : (2 - (t * 2));
+            return Transform.translate(
+              offset: Offset(0, -value * 4),
+              child: child,
+            );
+          },
+          child: Container(
+            width: 6,
+            height: 6,
+            decoration: const BoxDecoration(
+              color: AppColors.primaryPurple,
+              shape: BoxShape.circle,
+            ),
+          ),
+        );
+      }),
     );
   }
 }

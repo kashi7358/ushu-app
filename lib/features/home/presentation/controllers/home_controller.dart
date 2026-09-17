@@ -16,6 +16,8 @@ class HomeController extends GetxController {
   final RxList<ProductEntity> bannerProducts = <ProductEntity>[].obs;
   final RxBool isLoading = true.obs;
   final RxBool isBannerLoading = true.obs;
+  final RxBool isFlashSaleLoading = true.obs;
+  final RxBool isTrendingLoading = true.obs;
 
   late final GetHomeProductsUseCase _getHomeProductsUseCase;
   late final GetFlashSaleUseCase _getFlashSaleUseCase;
@@ -66,19 +68,25 @@ class HomeController extends GetxController {
 
   Future<void> fetchFlashSale() async {
     try {
+      isFlashSaleLoading.value = true;
       final result = await _getFlashSaleUseCase.execute();
       flashSaleProducts.assignAll(result);
     } catch (e) {
       // Silently handle if flash sale fails
+    } finally {
+      isFlashSaleLoading.value = false;
     }
   }
 
   Future<void> fetchTrendingProducts() async {
     try {
+      isTrendingLoading.value = true;
       final result = await _getTrendingProductsUseCase.execute();
       trendingProducts.assignAll(result);
     } catch (e) {
       // Handle silently
+    } finally {
+      isTrendingLoading.value = false;
     }
   }
 }

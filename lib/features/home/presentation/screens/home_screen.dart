@@ -161,7 +161,7 @@ class HomeScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: AppDimensions.md),
                   Obx(() {
-                    if (controller.isLoading.value && controller.trendingProducts.isEmpty) {
+                    if (controller.isTrendingLoading.value && controller.trendingProducts.isEmpty) {
                       return SizedBox(
                         height: 290,
                         child: Shimmer.fromColors(
@@ -218,7 +218,49 @@ class HomeScreen extends StatelessWidget {
 
                   // 2. Flash Sale
                   Obx(() {
-                    if (controller.isLoading.value || controller.flashSaleProducts.isEmpty) return const SizedBox.shrink();
+                    if (controller.isFlashSaleLoading.value && controller.flashSaleProducts.isEmpty) {
+                      return Column(
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: AppDimensions.md),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text('Flash Sale', style: AppTextStyles.extraBold.copyWith(fontSize: 22, color: AppColors.darkText, fontWeight: FontWeight.w900)),
+                                      const SizedBox(height: 4),
+                                      Text('Loading...', style: AppTextStyles.bold.copyWith(fontSize: 12, color: AppColors.error), maxLines: 1),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: AppDimensions.md),
+                          SizedBox(
+                            height: 290,
+                            child: Shimmer.fromColors(
+                              baseColor: Colors.grey.shade300,
+                              highlightColor: Colors.grey.shade100,
+                              child: ListView.builder(
+                                scrollDirection: Axis.horizontal,
+                                itemCount: 3,
+                                itemBuilder: (context, index) {
+                                  return Padding(
+                                    padding: EdgeInsets.only(right: AppDimensions.md, bottom: AppDimensions.sm, left: index == 0 ? AppDimensions.md : 0),
+                                    child: const SizedBox(width: 170, child: ShimmerProductCard()),
+                                  );
+                                },
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    }
+                    if (controller.flashSaleProducts.isEmpty) return const SizedBox.shrink();
                     return Column(
                       children: [
                         Padding(

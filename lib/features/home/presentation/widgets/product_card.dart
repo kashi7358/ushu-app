@@ -3,6 +3,7 @@ import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_dimensions.dart';
 import '../../../../app/theme/app_text_styles.dart';
 import '../../domain/entities/product_entity.dart';
+import '../../../wishlist/presentation/controllers/wishlist_controller.dart';
 import 'package:get/get.dart';
 import '../../../../app/routes/app_routes.dart';
 
@@ -82,16 +83,33 @@ class ProductCard extends StatelessWidget {
                   Positioned(
                     top: 8,
                     right: 8,
-                    child: Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.9),
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 4),
-                        ],
+                    child: GestureDetector(
+                      onTap: () {
+                        if (Get.isRegistered<WishlistController>()) {
+                          Get.find<WishlistController>().toggleWishlist(product.id);
+                        }
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.9),
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 4),
+                          ],
+                        ),
+                        child: Obx(() {
+                          if (!Get.isRegistered<WishlistController>()) {
+                            return const Icon(Icons.favorite_border, size: 14, color: Colors.grey);
+                          }
+                          final isFav = Get.find<WishlistController>().isFavorite(product.id);
+                          return Icon(
+                            isFav ? Icons.favorite : Icons.favorite_border, 
+                            size: 14, 
+                            color: isFav ? AppColors.error : Colors.grey
+                          );
+                        }),
                       ),
-                      child: const Icon(Icons.favorite_border, size: 14, color: Colors.grey),
                     ),
                   ),
                 ],

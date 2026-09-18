@@ -7,6 +7,7 @@ import '../../features/authentication/presentation/screens/reset_password_screen
 import '../../features/main_layout/presentation/screens/main_layout_screen.dart';
 import '../../features/home/presentation/screens/product_detail_screen.dart';
 import '../../features/store/presentation/screens/store_screen.dart';
+import '../../features/wishlist/presentation/screens/wishlist_screen.dart';
 
 class AppRoutes {
   AppRoutes._();
@@ -20,6 +21,8 @@ class AppRoutes {
   static const String productDetail = '/product-detail';
   static const String store = '/store';
 
+  static const String wishlist = '/wishlist';
+
   static final routes = [
     GetPage(name: login, page: () => const LoginScreen()),
     GetPage(name: signup, page: () => const SignupScreen()),
@@ -29,5 +32,6 @@ class AppRoutes {
     GetPage(name: mainLayout, page: () => const MainLayoutScreen()),
     GetPage(name: productDetail, page: () => const ProductDetailScreen()),
     GetPage(name: store, page: () => const StoreScreen()),
+    GetPage(name: wishlist, page: () => const WishlistScreen()),
   ];
 }

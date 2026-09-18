@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../../app/theme/app_colors.dart';
+import '../../../../app/theme/app_text_styles.dart';
+import '../../../../app/theme/app_dimensions.dart';
 import '../controllers/main_layout_controller.dart';
 import '../../../home/presentation/screens/home_screen.dart';
 import '../../../profile/presentation/screens/profile_screen.dart';
 import '../../../cart/presentation/screens/cart_screen.dart';
 import '../../../cart/presentation/controllers/cart_controller.dart';
+import '../../../wishlist/presentation/controllers/wishlist_controller.dart';
 import 'package:lottie/lottie.dart';
 import '../../../../features/chatbot/presentation/screens/chatbot_screen.dart';
 
@@ -17,6 +20,7 @@ class MainLayoutScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = Get.put(MainLayoutController());
+    Get.put(WishlistController()); // Initialize globally
 
     final List<Widget> pages = [
       const HomeScreen(),

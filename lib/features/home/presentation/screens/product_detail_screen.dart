@@ -8,6 +8,7 @@ import '../../../../core/utils/session_manager.dart';
 import '../../../../core/utils/custom_popup.dart';
 import '../controllers/product_detail_controller.dart';
 import '../../../cart/presentation/controllers/cart_controller.dart';
+import '../../../wishlist/presentation/controllers/wishlist_controller.dart';
 
 class ProductDetailScreen extends StatelessWidget {
   const ProductDetailScreen({super.key});
@@ -31,14 +32,30 @@ class ProductDetailScreen extends StatelessWidget {
           ),
         ),
         actions: [
-          Container(
-            margin: const EdgeInsets.all(8),
-            decoration: BoxDecoration(color: Colors.black.withOpacity(0.3), shape: BoxShape.circle),
-            child: IconButton(
-              icon: const Icon(Icons.favorite_border, color: AppColors.white, size: 20),
-              onPressed: () {},
-            ),
-          ),
+          Obx(() {
+            final product = controller.product.value;
+            final isRegistered = Get.isRegistered<WishlistController>();
+            final isFav = isRegistered && product != null 
+                ? Get.find<WishlistController>().isFavorite(product.id) 
+                : false;
+
+            return Container(
+              margin: const EdgeInsets.all(8),
+              decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.3), shape: BoxShape.circle),
+              child: IconButton(
+                icon: Icon(
+                  isFav ? Icons.favorite : Icons.favorite_border, 
+                  color: isFav ? AppColors.error : AppColors.white, 
+                  size: 20
+                ),
+                onPressed: () {
+                  if (isRegistered && product != null) {
+                    Get.find<WishlistController>().toggleWishlist(product.id);
+                  }
+                },
+              ),
+            );
+          }),
           Container(
             margin: const EdgeInsets.all(8),
             decoration: BoxDecoration(color: Colors.black.withOpacity(0.3), shape: BoxShape.circle),

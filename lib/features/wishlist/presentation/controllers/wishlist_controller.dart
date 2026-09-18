@@ -1,0 +1,106 @@
+import 'package:get/get.dart';
+import '../../../../core/network/api_client.dart';
+import '../../../../core/network/api_endpoints.dart';
+import '../../../../core/utils/session_manager.dart';
+import '../../../../core/utils/custom_popup.dart';
+import '../../../home/data/models/product_model.dart';
+import 'package:flutter/material.dart';
+
+class WishlistController extends GetxController {
+  final ApiClient _apiClient = ApiClient();
+  
+  // To keep track of heart icons globally across the app
+  final RxList<String> wishlistedProductIds = <String>[].obs;
+  
+  // The actual products to display on the wishlist screen
+  final RxList<ProductModel> wishlistProducts = <ProductModel>[].obs;
+  
+  final RxBool isLoading = false.obs;
+
+  @override
+  void onInit() {
+    super.onInit();
+    if (SessionManager.isLoggedIn()) {
+      fetchWishlist();
+    }
+  }
+
+  Future<void> fetchWishlist() async {
+    if (!SessionManager.isLoggedIn()) return;
+    
+    try {
+      isLoading.value = true;
+      final response = await _apiClient.get(ApiEndpoints.getWishlist);
+      
+      if (response.data['success'] == true) {
+        wishlistProducts.clear();
+        wishlistedProductIds.clear();
+        
+        final List<dynamic> items = response.data['wishlist']?['items'] ?? [];
+        for (var item in items) {
+          if (item is Map && item['productId'] != null) {
+            final productData = item['productId'];
+            if (productData is Map<String, dynamic>) {
+              // Full product object populated by backend
+              final product = ProductModel.fromJson(productData);
+              wishlistProducts.add(product);
+              wishlistedProductIds.add(product.id);
+            } else if (productData is String) {
+              // Only ID
+              wishlistedProductIds.add(productData);
+            }
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('Error fetching wishlist: $e');
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  Future<void> toggleWishlist(String productId) async {
+    if (!SessionManager.isLoggedIn()) {
+      CustomPopup.showError('Please login to add items to wishlist');
+      return;
+    }
+
+    final isAlreadyWishlisted = wishlistedProductIds.contains(productId);
+
+    // Optimistic UI update
+    if (isAlreadyWishlisted) {
+      wishlistedProductIds.remove(productId);
+      wishlistProducts.removeWhere((p) => p.id == productId);
+    } else {
+      wishlistedProductIds.add(productId);
+    }
+
+    try {
+      if (isAlreadyWishlisted) {
+        await _apiClient.post(
+          ApiEndpoints.removeWishlist,
+          data: {'productId': productId},
+        );
+      } else {
+        await _apiClient.post(
+          ApiEndpoints.addWishlist,
+          data: {'productId': productId},
+        );
+        CustomPopup.showSuccess('Item added to wishlist');
+      }
+    } catch (e) {
+      // Revert optimistic update on failure
+      if (isAlreadyWishlisted) {
+        wishlistedProductIds.add(productId);
+      } else {
+        wishlistedProductIds.remove(productId);
+      }
+      CustomPopup.showError('Failed to update wishlist');
+      debugPrint('Wishlist Error: $e');
+    }
+  }
+
+  bool isFavorite(String productId) {
+    return wishlistedProductIds.contains(productId);
+  }
+}

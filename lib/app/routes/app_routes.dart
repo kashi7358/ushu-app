@@ -6,6 +6,7 @@ import '../../features/authentication/presentation/screens/forget_password_scree
 import '../../features/authentication/presentation/screens/reset_password_screen.dart';
 import '../../features/main_layout/presentation/screens/main_layout_screen.dart';
 import '../../features/home/presentation/screens/product_detail_screen.dart';
+import '../../features/store/presentation/screens/store_screen.dart';
 
 class AppRoutes {
   AppRoutes._();
@@ -17,6 +18,7 @@ class AppRoutes {
   static const String resetPassword = '/reset-password';
   static const String mainLayout = '/main';
   static const String productDetail = '/product-detail';
+  static const String store = '/store';
 
   static final routes = [
     GetPage(name: login, page: () => const LoginScreen()),
@@ -26,5 +28,6 @@ class AppRoutes {
     GetPage(name: resetPassword, page: () => const ResetPasswordScreen()),
     GetPage(name: mainLayout, page: () => const MainLayoutScreen()),
     GetPage(name: productDetail, page: () => const ProductDetailScreen()),
+    GetPage(name: store, page: () => const StoreScreen()),
   ];
 }

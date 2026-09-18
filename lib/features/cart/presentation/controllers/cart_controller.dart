@@ -102,6 +102,9 @@ class CartController extends GetxController {
   }
 
   Future<void> removeFromCart(String itemId) async {
+    // Optimistic UI Update: immediately remove from UI
+    cartItems.removeWhere((item) => item.id == itemId);
+
     try {
       final response = await _apiClient.dio.delete(
         ApiEndpoints.removeCartItem(itemId),
@@ -110,12 +113,38 @@ class CartController extends GetxController {
       
       final data = response.data;
       if (data != null && data['success'] == true) {
+        // Show non-blocking Done Lottie Popup
+        Get.dialog(
+          Center(
+            child: Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Lottie.asset(
+                'assets/lotties/done.json',
+                repeat: false,
+                width: 100,
+                height: 100,
+              ),
+            ),
+          ),
+          barrierColor: Colors.black.withValues(alpha: 0.1),
+        );
+        Future.delayed(const Duration(milliseconds: 1000), () {
+          if (Get.isDialogOpen ?? false) {
+            Get.back();
+          }
+        });
+
         _updateCartItems(data);
-        CustomPopup.showSuccess('Removed', 'Item removed from cart.');
       } else {
+        fetchCart(); // Revert on fail
         CustomPopup.showError('Failed', data['message'] ?? 'Could not remove item');
       }
     } catch (e) {
+      fetchCart(); // Revert on fail
       CustomPopup.showError('Error', 'An error occurred while removing item.');
     }
   }

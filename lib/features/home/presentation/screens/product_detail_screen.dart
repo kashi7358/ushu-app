@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:shimmer/shimmer.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_dimensions.dart';
 import '../../../../app/theme/app_text_styles.dart';
@@ -127,7 +128,7 @@ class ProductDetailScreen extends StatelessWidget {
       ),
       body: Obx(() {
         if (controller.isLoading.value) {
-          return const Center(child: CircularProgressIndicator(color: AppColors.primaryPurple));
+          return _buildShimmer();
         }
         final product = controller.product.value;
         if (product == null) {
@@ -336,50 +337,57 @@ class ProductDetailScreen extends StatelessWidget {
               ),
 
               // --- SECTION 4: STORE INFO ---
-              Container(
-                width: double.infinity,
-                color: AppColors.white,
-                padding: const EdgeInsets.all(16),
-                margin: const EdgeInsets.only(bottom: 8),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 50,
-                      height: 50,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.grey.shade100,
-                        border: Border.all(color: Colors.grey.shade300),
-                        image: product.storeLogo != null 
-                          ? DecorationImage(image: NetworkImage(product.storeLogo!), fit: BoxFit.cover) 
-                          : null,
+              GestureDetector(
+                onTap: () {
+                  if (product.storeId != null && product.storeId!.isNotEmpty) {
+                    Get.toNamed('/store', arguments: product.storeId);
+                  }
+                },
+                child: Container(
+                  width: double.infinity,
+                  color: AppColors.white,
+                  padding: const EdgeInsets.all(16),
+                  margin: const EdgeInsets.only(bottom: 8),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 50,
+                        height: 50,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.grey.shade100,
+                          border: Border.all(color: Colors.grey.shade300),
+                          image: product.storeLogo != null 
+                            ? DecorationImage(image: NetworkImage(product.storeLogo!), fit: BoxFit.cover) 
+                            : null,
+                        ),
+                        child: product.storeLogo == null ? const Icon(Icons.store, color: AppColors.primaryPurple, size: 24) : null,
                       ),
-                      child: product.storeLogo == null ? const Icon(Icons.store, color: AppColors.primaryPurple, size: 24) : null,
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(product.storeName ?? (product.brand.isNotEmpty ? product.brand : 'Verified Store'), style: AppTextStyles.extraBold.copyWith(fontSize: 15, color: AppColors.darkText)),
-                          const SizedBox(height: 4),
-                          Row(
-                            children: [
-                              Text('98% Positive Feedback', style: AppTextStyles.medium.copyWith(color: AppColors.hintText, fontSize: 11)),
-                            ],
-                          ),
-                        ],
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(product.storeName ?? (product.brand.isNotEmpty ? product.brand : 'Verified Store'), style: AppTextStyles.extraBold.copyWith(fontSize: 15, color: AppColors.darkText)),
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                Text('98% Positive Feedback', style: AppTextStyles.medium.copyWith(color: AppColors.hintText, fontSize: 11)),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      decoration: BoxDecoration(
-                        border: Border.all(color: AppColors.primaryPurple),
-                        borderRadius: BorderRadius.circular(4),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: AppColors.primaryPurple),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text('Visit Store', style: AppTextStyles.bold.copyWith(color: AppColors.primaryPurple, fontSize: 12)),
                       ),
-                      child: Text('Visit Store', style: AppTextStyles.bold.copyWith(color: AppColors.primaryPurple, fontSize: 12)),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
 
@@ -409,6 +417,138 @@ class ProductDetailScreen extends StatelessWidget {
           ),
         );
       }),
+    );
+  }
+
+  Widget _buildShimmer() {
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Image placeholder
+          Shimmer.fromColors(
+            baseColor: Colors.grey.shade300,
+            highlightColor: Colors.grey.shade100,
+            child: Container(
+              height: 400,
+              width: double.infinity,
+              color: Colors.white,
+            ),
+          ),
+          
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Price placeholder
+                Shimmer.fromColors(
+                  baseColor: Colors.grey.shade300,
+                  highlightColor: Colors.grey.shade100,
+                  child: Container(
+                    height: 24,
+                    width: 120,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                
+                // Title placeholder
+                Shimmer.fromColors(
+                  baseColor: Colors.grey.shade300,
+                  highlightColor: Colors.grey.shade100,
+                  child: Container(
+                    height: 20,
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Shimmer.fromColors(
+                  baseColor: Colors.grey.shade300,
+                  highlightColor: Colors.grey.shade100,
+                  child: Container(
+                    height: 20,
+                    width: 250,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                
+                // Rating/Sold placeholder
+                Row(
+                  children: [
+                    Shimmer.fromColors(
+                      baseColor: Colors.grey.shade300,
+                      highlightColor: Colors.grey.shade100,
+                      child: Container(height: 16, width: 80, color: Colors.white),
+                    ),
+                    const SizedBox(width: 16),
+                    Shimmer.fromColors(
+                      baseColor: Colors.grey.shade300,
+                      highlightColor: Colors.grey.shade100,
+                      child: Container(height: 16, width: 80, color: Colors.white),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                
+                // Divider
+                Shimmer.fromColors(
+                  baseColor: Colors.grey.shade300,
+                  highlightColor: Colors.grey.shade100,
+                  child: Container(height: 1, width: double.infinity, color: Colors.white),
+                ),
+                const SizedBox(height: 24),
+                
+                // Section Title (Description)
+                Shimmer.fromColors(
+                  baseColor: Colors.grey.shade300,
+                  highlightColor: Colors.grey.shade100,
+                  child: Container(height: 18, width: 100, color: Colors.white),
+                ),
+                const SizedBox(height: 12),
+                
+                // Description lines
+                for (int i = 0; i < 4; i++)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8.0),
+                    child: Shimmer.fromColors(
+                      baseColor: Colors.grey.shade300,
+                      highlightColor: Colors.grey.shade100,
+                      child: Container(height: 14, width: i == 3 ? 200 : double.infinity, color: Colors.white),
+                    ),
+                  ),
+                  
+                const SizedBox(height: 24),
+                
+                // Store Profile Block Shimmer
+                Shimmer.fromColors(
+                  baseColor: Colors.grey.shade300,
+                  highlightColor: Colors.grey.shade100,
+                  child: Container(
+                    height: 80,
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -17,6 +17,7 @@ class ProductModel extends ProductEntity {
     super.images,
     super.storeName,
     super.storeLogo,
+    super.storeId,
   });
 
   factory ProductModel.fromJson(Map<String, dynamic> json) {
@@ -39,9 +40,21 @@ class ProductModel extends ProductEntity {
     // Parse store
     String? sName;
     String? sLogo;
-    if (json['storeId'] != null && json['storeId'] is Map) {
-      sName = json['storeId']['StoreName'];
-      sLogo = json['storeId']['logo'];
+    String? sId;
+
+    if (json['storeId'] != null) {
+      if (json['storeId'] is Map) {
+        sName = json['storeId']['StoreName'] ?? json['storeId']['storeName'];
+        sLogo = json['storeId']['logo'];
+        sId = json['storeId']['createdBy'] ?? json['storeId']['_id'];
+      } else {
+        sId = json['storeId'].toString();
+      }
+    }
+    
+    // The Store API actually expects the seller's user ID (createdBy). If product has it directly, use it over the store's createdBy.
+    if (json['createdBy'] != null) {
+      sId = json['createdBy'] is Map ? json['createdBy']['_id'] : json['createdBy'];
     }
 
     return ProductModel(
@@ -60,6 +73,7 @@ class ProductModel extends ProductEntity {
       images: parsedImages,
       storeName: sName,
       storeLogo: sLogo,
+      storeId: sId,
     );
   }
 }

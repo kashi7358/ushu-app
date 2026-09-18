@@ -5,6 +5,7 @@ import '../controllers/main_layout_controller.dart';
 import '../../../home/presentation/screens/home_screen.dart';
 import '../../../profile/presentation/screens/profile_screen.dart';
 import '../../../cart/presentation/screens/cart_screen.dart';
+import '../../../cart/presentation/controllers/cart_controller.dart';
 import 'package:lottie/lottie.dart';
 import '../../../../features/chatbot/presentation/screens/chatbot_screen.dart';
 
@@ -61,14 +62,30 @@ class MainLayoutScreen extends StatelessWidget {
                 label: 'Categories',
               ),
               BottomNavigationBarItem(
-                icon: AddToCartIcon(
-                  key: controller.cartKey,
-                  icon: const Icon(Icons.shopping_cart_outlined),
-                  badgeOptions: const BadgeOptions(
-                    active: false,
-                  ),
-                ),
-                activeIcon: const Icon(Icons.shopping_cart),
+                icon: Obx(() {
+                  final cartCtrl = Get.isRegistered<CartController>() ? Get.find<CartController>() : Get.put(CartController());
+                  final count = cartCtrl.cartItems.length;
+                  return Badge(
+                    isLabelVisible: count > 0,
+                    label: Text(count.toString(), style: const TextStyle(fontSize: 10, color: Colors.white)),
+                    backgroundColor: AppColors.error,
+                    child: AddToCartIcon(
+                      key: controller.cartKey,
+                      icon: const Icon(Icons.shopping_cart_outlined),
+                      badgeOptions: const BadgeOptions(active: false),
+                    ),
+                  );
+                }),
+                activeIcon: Obx(() {
+                  final cartCtrl = Get.isRegistered<CartController>() ? Get.find<CartController>() : Get.put(CartController());
+                  final count = cartCtrl.cartItems.length;
+                  return Badge(
+                    isLabelVisible: count > 0,
+                    label: Text(count.toString(), style: const TextStyle(fontSize: 10, color: Colors.white)),
+                    backgroundColor: AppColors.error,
+                    child: const Icon(Icons.shopping_cart),
+                  );
+                }),
                 label: 'Cart',
               ),
               const BottomNavigationBarItem(
@@ -85,7 +102,7 @@ class MainLayoutScreen extends StatelessWidget {
         }
         
         return Transform.translate(
-          offset: const Offset(15, 35), // pushed further right and much closer to the bottom nav
+          offset: const Offset(30, 35), // pushed further right
           child: GestureDetector(
             onTap: () {
               Get.to(() => const ChatbotScreen());

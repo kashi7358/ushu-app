@@ -20,4 +20,5 @@ class ApiEndpoints {
   static String removeCartItem(String itemId) => 'https://ecombackend.ushu.pk/api/cart/items/$itemId';
   static String updateCartQuantity(String itemId) => 'https://ecombackend.ushu.pk/api/cart/quantity/$itemId';
   static const String selectCartItem = 'https://ecombackend.ushu.pk/api/cart/select';
+  static String getStore(String id) => 'https://ecombackend.ushu.pk/store/get/$id';
 }

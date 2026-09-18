@@ -16,6 +16,7 @@ class ProductEntity {
   final List<String>? images;
   final String? storeName;
   final String? storeLogo;
+  final String? storeId;
 
   ProductEntity({
     required this.id,
@@ -33,5 +34,6 @@ class ProductEntity {
     this.images,
     this.storeName,
     this.storeLogo,
+    this.storeId,
   });
 }

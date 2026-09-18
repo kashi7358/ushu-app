@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'routes/app_routes.dart';
 import 'theme/app_theme.dart';
-import '../core/utils/session_manager.dart';
 
 class UshuApp extends StatelessWidget {
   const UshuApp({super.key});

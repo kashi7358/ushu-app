@@ -116,31 +116,95 @@ class CheckoutScreen extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(Icons.payment, color: AppColors.primaryPurple, size: 24),
-              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryPurple.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.account_balance_wallet_outlined, color: AppColors.primaryPurple, size: 20),
+              ),
+              const SizedBox(width: 12),
               Text('Payment Method', style: AppTextStyles.bold.copyWith(fontSize: 16, color: AppColors.darkText)),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
+          // COD Option (Active)
+          Obx(() => GestureDetector(
+            onTap: () => controller.selectedPaymentMethod.value = 'COD',
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                border: Border.all(
+                  color: controller.selectedPaymentMethod.value == 'COD' ? AppColors.primaryPurple : Colors.grey.shade200,
+                  width: controller.selectedPaymentMethod.value == 'COD' ? 1.5 : 1,
+                ),
+                borderRadius: BorderRadius.circular(12),
+                color: controller.selectedPaymentMethod.value == 'COD' ? AppColors.primaryPurple.withValues(alpha: 0.03) : Colors.transparent,
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    controller.selectedPaymentMethod.value == 'COD' ? Icons.radio_button_checked : Icons.radio_button_off,
+                    color: controller.selectedPaymentMethod.value == 'COD' ? AppColors.primaryPurple : Colors.grey.shade400,
+                  ),
+                  const SizedBox(width: 16),
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: controller.selectedPaymentMethod.value == 'COD' ? AppColors.primaryPurple.withValues(alpha: 0.1) : Colors.grey.shade100,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      Icons.local_shipping_outlined,
+                      color: controller.selectedPaymentMethod.value == 'COD' ? AppColors.primaryPurple : Colors.grey.shade600,
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Cash on Delivery', style: AppTextStyles.bold.copyWith(fontSize: 15, color: AppColors.darkText)),
+                        const SizedBox(height: 2),
+                        Text('Pay cash when order arrives', style: AppTextStyles.regular.copyWith(fontSize: 12, color: AppColors.hintText)),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          )),
+          const SizedBox(height: 12),
+          // Credit Card Option (Disabled / Coming Soon)
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              border: Border.all(color: AppColors.primaryPurple, width: 1.5),
+              border: Border.all(color: Colors.grey.shade200, width: 1),
               borderRadius: BorderRadius.circular(12),
-              color: AppColors.primaryPurple.withValues(alpha: 0.05),
+              color: Colors.grey.shade50,
             ),
             child: Row(
               children: [
-                const Icon(Icons.radio_button_checked, color: AppColors.primaryPurple),
-                const SizedBox(width: 12),
-                const Icon(Icons.money, color: AppColors.primaryPurple),
-                const SizedBox(width: 12),
+                Icon(Icons.radio_button_off, color: Colors.grey.shade300),
+                const SizedBox(width: 16),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade200,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(Icons.credit_card_outlined, color: Colors.grey.shade400, size: 24),
+                ),
+                const SizedBox(width: 16),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Cash on Delivery', style: AppTextStyles.bold.copyWith(fontSize: 14, color: AppColors.darkText)),
-                      Text('Pay when your order arrives', style: AppTextStyles.regular.copyWith(fontSize: 12, color: AppColors.hintText)),
+                      Text('Credit / Debit Card', style: AppTextStyles.bold.copyWith(fontSize: 15, color: Colors.grey.shade400)),
+                      const SizedBox(height: 2),
+                      Text('Coming soon', style: AppTextStyles.regular.copyWith(fontSize: 12, color: Colors.grey.shade400)),
                     ],
                   ),
                 ),

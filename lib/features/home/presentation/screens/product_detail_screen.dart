@@ -413,16 +413,16 @@ class ProductDetailScreen extends StatelessWidget {
                 width: double.infinity,
                 color: AppColors.white,
                 padding: const EdgeInsets.all(16),
-                margin: const EdgeInsets.only(bottom: 40),
+                margin: const EdgeInsets.only(bottom: 8),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text('Product Description', style: AppTextStyles.extraBold.copyWith(fontSize: 15, color: AppColors.darkText)),
                     const SizedBox(height: 12),
                     Text(
-                      product.description ?? 'No detailed description available for this product. It is guaranteed to meet high quality standards. Buy with confidence.',
+                      product.description ?? 'No detailed description available for this product.',
                       style: AppTextStyles.regular.copyWith(
-                        color: AppColors.darkText.withOpacity(0.8),
+                        color: AppColors.darkText.withValues(alpha: 0.8),
                         height: 1.6,
                         fontSize: 13,
                       ),
@@ -430,6 +430,112 @@ class ProductDetailScreen extends StatelessWidget {
                   ],
                 ),
               ),
+
+              // --- SECTION 6: REVIEWS ---
+              Obx(() {
+                if (controller.reviews.isEmpty) {
+                  return const SizedBox.shrink();
+                }
+                return Container(
+                  width: double.infinity,
+                  color: AppColors.white,
+                  padding: const EdgeInsets.all(16),
+                  margin: const EdgeInsets.only(bottom: 40),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Product Reviews (${controller.reviews.length})', style: AppTextStyles.extraBold.copyWith(fontSize: 15, color: AppColors.darkText)),
+                      const SizedBox(height: 16),
+                      ListView.separated(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: controller.reviews.length > 5 ? 5 : controller.reviews.length, // Show up to 5
+                        separatorBuilder: (context, index) => const Divider(height: 32),
+                        itemBuilder: (context, index) {
+                          final review = controller.reviews[index];
+                          final rating = review['rating'] ?? 5;
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  CircleAvatar(
+                                    radius: 16,
+                                    backgroundColor: Colors.grey.shade200,
+                                    child: Icon(Icons.person, size: 20, color: Colors.grey.shade500),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          review['user']?['fullName'] ?? review['userName'] ?? 'User',
+                                          style: AppTextStyles.bold.copyWith(fontSize: 13),
+                                        ),
+                                        Row(
+                                          children: List.generate(5, (starIndex) {
+                                            return Icon(
+                                              starIndex < rating ? Icons.star : Icons.star_border,
+                                              size: 14,
+                                              color: Colors.amber,
+                                            );
+                                          }),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              if (review['title'] != null && review['title'].toString().isNotEmpty) ...[
+                                Text(
+                                  review['title'],
+                                  style: AppTextStyles.bold.copyWith(fontSize: 14),
+                                ),
+                                const SizedBox(height: 4),
+                              ],
+                              Text(
+                                review['body'] ?? '',
+                                style: AppTextStyles.regular.copyWith(fontSize: 13, color: AppColors.darkText.withValues(alpha: 0.8)),
+                              ),
+                              if (review['images'] != null && (review['images'] as List).isNotEmpty) ...[
+                                const SizedBox(height: 12),
+                                SizedBox(
+                                  height: 80,
+                                  child: ListView.separated(
+                                    scrollDirection: Axis.horizontal,
+                                    itemCount: (review['images'] as List).length,
+                                    separatorBuilder: (context, idx) => const SizedBox(width: 8),
+                                    itemBuilder: (context, idx) {
+                                      final imgUrl = review['images'][idx];
+                                      return ClipRRect(
+                                        borderRadius: BorderRadius.circular(8),
+                                        child: Image.network(
+                                          imgUrl,
+                                          height: 80,
+                                          width: 80,
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (_, __, ___) => Container(
+                                            height: 80,
+                                            width: 80,
+                                            color: Colors.grey.shade200,
+                                            child: const Icon(Icons.broken_image),
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                              ],
+                            ],
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                );
+              }),
             ],
           ),
         );

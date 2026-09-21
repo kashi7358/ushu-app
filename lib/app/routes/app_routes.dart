@@ -8,6 +8,10 @@ import '../../features/main_layout/presentation/screens/main_layout_screen.dart'
 import '../../features/home/presentation/screens/product_detail_screen.dart';
 import '../../features/store/presentation/screens/store_screen.dart';
 import '../../features/wishlist/presentation/screens/wishlist_screen.dart';
+import '../../features/order/presentation/screens/my_orders_screen.dart';
+import '../../features/profile/presentation/screens/contact_us_screen.dart';
+import '../../features/review/presentation/screens/write_review_screen.dart';
+import '../../features/checkout/presentation/screens/checkout_screen.dart';
 
 class AppRoutes {
   AppRoutes._();
@@ -20,8 +24,13 @@ class AppRoutes {
   static const String mainLayout = '/main';
   static const String productDetail = '/product-detail';
   static const String store = '/store';
-
   static const String wishlist = '/wishlist';
+  static const String changePassword = '/change-password';
+  static const String search = '/search';
+  static const String myOrders = '/my-orders';
+  static const String contactUs = '/contact-us';
+  static const String writeReview = '/write-review';
+  static const String checkout = '/checkout';
 
   static final routes = [
     GetPage(name: login, page: () => const LoginScreen()),
@@ -33,5 +42,9 @@ class AppRoutes {
     GetPage(name: productDetail, page: () => const ProductDetailScreen()),
     GetPage(name: store, page: () => const StoreScreen()),
     GetPage(name: wishlist, page: () => const WishlistScreen()),
+    GetPage(name: myOrders, page: () => const MyOrdersScreen()),
+    GetPage(name: contactUs, page: () => const ContactUsScreen()),
+    GetPage(name: writeReview, page: () => const WriteReviewScreen()),
+    GetPage(name: checkout, page: () => const CheckoutScreen()),
   ];
 }

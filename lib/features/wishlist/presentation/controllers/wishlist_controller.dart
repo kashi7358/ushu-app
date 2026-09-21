@@ -20,23 +20,25 @@ class WishlistController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    if (SessionManager.isLoggedIn()) {
+    if (SessionManager.isLoggedIn) {
       fetchWishlist();
     }
   }
 
   Future<void> fetchWishlist() async {
-    if (!SessionManager.isLoggedIn()) return;
+    if (!SessionManager.isLoggedIn) return;
     
     try {
       isLoading.value = true;
-      final response = await _apiClient.get(ApiEndpoints.getWishlist);
+      final response = await _apiClient.dio.get(ApiEndpoints.getWishlist);
       
       if (response.data['success'] == true) {
         wishlistProducts.clear();
         wishlistedProductIds.clear();
         
-        final List<dynamic> items = response.data['wishlist']?['items'] ?? [];
+        final List<dynamic> items = response.data['item']?['items'] ?? [];
+        List<Future<ProductModel?>> fetchFutures = [];
+
         for (var item in items) {
           if (item is Map && item['productId'] != null) {
             final productData = item['productId'];
@@ -48,6 +50,29 @@ class WishlistController extends GetxController {
             } else if (productData is String) {
               // Only ID
               wishlistedProductIds.add(productData);
+              
+              // Add a future to fetch it concurrently
+              fetchFutures.add((() async {
+                try {
+                  final prodRes = await _apiClient.dio.get(ApiEndpoints.singleProduct + productData);
+                  if (prodRes.data['success'] == true && prodRes.data['product'] != null) {
+                    return ProductModel.fromJson(prodRes.data['product']);
+                  }
+                } catch (e) {
+                   debugPrint('Error fetching single product $productData: $e');
+                }
+                return null;
+              })());
+            }
+          }
+        }
+        
+        // Wait for all single product fetches to complete
+        if (fetchFutures.isNotEmpty) {
+          final fetchedProducts = await Future.wait(fetchFutures);
+          for (var p in fetchedProducts) {
+            if (p != null) {
+              wishlistProducts.add(p);
             }
           }
         }
@@ -60,8 +85,8 @@ class WishlistController extends GetxController {
   }
 
   Future<void> toggleWishlist(String productId) async {
-    if (!SessionManager.isLoggedIn()) {
-      CustomPopup.showError('Please login to add items to wishlist');
+    if (!SessionManager.isLoggedIn) {
+      CustomPopup.showError('Error', 'Please login to add items to wishlist');
       return;
     }
 
@@ -77,16 +102,15 @@ class WishlistController extends GetxController {
 
     try {
       if (isAlreadyWishlisted) {
-        await _apiClient.post(
-          ApiEndpoints.removeWishlist,
-          data: {'productId': productId},
+        await _apiClient.dio.delete(
+          ApiEndpoints.removeWishlist(productId),
         );
       } else {
-        await _apiClient.post(
+        await _apiClient.dio.post(
           ApiEndpoints.addWishlist,
           data: {'productId': productId},
         );
-        CustomPopup.showSuccess('Item added to wishlist');
+        CustomPopup.showSuccess('Success', 'Item added to wishlist');
       }
     } catch (e) {
       // Revert optimistic update on failure
@@ -95,7 +119,7 @@ class WishlistController extends GetxController {
       } else {
         wishlistedProductIds.remove(productId);
       }
-      CustomPopup.showError('Failed to update wishlist');
+      CustomPopup.showError('Error', 'Failed to update wishlist');
       debugPrint('Wishlist Error: $e');
     }
   }

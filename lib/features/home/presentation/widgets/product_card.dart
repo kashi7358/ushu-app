@@ -4,17 +4,18 @@ import '../../../../app/theme/app_dimensions.dart';
 import '../../../../app/theme/app_text_styles.dart';
 import '../../domain/entities/product_entity.dart';
 import '../../../wishlist/presentation/controllers/wishlist_controller.dart';
+import '../../../cart/presentation/controllers/cart_controller.dart';
 import 'package:get/get.dart';
 import '../../../../app/routes/app_routes.dart';
 
 class ProductCard extends StatelessWidget {
   final ProductEntity product;
-  final void Function(GlobalKey imageKey) onAddToCart;
+  final void Function(GlobalKey imageKey)? onAddToCart;
 
   const ProductCard({
     super.key,
     required this.product,
-    required this.onAddToCart,
+    this.onAddToCart,
   });
 
   @override
@@ -187,7 +188,13 @@ class ProductCard extends StatelessWidget {
                     
                     // Add to Cart Button
                     GestureDetector(
-                      onTap: () => onAddToCart(imageKey),
+                      onTap: () {
+                        if (onAddToCart != null) {
+                          onAddToCart!(imageKey);
+                        } else {
+                          Get.put(CartController()).addToCart(product.id, 1, product.name);
+                        }
+                      },
                       child: Container(
                         width: double.infinity,
                         padding: const EdgeInsets.symmetric(vertical: 6),

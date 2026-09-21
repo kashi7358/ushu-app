@@ -6,7 +6,6 @@ import '../../../../app/theme/app_dimensions.dart';
 import '../../../../core/utils/session_manager.dart';
 import '../../../../core/utils/custom_popup.dart';
 import '../../../../features/home/presentation/widgets/product_card.dart';
-import '../../../../features/main_layout/presentation/controllers/main_layout_controller.dart';
 import '../../../../features/cart/presentation/controllers/cart_controller.dart';
 import '../controllers/chatbot_controller.dart';
 
@@ -131,8 +130,8 @@ class ChatbotScreen extends StatelessWidget {
                                           CustomPopup.showLoginRequired();
                                           return;
                                         }
-                                        final mainLayoutCtrl = Get.find<MainLayoutController>();
-                                        mainLayoutCtrl.runAddToCartAnimation(imageKey);
+                                        // final mainLayoutCtrl = Get.find<MainLayoutController>();
+                                        // mainLayoutCtrl.runAddToCartAnimation(imageKey);
                                         Get.put(CartController()).addToCart(product.id, 1, product.name);
                                       },
                                     ),

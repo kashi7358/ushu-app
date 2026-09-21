@@ -1,10 +1,8 @@
-import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:dio/dio.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/network/api_endpoints.dart';
 import '../../../../core/utils/custom_popup.dart';
-import 'package:lottie/lottie.dart';
 
 import '../../data/models/cart_item_model.dart';
 
@@ -32,34 +30,14 @@ class CartController extends GetxController {
   }
 
   Future<void> addToCart(String productId, int quantity, String productName) async {
+    if (isAddingToCart.value) return;
+    
+    // Optimistic UI: Show animation immediately for best UX
+    CustomPopup.showFastLottie('assets/lotties/add_to_cart_new.json');
+    
     try {
       isAddingToCart.value = true;
       
-      // Optimistic Popup - Show popup immediately
-      Get.dialog(
-          Center(
-            child: Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Lottie.asset(
-                'assets/lotties/done.json',
-                repeat: false,
-                width: 100,
-                height: 100,
-              ),
-            ),
-          ),
-          barrierColor: Colors.black.withValues(alpha: 0.1),
-        );
-        Future.delayed(const Duration(milliseconds: 1200), () {
-          if (Get.isDialogOpen ?? false) {
-            Get.back();
-          }
-        });
-
       final response = await _apiClient.dio.post(
         ApiEndpoints.addToCart,
         data: {
@@ -73,10 +51,10 @@ class CartController extends GetxController {
       if (data['success'] == true) {
         _updateCartItems(data);
       } else {
-        CustomPopup.showError('Failed', data['message'] ?? 'Could not add to cart');
+        CustomPopup.showToast('Failed', data['message'] ?? 'Could not add to cart', isError: true);
       }
     } catch (e) {
-      CustomPopup.showError('Error', 'An error occurred while adding to cart.');
+      CustomPopup.showToast('Error', 'An error occurred while adding to cart.', isError: true);
     } finally {
       isAddingToCart.value = false;
     }
@@ -102,8 +80,9 @@ class CartController extends GetxController {
   }
 
   Future<void> removeFromCart(String itemId) async {
-    // Optimistic UI Update: immediately remove from UI
+    // Optimistic UI Update: immediately remove from UI & show lottie
     cartItems.removeWhere((item) => item.id == itemId);
+    CustomPopup.showFastLottie('assets/lotties/done.json');
 
     try {
       final response = await _apiClient.dio.delete(
@@ -113,39 +92,14 @@ class CartController extends GetxController {
       
       final data = response.data;
       if (data != null && data['success'] == true) {
-        // Show non-blocking Done Lottie Popup
-        Get.dialog(
-          Center(
-            child: Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Lottie.asset(
-                'assets/lotties/done.json',
-                repeat: false,
-                width: 100,
-                height: 100,
-              ),
-            ),
-          ),
-          barrierColor: Colors.black.withValues(alpha: 0.1),
-        );
-        Future.delayed(const Duration(milliseconds: 1000), () {
-          if (Get.isDialogOpen ?? false) {
-            Get.back();
-          }
-        });
-
         _updateCartItems(data);
       } else {
         fetchCart(); // Revert on fail
-        CustomPopup.showError('Failed', data['message'] ?? 'Could not remove item');
+        CustomPopup.showToast('Failed', data['message'] ?? 'Could not remove item', isError: true);
       }
     } catch (e) {
       fetchCart(); // Revert on fail
-      CustomPopup.showError('Error', 'An error occurred while removing item.');
+      CustomPopup.showToast('Error', 'An error occurred while removing item.', isError: true);
     }
   }
 

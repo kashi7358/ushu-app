@@ -10,6 +10,7 @@ class ProductDetailController extends GetxController {
   final Rx<ProductEntity?> product = Rx<ProductEntity?>(null);
   final RxBool isLoading = true.obs;
   final RxInt selectedImageIndex = 0.obs;
+  final reviews = <dynamic>[].obs; // Using dynamic or importing ReviewModel later
 
   late final GetProductByIdUseCase _getProductByIdUseCase;
   late final String productId;
@@ -25,6 +26,7 @@ class ProductDetailController extends GetxController {
     _getProductByIdUseCase = GetProductByIdUseCase(repository);
     
     fetchProductDetails();
+    fetchReviews();
   }
 
   Future<void> fetchProductDetails() async {
@@ -38,6 +40,21 @@ class ProductDetailController extends GetxController {
       Get.snackbar('Error', error.message, snackPosition: SnackPosition.BOTTOM);
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  Future<void> fetchReviews() async {
+    try {
+      final apiClient = ApiClient();
+      final response = await apiClient.dio.get(
+        'https://ecombackend.ushu.pk/api/review/all/$productId',
+      );
+      final data = response.data;
+      if (data != null && data['success'] == true) {
+        reviews.assignAll(data['reviews'] ?? []);
+      }
+    } catch (e) {
+      print('Error fetching reviews: $e');
     }
   }
 }

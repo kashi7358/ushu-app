@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:lottie/lottie.dart';
 import '../../app/theme/app_colors.dart';
-import '../../app/theme/app_dimensions.dart';
 import '../../app/theme/app_text_styles.dart';
 
 class CustomPopup {
@@ -11,6 +11,7 @@ class CustomPopup {
       message: message,
       icon: Icons.check_circle_rounded,
       iconColor: AppColors.success,
+      lottieAsset: 'assets/lotties/done.json',
       emoji: '🎉',
     );
   }
@@ -21,8 +22,74 @@ class CustomPopup {
       message: message,
       icon: Icons.error_rounded,
       iconColor: AppColors.error,
-      emoji: '⚠️',
+      emoji: '❌',
     );
+  }
+
+  static void showToast(String title, String message, {bool isError = false}) {
+    Get.snackbar(
+      title,
+      message,
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: isError ? AppColors.error : AppColors.success,
+      colorText: Colors.white,
+      margin: const EdgeInsets.all(16),
+      borderRadius: 12,
+      duration: const Duration(seconds: 2),
+      icon: Icon(
+        isError ? Icons.error_outline : Icons.check_circle_outline,
+        color: Colors.white,
+      ),
+      isDismissible: true,
+      forwardAnimationCurve: Curves.easeOutBack,
+    );
+  }
+
+  static void showFastLottie(String lottieAsset, {double width = 120, double height = 120}) {
+    if (Get.isDialogOpen ?? false) {
+      Get.back();
+    }
+    Get.dialog(
+      Center(
+        child: TweenAnimationBuilder(
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.elasticOut,
+          tween: Tween<double>(begin: 0.5, end: 1.0),
+          builder: (context, double scale, child) {
+            return Transform.scale(scale: scale, child: child);
+          },
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.08),
+                  blurRadius: 30,
+                  offset: const Offset(0, 10),
+                )
+              ],
+            ),
+            child: Lottie.asset(
+              lottieAsset,
+              width: width,
+              height: height,
+              repeat: false,
+            ),
+          ),
+        ),
+      ),
+      barrierDismissible: false,
+      barrierColor: Colors.black.withValues(alpha: 0.1),
+    );
+
+    // Auto close after animation
+    Future.delayed(const Duration(milliseconds: 1500), () {
+      if (Get.isDialogOpen ?? false) {
+        Get.back();
+      }
+    });
   }
 
   static void showLoginRequired() {
@@ -147,6 +214,7 @@ class CustomPopup {
     required IconData icon,
     required Color iconColor,
     required String emoji,
+    String? lottieAsset,
   }) {
     Get.dialog(
       Dialog(
@@ -193,15 +261,22 @@ class CustomPopup {
                     );
                   },
                   child: Container(
-                    padding: const EdgeInsets.all(16),
+                    padding: EdgeInsets.all(lottieAsset != null ? 0 : 16),
                     decoration: BoxDecoration(
-                      color: iconColor.withOpacity(0.1),
+                      color: lottieAsset != null ? Colors.transparent : iconColor.withOpacity(0.1),
                       shape: BoxShape.circle,
                     ),
-                    child: Text(
-                      emoji,
-                      style: const TextStyle(fontSize: 48),
-                    ),
+                    child: lottieAsset != null
+                        ? Lottie.asset(
+                            lottieAsset,
+                            width: 100,
+                            height: 100,
+                            repeat: false,
+                          )
+                        : Text(
+                            emoji,
+                            style: const TextStyle(fontSize: 48),
+                          ),
                   ),
                 ),
                 const SizedBox(height: 20),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:uhsu_buy/features/wishlist/presentation/controllers/wishlist_controller.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_text_styles.dart';
 import '../controllers/profile_controller.dart';
@@ -98,26 +99,30 @@ class ProfileScreen extends StatelessWidget {
                     ),
                     child: Column(
                       children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text('My Orders', style: AppTextStyles.bold.copyWith(fontSize: 16, color: AppColors.darkText)),
-                            Row(
-                              children: [
-                                Text('View All', style: AppTextStyles.medium.copyWith(fontSize: 13, color: AppColors.hintText)),
-                                const Icon(Icons.chevron_right, size: 16, color: AppColors.hintText),
-                              ],
-                            ),
-                          ],
+                        GestureDetector(
+                          onTap: () => Get.toNamed('/my-orders'),
+                          behavior: HitTestBehavior.opaque,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text('My Orders', style: AppTextStyles.bold.copyWith(fontSize: 16, color: AppColors.darkText)),
+                              Row(
+                                children: [
+                                  Text('View All', style: AppTextStyles.medium.copyWith(fontSize: 13, color: AppColors.hintText)),
+                                  const Icon(Icons.chevron_right, size: 16, color: AppColors.hintText),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
                         const SizedBox(height: 16),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceAround,
                           children: [
-                            _buildOrderIcon(Icons.payment_outlined, 'To Pay', badge: 1),
-                            _buildOrderIcon(Icons.inventory_2_outlined, 'To Ship', badge: 0),
-                            _buildOrderIcon(Icons.local_shipping_outlined, 'To Receive', badge: 2),
-                            _buildOrderIcon(Icons.rate_review_outlined, 'To Review', badge: 0),
+                            GestureDetector(onTap: () => Get.toNamed('/my-orders'), child: _buildOrderIcon(Icons.payment_outlined, 'To Pay', badge: 1)),
+                            GestureDetector(onTap: () => Get.toNamed('/my-orders'), child: _buildOrderIcon(Icons.inventory_2_outlined, 'To Ship', badge: 0)),
+                            GestureDetector(onTap: () => Get.toNamed('/my-orders'), child: _buildOrderIcon(Icons.local_shipping_outlined, 'To Receive', badge: 2)),
+                            GestureDetector(onTap: () => Get.toNamed('/my-orders'), child: _buildOrderIcon(Icons.rate_review_outlined, 'To Review', badge: 0)),
                           ],
                         ),
                       ],
@@ -192,7 +197,7 @@ class ProfileScreen extends StatelessWidget {
                 ),
                 child: Column(
                   children: [
-                    _buildMenuTile(Icons.help_outline, 'Help Center', ''),
+                    _buildMenuTile(Icons.support_agent_outlined, 'Contact Us', '', onTap: () => Get.toNamed('/contact-us')),
                     _buildDivider(),
                     _buildMenuTile(Icons.settings_outlined, 'Settings', ''),
                   ],

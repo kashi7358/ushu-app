@@ -9,7 +9,6 @@ import '../widgets/home_slider.dart';
 import '../widgets/product_card.dart';
 import '../controllers/home_controller.dart';
 import '../../../cart/presentation/controllers/cart_controller.dart';
-import '../../../../core/utils/custom_popup.dart';
 import '../../../../features/main_layout/presentation/controllers/main_layout_controller.dart';
 import 'package:shimmer/shimmer.dart';
 
@@ -203,8 +202,8 @@ class HomeScreen extends StatelessWidget {
                                     CustomPopup.showLoginRequired();
                                     return;
                                   }
-                                  final mainLayoutCtrl = Get.find<MainLayoutController>();
-                                  mainLayoutCtrl.runAddToCartAnimation(imageKey);
+                                  // final mainLayoutCtrl = Get.find<MainLayoutController>();
+                                  // mainLayoutCtrl.runAddToCartAnimation(imageKey);
                                   Get.put(CartController()).addToCart(product.id, 1, product.name);
                                 },
                               ),
@@ -304,8 +303,8 @@ class HomeScreen extends StatelessWidget {
                                         CustomPopup.showLoginRequired();
                                         return;
                                       }
-                                      final mainLayoutCtrl = Get.find<MainLayoutController>();
-                                      mainLayoutCtrl.runAddToCartAnimation(imageKey);
+                                      // final mainLayoutCtrl = Get.find<MainLayoutController>();
+                                      // mainLayoutCtrl.runAddToCartAnimation(imageKey);
                                       Get.put(CartController()).addToCart(product.id, 1, product.name);
                                     },
                                   ),
@@ -392,8 +391,8 @@ class HomeScreen extends StatelessWidget {
                             CustomPopup.showLoginRequired();
                             return;
                           }
-                          final mainLayoutCtrl = Get.find<MainLayoutController>();
-                          mainLayoutCtrl.runAddToCartAnimation(imageKey);
+                          // final mainLayoutCtrl = Get.find<MainLayoutController>();
+                          // mainLayoutCtrl.runAddToCartAnimation(imageKey);
                           Get.put(CartController()).addToCart(product.id, 1, product.name);
                         },
                       );

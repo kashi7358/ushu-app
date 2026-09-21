@@ -5,6 +5,7 @@ class CartItemModel {
   final String image;
   final num price;
   final int quantity;
+  final int stock;
   final bool isSelected;
 
   CartItemModel({
@@ -14,6 +15,7 @@ class CartItemModel {
     required this.image,
     required this.price,
     required this.quantity,
+    this.stock = 10,
     this.isSelected = false,
   });
 
@@ -25,6 +27,7 @@ class CartItemModel {
       image: json['image'] ?? '',
       price: json['price'] ?? 0,
       quantity: json['quantity'] ?? 1,
+      stock: json['stock'] ?? 10, // Try to parse stock if provided by backend, else default 10
       isSelected: json['isSelected'] ?? false,
     );
   }
@@ -36,6 +39,7 @@ class CartItemModel {
     String? image,
     num? price,
     int? quantity,
+    int? stock,
     bool? isSelected,
   }) {
     return CartItemModel(
@@ -45,6 +49,7 @@ class CartItemModel {
       image: image ?? this.image,
       price: price ?? this.price,
       quantity: quantity ?? this.quantity,
+      stock: stock ?? this.stock,
       isSelected: isSelected ?? this.isSelected,
     );
   }

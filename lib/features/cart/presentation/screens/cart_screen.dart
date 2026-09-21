@@ -5,6 +5,8 @@ import '../../../../app/theme/app_text_styles.dart';
 import '../controllers/cart_controller.dart';
 import '../../data/models/cart_item_model.dart';
 import '../../../../core/widgets/app_button.dart';
+import '../../../../core/utils/custom_popup.dart';
+import '../../../main_layout/presentation/controllers/main_layout_controller.dart';
 
 class CartScreen extends StatelessWidget {
   const CartScreen({super.key});
@@ -53,10 +55,14 @@ class CartScreen extends StatelessWidget {
                   child: AppButton(
                     text: 'Start Shopping',
                     onPressed: () {
-                      // Navigate to home or change tab
+                      if (Get.isRegistered<MainLayoutController>()) {
+                        Get.find<MainLayoutController>().changePage(0);
+                      } else {
+                        Get.offAllNamed('/main');
+                      }
                     },
                   ),
-                )
+                ),
               ],
             ),
           );
@@ -82,67 +88,79 @@ class CartScreen extends StatelessWidget {
   }
 
   Widget _buildCartItem(CartItemModel item, CartController controller) {
-    return Dismissible(
-      key: Key(item.id),
-      direction: DismissDirection.endToStart,
-      background: Container(
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 20),
-        color: Colors.red,
-        child: const Icon(Icons.delete, color: Colors.white, size: 28),
-      ),
-      onDismissed: (direction) {
-        controller.removeFromCart(item.id);
-      },
-      child: Container(
-        color: Colors.white,
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Simple Checkbox
-            Checkbox(
-              value: item.isSelected,
-              onChanged: (val) => controller.selectCartItem(item.id),
-              activeColor: AppColors.primaryPurple,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Simple Checkbox
+          Checkbox(
+            value: item.isSelected,
+            onChanged: (val) => controller.selectCartItem(item.id),
+            activeColor: AppColors.primaryPurple,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+          ),
+          // Product Image
+          Container(
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey.shade200),
+              borderRadius: BorderRadius.circular(4),
             ),
-            // Product Image
-            Container(
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey.shade200),
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(4),
-                child: Image.network(
-                  item.image,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: Image.network(
+                item.image,
+                width: 75,
+                height: 75,
+                cacheWidth: 150,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) => Container(
                   width: 75,
                   height: 75,
-                  cacheWidth: 150,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => Container(
-                    width: 75,
-                    height: 75,
-                    color: Colors.grey.shade100,
-                    child: const Icon(Icons.image_not_supported, color: Colors.grey),
-                  ),
+                  color: Colors.grey.shade100,
+                  child: const Icon(Icons.image_not_supported, color: Colors.grey),
                 ),
               ),
             ),
-            const SizedBox(width: 12),
-            // Details
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    item.name,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTextStyles.medium.copyWith(fontSize: 14, color: AppColors.darkText, height: 1.2),
-                  ),
-                  const SizedBox(height: 12),
+          ),
+          const SizedBox(width: 12),
+          // Details
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            item.name,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTextStyles.medium.copyWith(fontSize: 14, color: AppColors.darkText, height: 1.2),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'In Stock: ${item.stock}',
+                            style: AppTextStyles.medium.copyWith(fontSize: 11, color: AppColors.success),
+                          ),
+                        ],
+                      ),
+                    ),
+                    InkWell(
+                      onTap: () => controller.removeFromCart(item.id),
+                      child: const Padding(
+                        padding: EdgeInsets.only(left: 8, bottom: 8),
+                        child: Icon(Icons.delete_outline, color: Colors.black54, size: 20),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -199,107 +217,106 @@ class CartScreen extends StatelessWidget {
             const SizedBox(width: 8),
           ],
         ),
-      ),
+
     );
   }
 
   Widget _buildBottomSummary(CartController controller) {
-    bool isAllSelected = controller.cartItems.isNotEmpty && controller.cartItems.every((item) => item.isSelected);
-    
+    int selectedCount = controller.cartItems.where((item) => item.isSelected).length;
+    bool isAllSelected = controller.cartItems.isNotEmpty && selectedCount == controller.cartItems.length;
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      padding: const EdgeInsets.only(left: 16, right: 16, bottom: 20, top: 12),
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 20,
+            blurRadius: 10,
             offset: const Offset(0, -5),
           ),
         ],
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
       ),
       child: SafeArea(
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            // Select All Checkbox
-            GestureDetector(
-              onTap: controller.toggleSelectAll,
-              behavior: HitTestBehavior.opaque,
-              child: Row(
-                children: [
-                  AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    width: 22,
-                    height: 22,
-                    decoration: BoxDecoration(
-                      color: isAllSelected ? AppColors.primaryPurple : Colors.transparent,
-                      borderRadius: BorderRadius.circular(6),
-                      border: Border.all(
-                        color: isAllSelected ? AppColors.primaryPurple : Colors.grey.shade300,
-                        width: 2,
-                      ),
-                    ),
-                    child: isAllSelected
-                        ? const Icon(Icons.check, color: Colors.white, size: 14)
-                        : null,
-                  ),
-                  const SizedBox(width: 8),
-                  Text('All', style: AppTextStyles.semiBold.copyWith(fontSize: 14, color: AppColors.darkText)),
-                ],
-              ),
-            ),
-            
-            // Spacer and Total
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.only(right: 12.0),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text('Total', style: AppTextStyles.medium.copyWith(fontSize: 12, color: AppColors.hintText)),
-                    Text(
-                      'Rs. ${controller.subtotal}',
-                      style: AppTextStyles.extraBold.copyWith(fontSize: 17, color: AppColors.primaryPurple),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            
-            // Checkout Button
-            SizedBox(
-              height: 50,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryPurple,
-                  elevation: 0,
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(100), // pill shape looks better for checkout
-                  ),
-                ),
-                onPressed: () {
-                  // Proceed to checkout
-                },
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: AppColors.primaryPurple,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              // Left Side: Select All Checkbox + Texts
+              GestureDetector(
+                onTap: controller.toggleSelectAll,
+                behavior: HitTestBehavior.opaque,
                 child: Row(
-                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
-                      'Checkout',
-                      style: AppTextStyles.bold.copyWith(fontSize: 14, color: Colors.white),
+                    // Checkbox
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      width: 24,
+                      height: 24,
+                      decoration: BoxDecoration(
+                        color: isAllSelected ? Colors.white : Colors.transparent,
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(
+                          color: Colors.white,
+                          width: 2,
+                        ),
+                      ),
+                      child: isAllSelected
+                          ? Icon(Icons.check, color: AppColors.primaryPurple, size: 16)
+                          : null,
                     ),
-                    const SizedBox(width: 4),
-                    const Icon(Icons.arrow_forward_rounded, size: 16, color: Colors.white),
+                    const SizedBox(width: 12),
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '$selectedCount Items Selected',
+                          style: AppTextStyles.medium.copyWith(color: Colors.white70, fontSize: 12),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          'Total: Rs. ${controller.subtotal}',
+                          style: AppTextStyles.bold.copyWith(color: Colors.white, fontSize: 15),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               ),
-            ),
-          ],
+              
+              // Right Side: Checkout Button
+              SizedBox(
+                height: 40,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                  ),
+                  onPressed: () {
+                    if (controller.cartItems.where((item) => item.isSelected).isEmpty) {
+                      CustomPopup.showToast('Error', 'Please select at least one item to checkout', isError: true);
+                      return;
+                    }
+                    Get.toNamed('/checkout');
+                  },
+                  child: Text(
+                    'Checkout',
+                    style: AppTextStyles.bold.copyWith(fontSize: 14, color: AppColors.primaryPurple),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

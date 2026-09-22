@@ -17,6 +17,7 @@ class ApiEndpoints {
   static const String flashSale = '$baseUrl/flashSale/active';
   static const String trendingProducts = '$baseUrl/product/trending';
   static const String homeBanner = '$baseUrl/banner/homepage';
+  static const String categoriesWithImages = '$baseUrl/category/categories-withImages';
   static const String chatMessage = '$baseUrl/chat/message';
   static const String addToCart = '$baseUrl/cart/add';
   static const String getCart = '$baseUrl/cart/all';
@@ -41,4 +42,7 @@ class ApiEndpoints {
   // Reviews
   static String createReview(String productId) => '$baseUrl/review/create/$productId';
   static String getReviews(String productId) => '$baseUrl/review/all/$productId';
+  // Returns
+  static const String createReturnRequest = '$baseUrl/return/create-request';
+  static const String getBuyerReturnRequests = '$baseUrl/return/buyer-request';
 }

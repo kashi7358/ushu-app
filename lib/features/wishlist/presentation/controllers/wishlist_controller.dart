@@ -25,11 +25,11 @@ class WishlistController extends GetxController {
     }
   }
 
-  Future<void> fetchWishlist() async {
+  Future<void> fetchWishlist({bool showLoading = true}) async {
     if (!SessionManager.isLoggedIn) return;
     
     try {
-      isLoading.value = true;
+      if (showLoading) isLoading.value = true;
       final response = await _apiClient.dio.get(ApiEndpoints.getWishlist);
       
       if (response.data['success'] == true) {
@@ -80,7 +80,7 @@ class WishlistController extends GetxController {
     } catch (e) {
       debugPrint('Error fetching wishlist: $e');
     } finally {
-      isLoading.value = false;
+      if (showLoading) isLoading.value = false;
     }
   }
 
@@ -96,8 +96,10 @@ class WishlistController extends GetxController {
     if (isAlreadyWishlisted) {
       wishlistedProductIds.remove(productId);
       wishlistProducts.removeWhere((p) => p.id == productId);
+      CustomPopup.showFastLottie('assets/lotties/done.json');
     } else {
       wishlistedProductIds.add(productId);
+      CustomPopup.showFastLottie('assets/lotties/done.json');
     }
 
     try {
@@ -105,12 +107,13 @@ class WishlistController extends GetxController {
         await _apiClient.dio.delete(
           ApiEndpoints.removeWishlist(productId),
         );
+        // No need to fetchWishlist() on remove since we optimistically removed it!
       } else {
         await _apiClient.dio.post(
           ApiEndpoints.addWishlist,
           data: {'productId': productId},
         );
-        CustomPopup.showSuccess('Success', 'Item added to wishlist');
+        fetchWishlist(showLoading: false); // Fetch quietly in background
       }
     } catch (e) {
       // Revert optimistic update on failure

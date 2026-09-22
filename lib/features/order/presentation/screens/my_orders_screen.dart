@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_text_styles.dart';
+import '../../../../core/widgets/app_button.dart';
 import '../controllers/order_controller.dart';
 
 
@@ -57,19 +58,11 @@ class MyOrdersScreen extends StatelessWidget {
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 32),
-                  SizedBox(
-                    height: 50,
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () => Get.offAllNamed('/main'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primaryPurple,
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
-                      child: Text('Start Shopping', style: AppTextStyles.bold.copyWith(fontSize: 16)),
-                    ),
+                  AppButton(
+                    text: 'Start Shopping',
+                    onPressed: () {
+                      Get.offAllNamed('/main');
+                    },
                   ),
                 ],
               ),
@@ -218,26 +211,55 @@ class MyOrdersScreen extends StatelessWidget {
                       padding: EdgeInsets.symmetric(vertical: 12),
                       child: Divider(),
                     ),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 40,
-                      child: ElevatedButton(
-                        onPressed: () {
-                          Get.toNamed('/write-review', arguments: {
-                            'productId': order.items[0].productId,
-                            'orderId': order.id,
-                          });
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primaryPurple,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: SizedBox(
+                            height: 40,
+                            child: OutlinedButton(
+                              onPressed: () {
+                                Get.toNamed('/return-request', arguments: {
+                                  'orderId': order.id,
+                                  'orderItemId': order.items[0].id,
+                                  'quantity': order.items[0].quantity,
+                                });
+                              },
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: AppColors.primaryPurple,
+                                side: const BorderSide(color: AppColors.primaryPurple),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              ),
+                              child: Text(
+                                'Return Item',
+                                style: AppTextStyles.bold.copyWith(fontSize: 13, color: AppColors.primaryPurple),
+                              ),
+                            ),
+                          ),
                         ),
-                        child: Text(
-                          'Write a Review',
-                          style: AppTextStyles.bold.copyWith(fontSize: 13, color: Colors.white),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: SizedBox(
+                            height: 40,
+                            child: ElevatedButton(
+                              onPressed: () {
+                                Get.toNamed('/write-review', arguments: {
+                                  'productId': order.items[0].productId,
+                                  'orderId': order.id,
+                                });
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primaryPurple,
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              ),
+                              child: Text(
+                                'Write a Review',
+                                style: AppTextStyles.bold.copyWith(fontSize: 13, color: Colors.white),
+                              ),
+                            ),
+                          ),
                         ),
-                      ),
+                      ],
                     ),
                   ],
                 ],

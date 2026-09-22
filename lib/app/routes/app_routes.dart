@@ -12,6 +12,8 @@ import '../../features/order/presentation/screens/my_orders_screen.dart';
 import '../../features/profile/presentation/screens/contact_us_screen.dart';
 import '../../features/review/presentation/screens/write_review_screen.dart';
 import '../../features/checkout/presentation/screens/checkout_screen.dart';
+import '../../features/returns/presentation/screens/my_returns_screen.dart';
+import '../../features/returns/presentation/screens/return_request_screen.dart';
 
 class AppRoutes {
   AppRoutes._();
@@ -31,6 +33,8 @@ class AppRoutes {
   static const String contactUs = '/contact-us';
   static const String writeReview = '/write-review';
   static const String checkout = '/checkout';
+  static const String myReturns = '/my-returns';
+  static const String returnRequest = '/return-request';
 
   static final routes = [
     GetPage(name: login, page: () => const LoginScreen()),
@@ -46,5 +50,7 @@ class AppRoutes {
     GetPage(name: contactUs, page: () => const ContactUsScreen()),
     GetPage(name: writeReview, page: () => const WriteReviewScreen()),
     GetPage(name: checkout, page: () => const CheckoutScreen()),
+    GetPage(name: myReturns, page: () => const MyReturnsScreen()),
+    GetPage(name: returnRequest, page: () => const ReturnRequestScreen()),
   ];
 }

@@ -5,6 +5,35 @@ import '../../app/theme/app_colors.dart';
 import '../../app/theme/app_text_styles.dart';
 
 class CustomPopup {
+  static void showLoading([String message = 'Please wait...']) {
+    Get.dialog(
+      Center(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const CircularProgressIndicator(color: AppColors.primaryPurple),
+              const SizedBox(width: 16),
+              Text(message, style: AppTextStyles.bold.copyWith(color: AppColors.darkText)),
+            ],
+          ),
+        ),
+      ),
+      barrierDismissible: false,
+    );
+  }
+
+  static void hideLoading() {
+    if (Get.isDialogOpen ?? false) {
+      Get.back();
+    }
+  }
+
   static void showSuccess(String title, String message) {
     _showDialog(
       title: title,

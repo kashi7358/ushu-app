@@ -11,6 +11,7 @@ import '../../../cart/presentation/controllers/cart_controller.dart';
 import '../../../wishlist/presentation/controllers/wishlist_controller.dart';
 import 'package:lottie/lottie.dart';
 import '../../../../features/chatbot/presentation/screens/chatbot_screen.dart';
+import '../../../categories/presentation/screens/categories_screen.dart';
 
 import 'package:add_to_cart_animation/add_to_cart_animation.dart';
 
@@ -24,7 +25,7 @@ class MainLayoutScreen extends StatelessWidget {
 
     final List<Widget> pages = [
       const HomeScreen(),
-      const Center(child: Text("Categories")),
+      const CategoriesScreen(),
       const CartScreen(),
       const ProfileScreen(),
     ];

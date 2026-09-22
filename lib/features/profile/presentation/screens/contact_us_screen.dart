@@ -40,16 +40,26 @@ class ContactUsScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 24),
-            Text(
-              'Get in Touch',
-              style: AppTextStyles.extraBold.copyWith(fontSize: 24, color: AppColors.darkText),
+            Center(
+              child: Text(
+                'Get in Touch',
+                style: AppTextStyles.extraBold.copyWith(fontSize: 24, color: AppColors.darkText),
+              ),
             ),
             const SizedBox(height: 8),
-            Text(
-              'We are here to help you. Send us a message and we will get back to you as soon as possible.',
-              style: AppTextStyles.medium.copyWith(fontSize: 14, color: AppColors.hintText, height: 1.5),
+            Center(
+              child: Text(
+                'We are here to help you. Send us a message and we will get back to you as soon as possible.',
+                style: AppTextStyles.medium.copyWith(fontSize: 14, color: AppColors.hintText, height: 1.5),
+                textAlign: TextAlign.center,
+              ),
             ),
             const SizedBox(height: 32),
+            
+            const SizedBox(height: 32),
+            Text('Send a Message', style: AppTextStyles.extraBold.copyWith(fontSize: 18, color: AppColors.darkText)),
+            const SizedBox(height: 16),
+            
             _buildTextField(
               controller: controller.emailController,
               label: 'Email Address',

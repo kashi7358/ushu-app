@@ -6,7 +6,6 @@ import '../../../../core/network/api_endpoints.dart';
 import '../../../../core/utils/custom_popup.dart';
 import '../../../../core/utils/session_manager.dart';
 import '../../../cart/presentation/controllers/cart_controller.dart';
-import '../../../cart/data/models/cart_item_model.dart';
 
 class CheckoutController extends GetxController {
   final ApiClient _apiClient = ApiClient();

@@ -70,11 +70,6 @@ class ProfileScreen extends StatelessWidget {
                           ],
                         ),
                       ),
-                      // Edit Icon
-                      IconButton(
-                        onPressed: () {},
-                        icon: const Icon(Icons.edit_outlined, color: Colors.white),
-                      ),
                     ],
                   ),
                 ),
@@ -119,10 +114,10 @@ class ProfileScreen extends StatelessWidget {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceAround,
                           children: [
-                            GestureDetector(onTap: () => Get.toNamed('/my-orders'), child: _buildOrderIcon(Icons.payment_outlined, 'To Pay', badge: 1)),
-                            GestureDetector(onTap: () => Get.toNamed('/my-orders'), child: _buildOrderIcon(Icons.inventory_2_outlined, 'To Ship', badge: 0)),
-                            GestureDetector(onTap: () => Get.toNamed('/my-orders'), child: _buildOrderIcon(Icons.local_shipping_outlined, 'To Receive', badge: 2)),
-                            GestureDetector(onTap: () => Get.toNamed('/my-orders'), child: _buildOrderIcon(Icons.rate_review_outlined, 'To Review', badge: 0)),
+                            GestureDetector(behavior: HitTestBehavior.opaque, onTap: () => Get.toNamed('/my-orders'), child: _buildOrderIcon(Icons.inventory_2_outlined, 'Active')),
+                            GestureDetector(behavior: HitTestBehavior.opaque, onTap: () => Get.toNamed('/my-orders'), child: _buildOrderIcon(Icons.check_circle_outline, 'Completed')),
+                            GestureDetector(behavior: HitTestBehavior.opaque, onTap: () => Get.toNamed('/my-orders'), child: _buildOrderIcon(Icons.cancel_outlined, 'Cancelled')),
+                            GestureDetector(behavior: HitTestBehavior.opaque, onTap: () => Get.toNamed('/my-returns'), child: _buildOrderIcon(Icons.assignment_return_outlined, 'Returns')),
                           ],
                         ),
                       ],
@@ -199,54 +194,46 @@ class ProfileScreen extends StatelessWidget {
                   children: [
                     _buildMenuTile(Icons.support_agent_outlined, 'Contact Us', '', onTap: () => Get.toNamed('/contact-us')),
                     _buildDivider(),
-                    _buildMenuTile(Icons.settings_outlined, 'Settings', ''),
+                    _buildMenuTile(
+                      Icons.assignment_return_outlined,
+                      'My Returns',
+                      '',
+                      onTap: () => Get.toNamed('/my-returns'),
+                    ),
+                    _buildDivider(),
+                    _buildMenuTile(
+                      Icons.logout_outlined, 
+                      'Logout', 
+                      '', 
+                      color: AppColors.error,
+                      onTap: () {
+                        Get.dialog(
+                          AlertDialog(
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            title: Text('Logout', style: AppTextStyles.bold),
+                            content: Text('Are you sure you want to logout?', style: AppTextStyles.regular),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Get.back(),
+                                child: Text('Cancel', style: AppTextStyles.semiBold.copyWith(color: AppColors.hintText)),
+                              ),
+                              TextButton(
+                                onPressed: () {
+                                  Get.back();
+                                  controller.logout();
+                                },
+                                child: Text('Logout', style: AppTextStyles.bold.copyWith(color: AppColors.error)),
+                              ),
+                            ],
+                          )
+                        );
+                      }
+                    ),
                   ],
                 ),
               ),
             ),
             const SizedBox(height: 24),
-            
-            // Logout Button
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-              child: InkWell(
-                onTap: () {
-                  Get.dialog(
-                    AlertDialog(
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      title: Text('Logout', style: AppTextStyles.bold),
-                      content: Text('Are you sure you want to logout?', style: AppTextStyles.regular),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Get.back(),
-                          child: Text('Cancel', style: AppTextStyles.semiBold.copyWith(color: AppColors.hintText)),
-                        ),
-                        TextButton(
-                          onPressed: () {
-                            Get.back();
-                            controller.logout();
-                          },
-                          child: Text('Logout', style: AppTextStyles.bold.copyWith(color: AppColors.error)),
-                        ),
-                      ],
-                    )
-                  );
-                },
-                borderRadius: BorderRadius.circular(16),
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.error.withValues(alpha: 0.2)),
-                  ),
-                  child: Center(
-                    child: Text('Logout', style: AppTextStyles.bold.copyWith(color: AppColors.error, fontSize: 16)),
-                  ),
-                ),
-              ),
-            ),
             const SizedBox(height: 120), // Bottom padding for navbar
           ],
         ),

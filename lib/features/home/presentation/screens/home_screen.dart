@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../../../features/categories/presentation/controllers/categories_controller.dart';
 import '../../../../core/utils/session_manager.dart';
 import '../../../../core/utils/custom_popup.dart';
 import '../../../../app/theme/app_colors.dart';
@@ -416,58 +417,79 @@ class _CategorySection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final categories = [
-      {'icon': Icons.phone_iphone, 'name': 'Mobiles'},
-      {'icon': Icons.laptop_mac, 'name': 'Laptops'},
-      {'icon': Icons.checkroom, 'name': 'Fashion'},
-      {'icon': Icons.chair, 'name': 'Furniture'},
-      {'icon': Icons.sports_esports, 'name': 'Gaming'},
-      {'icon': Icons.watch, 'name': 'Watches'},
-    ];
+    // Inject CategoriesController if not already injected
+    final controller = Get.put(CategoriesController());
 
-    return SizedBox(
-      height: 100,
-      child: ListView.builder(
-        physics: const BouncingScrollPhysics(),
-        scrollDirection: Axis.horizontal,
-        itemCount: categories.length,
-        padding: const EdgeInsets.symmetric(horizontal: AppDimensions.md),
-        itemBuilder: (context, index) {
-          return Padding(
-            padding: const EdgeInsets.only(right: AppDimensions.md),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  width: 60,
-                  height: 60,
-                  decoration: BoxDecoration(
-                    color: AppColors.white,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
+    return Obx(() {
+      if (controller.isLoading.value) {
+        return const SizedBox(
+          height: 100,
+          child: Center(child: CircularProgressIndicator(color: AppColors.primaryPurple)),
+        );
+      }
+
+      if (controller.categoriesList.isEmpty) {
+        return const SizedBox();
+      }
+
+      return SizedBox(
+        height: 110,
+        child: ListView.builder(
+          physics: const BouncingScrollPhysics(),
+          scrollDirection: Axis.horizontal,
+          itemCount: controller.categoriesList.length,
+          padding: const EdgeInsets.symmetric(horizontal: AppDimensions.md),
+          itemBuilder: (context, index) {
+            final cat = controller.categoriesList[index];
+            return Padding(
+              padding: const EdgeInsets.only(right: AppDimensions.md),
+              child: GestureDetector(
+                onTap: () {
+                   Get.find<MainLayoutController>().changePage(1);
+                },
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      width: 65,
+                      height: 65,
+                      decoration: BoxDecoration(
+                        color: AppColors.white,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.05),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                  child: Icon(
-                    categories[index]['icon'] as IconData,
-                    color: AppColors.primaryPurple,
-                    size: 28,
-                  ),
+                      child: ClipOval(
+                        child: Image.network(
+                          cat.image,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => const Icon(Icons.image_not_supported, color: Colors.grey),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: AppDimensions.sm),
+                    SizedBox(
+                      width: 70,
+                      child: Text(
+                        cat.category,
+                        textAlign: TextAlign.center,
+                        style: AppTextStyles.semiBold.copyWith(fontSize: 11, color: AppColors.darkText),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: AppDimensions.sm),
-                Text(
-                  categories[index]['name'] as String,
-                  style: AppTextStyles.semiBold.copyWith(fontSize: 11, color: AppColors.darkText),
-                ),
-              ],
-            ),
-          );
-        },
-      ),
-    );
+              ),
+            );
+          },
+        ),
+      );
+    });
   }
 }

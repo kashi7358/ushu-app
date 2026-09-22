@@ -26,6 +26,7 @@ class OrderModel {
 }
 
 class OrderItemModel {
+  final String id;
   final String productId;
   final String productName;
   final int quantity;
@@ -33,6 +34,7 @@ class OrderItemModel {
   final String image;
 
   OrderItemModel({
+    required this.id,
     required this.productId,
     required this.productName,
     required this.quantity,
@@ -46,6 +48,7 @@ class OrderItemModel {
     // Sometimes backend might just return product ID as string
     if (productData is String) {
       return OrderItemModel(
+        id: json['_id'] ?? '',
         productId: productData,
         productName: 'Product',
         quantity: json['quantity'] ?? 1,
@@ -56,6 +59,7 @@ class OrderItemModel {
     
     // If it's populated
     return OrderItemModel(
+      id: json['_id'] ?? '',
       productId: productData['_id'] ?? '',
       productName: productData['name'] ?? 'Product',
       quantity: json['quantity'] ?? 1,

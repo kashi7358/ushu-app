@@ -57,6 +57,17 @@ class StoreScreen extends StatelessWidget {
               pinned: true,
               backgroundColor: AppColors.primaryPurple,
               iconTheme: const IconThemeData(color: Colors.white),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.shopping_cart_outlined),
+                  onPressed: () {
+                    if (Get.isRegistered<MainLayoutController>()) {
+                      Get.find<MainLayoutController>().changePage(2); // Switch to Cart tab
+                    }
+                    Get.offAllNamed('/main');
+                  },
+                ),
+              ],
               flexibleSpace: FlexibleSpaceBar(
                 background: Stack(
                   fit: StackFit.expand,
@@ -98,64 +109,71 @@ class StoreScreen extends StatelessWidget {
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Header Row
+                      // Profile Header
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Logo
                           Container(
-                            width: 70,
-                            height: 70,
+                            width: 80,
+                            height: 80,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
+                              border: Border.all(color: Colors.grey.shade200),
                               color: Colors.white,
-                              border: Border.all(color: Colors.grey.shade200, width: 2),
-                              boxShadow: [
-                                BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4)),
-                              ],
-                              image: storeLogo != null && storeLogo.isNotEmpty
-                                  ? DecorationImage(image: NetworkImage(storeLogo), fit: BoxFit.cover)
-                                  : null,
                             ),
-                            child: storeLogo == null || storeLogo.isEmpty
-                                ? const Icon(Icons.store, color: AppColors.primaryPurple, size: 32)
-                                : null,
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(40),
+                              child: storeLogo != null && storeLogo.isNotEmpty
+                                  ? Image.network(storeLogo, fit: BoxFit.cover)
+                                  : const Icon(Icons.storefront, size: 40, color: Colors.grey),
+                            ),
                           ),
                           const SizedBox(width: 16),
-                          // Name and Tagline
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const SizedBox(height: 8),
                                 Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Expanded(
                                       child: Text(
                                         storeName,
-                                        style: AppTextStyles.extraBold.copyWith(fontSize: 18, color: AppColors.darkText),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
+                                        style: AppTextStyles.bold.copyWith(fontSize: 18, color: AppColors.darkText),
                                       ),
                                     ),
-                                    const SizedBox(width: 8),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                      decoration: BoxDecoration(
-                                        color: AppColors.primaryPurple,
-                                        borderRadius: BorderRadius.circular(100),
-                                      ),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          const Icon(Icons.add, color: Colors.white, size: 14),
-                                          const SizedBox(width: 2),
-                                          Text('Follow', style: AppTextStyles.bold.copyWith(color: Colors.white, fontSize: 11)),
-                                        ],
-                                      ),
-                                    ),
+                                    Obx(() {
+                                      final isFollowing = controller.isFollowing.value;
+                                      return GestureDetector(
+                                        onTap: controller.toggleFollow,
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                          decoration: BoxDecoration(
+                                            color: isFollowing ? Colors.grey.shade200 : AppColors.primaryPurple,
+                                            borderRadius: BorderRadius.circular(16),
+                                          ),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Icon(
+                                                isFollowing ? Icons.check : Icons.add, 
+                                                color: isFollowing ? AppColors.darkText : Colors.white, 
+                                                size: 14
+                                              ),
+                                              const SizedBox(width: 2),
+                                              Text(
+                                                isFollowing ? 'Following' : 'Follow', 
+                                                style: AppTextStyles.bold.copyWith(
+                                                  color: isFollowing ? AppColors.darkText : Colors.white, 
+                                                  fontSize: 11
+                                                )
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      );
+                                    }),
                                   ],
                                 ),
                                 if (tagline.isNotEmpty) ...[
@@ -179,33 +197,36 @@ class StoreScreen extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
                           _buildStatItem(Icons.inventory_2_outlined, '$totalProducts', 'Products'),
-                          Container(width: 1, height: 24, color: Colors.grey.shade300),
-                          _buildStatItem(Icons.star_outline, rating.toString(), 'Rating'),
-                          if (location.isNotEmpty) ...[
-                            Container(width: 1, height: 24, color: Colors.grey.shade300),
-                            _buildStatItem(Icons.location_on_outlined, location, 'Location'),
-                          ],
+                          Container(width: 1, height: 30, color: Colors.grey.shade300),
+                          _buildStatItem(Icons.star_border_rounded, (rating is num ? rating.toDouble() : 0.0).toStringAsFixed(1), 'Rating'),
+                          Container(width: 1, height: 30, color: Colors.grey.shade300),
+                          _buildStatItem(Icons.location_on_outlined, location.isNotEmpty ? location : 'Pakistan', 'Location'),
                         ],
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 16),
                       
-                      // Mini info chips
+                      // Badges
                       SingleChildScrollView(
                         scrollDirection: Axis.horizontal,
                         child: Row(
                           children: [
-                            if (processingTime.isNotEmpty) _buildInfoChip(Icons.access_time, processingTime),
-                            if (returnPolicy.isNotEmpty) _buildInfoChip(Icons.replay_circle_filled_outlined, returnPolicy),
-                            _buildInfoChip(Icons.verified_outlined, 'Verified Store'),
+                            if (processingTime.isNotEmpty) ...[
+                              _buildBadge(Icons.access_time, processingTime),
+                              const SizedBox(width: 8),
+                            ],
+                            if (returnPolicy.isNotEmpty) ...[
+                              _buildBadge(Icons.assignment_return_outlined, returnPolicy),
+                              const SizedBox(width: 8),
+                            ],
+                            _buildBadge(Icons.verified_outlined, 'Verified Store'),
                           ],
                         ),
                       ),
-                      const SizedBox(height: 16),
                       
-                      // Description
+                      const SizedBox(height: 16),
                       Text(
                         description,
-                        style: AppTextStyles.regular.copyWith(color: AppColors.hintText, height: 1.4, fontSize: 13),
+                        style: AppTextStyles.regular.copyWith(color: AppColors.darkText.withValues(alpha: 0.8), fontSize: 13, height: 1.5),
                         maxLines: 3,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -214,27 +235,32 @@ class StoreScreen extends StatelessWidget {
                 ),
               ),
             ),
-
-            // Products Header
+            const SliverToBoxAdapter(child: SizedBox(height: 8)),
+            
             SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                child: Text('All Products', style: AppTextStyles.bold.copyWith(fontSize: 18, color: AppColors.darkText)),
+              child: Container(
+                color: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                child: Text('All Products', style: AppTextStyles.bold.copyWith(fontSize: 16, color: AppColors.darkText)),
               ),
             ),
 
             // Products Grid
             controller.productsData.isEmpty
                 ? SliverToBoxAdapter(
-                    child: Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(40.0),
-                        child: Column(
-                          children: [
-                            Icon(Icons.inventory_2_outlined, size: 48, color: Colors.grey.shade300),
-                            const SizedBox(height: 16),
-                            Text('No products available yet', style: AppTextStyles.medium.copyWith(color: AppColors.hintText)),
-                          ],
+                    child: Container(
+                      color: Colors.white,
+                      height: 300,
+                      child: Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(40.0),
+                          child: Column(
+                            children: [
+                              Icon(Icons.inventory_2_outlined, size: 48, color: Colors.grey.shade300),
+                              const SizedBox(height: 16),
+                              Text('No products available yet', style: AppTextStyles.medium.copyWith(color: AppColors.hintText)),
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -244,7 +270,7 @@ class StoreScreen extends StatelessWidget {
                     sliver: SliverGrid(
                       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: 2,
-                        childAspectRatio: 0.55, // Changed to 0.55 to provide much more height and prevent overflow
+                        childAspectRatio: 0.55,
                         crossAxisSpacing: 16,
                         mainAxisSpacing: 16,
                       ),
@@ -253,7 +279,6 @@ class StoreScreen extends StatelessWidget {
                           final productModel = ProductModel.fromJson(controller.productsData[index]);
                           return ProductCard(
                             product: productModel,
-                            onAddToCart: (key) {},
                           );
                         },
                         childCount: controller.productsData.length,

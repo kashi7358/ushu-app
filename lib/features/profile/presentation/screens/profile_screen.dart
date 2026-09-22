@@ -152,7 +152,7 @@ class ProfileScreen extends StatelessWidget {
                       );
                     }),
                     _buildDivider(),
-                    _buildMenuTile(Icons.storefront_outlined, 'Followed Stores', '4 stores'),
+                    _buildMenuTile(Icons.storefront_outlined, 'Followed Stores', '${controller.followedStoresCount.value} stores'),
                     _buildDivider(),
                     _buildMenuTile(Icons.history, 'Browsing History', ''),
                   ],

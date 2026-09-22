@@ -9,6 +9,7 @@ import '../../../../core/utils/custom_popup.dart';
 import '../controllers/product_detail_controller.dart';
 import '../../../cart/presentation/controllers/cart_controller.dart';
 import '../../../wishlist/presentation/controllers/wishlist_controller.dart';
+import '../../../chatbot/presentation/screens/chatbot_screen.dart';
 
 class ProductDetailScreen extends StatelessWidget {
   const ProductDetailScreen({super.key});
@@ -80,22 +81,39 @@ class ProductDetailScreen extends StatelessWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.storefront, color: AppColors.primaryPurple, size: 22),
-                        const SizedBox(height: 2),
-                        Text('Store', style: AppTextStyles.medium.copyWith(fontSize: 10, color: AppColors.darkText)),
-                      ],
+                    GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () {
+                        if (controller.product.value?.storeId != null && controller.product.value!.storeId!.isNotEmpty) {
+                          Get.toNamed('/store', arguments: controller.product.value!.storeId);
+                        } else {
+                          CustomPopup.showToast('Store not found', 'This product does not have a valid store.', isError: true);
+                        }
+                      },
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.storefront, color: AppColors.primaryPurple, size: 22),
+                          const SizedBox(height: 2),
+                          Text('Store', style: AppTextStyles.medium.copyWith(fontSize: 10, color: AppColors.darkText)),
+                        ],
+                      ),
                     ),
                     Container(width: 1, height: 35, color: Colors.grey.shade300),
-                    Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.chat_bubble_outline, color: AppColors.primaryPurple, size: 22),
-                        const SizedBox(height: 2),
-                        Text('Chat', style: AppTextStyles.medium.copyWith(fontSize: 10, color: AppColors.darkText)),
-                      ],
+                    GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () {
+                        // Import ChatbotScreen locally or navigate by name if we register it
+                        Get.to(() => const ChatbotScreen());
+                      },
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.chat_bubble_outline, color: AppColors.primaryPurple, size: 22),
+                          const SizedBox(height: 2),
+                          Text('Chat', style: AppTextStyles.medium.copyWith(fontSize: 10, color: AppColors.darkText)),
+                        ],
+                      ),
                     ),
                   ],
                 ),
@@ -127,7 +145,18 @@ class ProductDetailScreen extends StatelessWidget {
               Expanded(
                 flex: 2,
                 child: GestureDetector(
-                  onTap: () {},
+                  onTap: () async {
+                    if (controller.product.value != null) {
+                      if (!SessionManager.isLoggedIn) {
+                        CustomPopup.showLoginRequired();
+                        return;
+                      }
+                      // For Buy Now: Add to cart, wait, then redirect to checkout
+                      final cartCtrl = Get.put(CartController());
+                      await cartCtrl.addToCart(controller.product.value!.id, 1, controller.product.value!.name);
+                      Get.toNamed('/checkout'); // Redirect directly to checkout
+                    }
+                  },
                   child: Container(
                     margin: const EdgeInsets.only(top: 8, bottom: 8, left: 4, right: 12),
                     decoration: BoxDecoration(

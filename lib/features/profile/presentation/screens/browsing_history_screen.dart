@@ -4,6 +4,7 @@ import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_dimensions.dart';
 import '../../../../app/theme/app_text_styles.dart';
 import '../../../../core/utils/browsing_history.dart';
+import '../../../../core/utils/custom_popup.dart';
 import '../../../home/data/models/product_model.dart';
 import '../../../home/presentation/screens/product_detail_screen.dart';
 
@@ -38,28 +39,7 @@ class _BrowsingHistoryScreenState extends State<BrowsingHistoryScreen> {
   }
 
   Future<void> _confirmClearAll() async {
-    final confirm = await Get.dialog<bool>(
-      AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text('Clear History', style: AppTextStyles.bold.copyWith(color: AppColors.darkText, fontSize: 18)),
-        content: Text('Are you sure you want to clear all browsing history?', style: AppTextStyles.medium.copyWith(color: AppColors.hintText, fontSize: 14)),
-        actions: [
-          TextButton(
-            onPressed: () => Get.back(result: false),
-            child: Text('Cancel', style: AppTextStyles.bold.copyWith(color: AppColors.hintText)),
-          ),
-          ElevatedButton(
-            onPressed: () => Get.back(result: true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.error,
-              elevation: 0,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            ),
-            child: Text('Clear All', style: AppTextStyles.bold.copyWith(color: Colors.white)),
-          ),
-        ],
-      ),
-    );
+    final confirm = await CustomPopup.showClearHistoryConfirmation();
 
     if (confirm ?? false) {
       await BrowsingHistory.clearHistory();

@@ -84,14 +84,14 @@ class CheckoutScreen extends StatelessWidget {
           const SizedBox(height: 12),
           _buildTextField(label: 'Postal code', hint: '54000', icon: Icons.numbers, controller: controller.postalCodeController, keyboardType: TextInputType.number),
           const SizedBox(height: 16),
-          Obx(() => CheckboxListTile(
+          CheckboxListTile(
             contentPadding: EdgeInsets.zero,
             value: controller.isDefaultAddress.value,
             onChanged: (val) => controller.isDefaultAddress.value = val ?? false,
             activeColor: AppColors.primaryPurple,
             controlAffinity: ListTileControlAffinity.leading,
             title: Text('Set as default address', style: AppTextStyles.medium.copyWith(fontSize: 14)),
-          )),
+          ),
         ],
       ),
     );
@@ -130,7 +130,7 @@ class CheckoutScreen extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           // COD Option (Active)
-          Obx(() => GestureDetector(
+          GestureDetector(
             onTap: () => controller.selectedPaymentMethod.value = 'COD',
             child: Container(
               padding: const EdgeInsets.all(16),
@@ -175,7 +175,7 @@ class CheckoutScreen extends StatelessWidget {
                 ],
               ),
             ),
-          )),
+          ),
         ],
       ),
     );
@@ -245,7 +245,7 @@ class CheckoutScreen extends StatelessWidget {
             );
           }),
           const Divider(height: 32),
-          Obx(() => Column(
+          Column(
             children: [
               _buildSummaryRow('Subtotal', 'Rs. ${controller.summary['subtotal']}'),
               const SizedBox(height: 8),
@@ -261,13 +261,13 @@ class CheckoutScreen extends StatelessWidget {
               const SizedBox(height: 16),
               _buildSummaryRow('Total', 'Rs. ${controller.summary['total']}', isTotal: true),
             ],
-          )),
+          ),
           const SizedBox(height: 24),
-          Obx(() => AppButton(
+          AppButton(
             text: 'Place Order',
             isLoading: controller.isLoading.value,
             onPressed: controller.placeOrder,
-          )),
+          ),
         ],
       ),
     );

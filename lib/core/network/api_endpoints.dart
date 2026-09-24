@@ -26,6 +26,8 @@ class ApiEndpoints {
   static const String selectCartItem = '$baseUrl/cart/select';
   static String getStore(String id) => '$domain/store/get/$id';
   static const String checkout = '$baseUrl/address/checkout';
+  static const String addAddress = '$baseUrl/address/add';
+  static const String getAddresses = '$baseUrl/address/all';
 
   // Order
   static const String myOrders = '$baseUrl/order/my-orders';
@@ -42,6 +44,7 @@ class ApiEndpoints {
   // Reviews
   static String createReview(String productId) => '$baseUrl/review/create/$productId';
   static String getReviews(String productId) => '$baseUrl/review/all/$productId';
+  static String voteReview(String reviewId) => '$baseUrl/review/vote/$reviewId';
   // Returns
   static const String createReturnRequest = '$baseUrl/return/create-request';
   static const String getBuyerReturnRequests = '$baseUrl/return/buyer-request';

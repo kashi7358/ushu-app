@@ -12,8 +12,8 @@ class ProfileController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    userName.value = SessionManager.fullName ?? 'User';
-    userEmail.value = SessionManager.email ?? 'No email';
+    userName.value = SessionManager.isLoggedIn ? (SessionManager.fullName ?? 'User') : 'Guest User';
+    userEmail.value = SessionManager.isLoggedIn ? (SessionManager.email ?? 'No email') : 'Login to view account details';
     loadFollowedStoresCount();
   }
 

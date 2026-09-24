@@ -220,7 +220,7 @@ class CustomPopup {
                           ),
                           child: Text(
                             'Login',
-                            style: AppTextStyles.bold.copyWith(fontSize: 14),
+                            style: AppTextStyles.bold.copyWith(fontSize: 14, color: Colors.white),
                           ),
                         ),
                       ),

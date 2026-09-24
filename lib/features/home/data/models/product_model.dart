@@ -21,15 +21,23 @@ class ProductModel extends ProductEntity {
   });
 
   factory ProductModel.fromJson(Map<String, dynamic> json) {
+    num parseNum(dynamic val) {
+      if (val == null) return 0;
+      if (val is num) return val;
+      return num.tryParse(val.toString()) ?? 0;
+    }
+
     // Parse main image
-    String mainImage = json['image'] ?? json['BannerImage'] ?? '';
+    String mainImage = json['image']?.toString() ?? json['BannerImage']?.toString() ?? json['photo']?.toString() ?? '';
     
     // Parse detailed images
     List<String> parsedImages = [];
     if (json['images'] != null && json['images'] is List) {
       for (var img in json['images']) {
         if (img is Map && img['photo'] != null) {
-          parsedImages.add(img['photo']);
+          parsedImages.add(img['photo'].toString());
+        } else if (img is String && img.isNotEmpty) {
+          parsedImages.add(img);
         }
       }
       if (mainImage.isEmpty && parsedImages.isNotEmpty) {
@@ -44,32 +52,33 @@ class ProductModel extends ProductEntity {
 
     if (json['storeId'] != null) {
       if (json['storeId'] is Map) {
-        sName = json['storeId']['StoreName'] ?? json['storeId']['storeName'];
-        sLogo = json['storeId']['logo'];
-        sId = json['storeId']['createdBy'] ?? json['storeId']['_id'];
+        sName = json['storeId']['StoreName']?.toString() ?? json['storeId']['storeName']?.toString();
+        sLogo = json['storeId']['logo']?.toString();
+        sId = json['storeId']['createdBy']?.toString() ?? json['storeId']['_id']?.toString();
       } else {
         sId = json['storeId'].toString();
       }
     }
     
-    // The Store API actually expects the seller's user ID (createdBy). If product has it directly, use it over the store's createdBy.
     if (json['createdBy'] != null) {
-      sId = json['createdBy'] is Map ? json['createdBy']['_id'] : json['createdBy'];
+      sId = json['createdBy'] is Map ? json['createdBy']['_id']?.toString() : json['createdBy']?.toString();
     }
 
     return ProductModel(
-      id: json['_id'] ?? '',
-      name: json['name'] ?? '',
-      price: (json['price'] ?? 0).toDouble(),
-      discountPriceOrg: json['discountPriceOrg'] != null ? double.tryParse(json['discountPriceOrg'].toString()) : null,
-      priceCurrency: json['priceCurrency'] ?? 'PKR',
-      category: json['category'] ?? '',
-      brand: json['brand'] ?? '',
-      stock: json['stock'] ?? 0,
+      id: json['_id']?.toString() ?? json['id']?.toString() ?? '',
+      name: json['name']?.toString() ?? json['title']?.toString() ?? '',
+      price: parseNum(json['price']).toDouble(),
+      discountPriceOrg: json['discountPriceOrg'] != null && json['discountPriceOrg'].toString().isNotEmpty
+          ? parseNum(json['discountPriceOrg']).toDouble()
+          : null,
+      priceCurrency: json['priceCurrency']?.toString() ?? 'PKR',
+      category: json['category']?.toString() ?? '',
+      brand: json['brand']?.toString() ?? '',
+      stock: parseNum(json['stock']).toInt(),
       image: mainImage,
-      rating: (json['rating'] ?? 0).toDouble(),
-      totalReviews: json['totalReviews'] ?? 0,
-      description: json['description'],
+      rating: parseNum(json['rating']).toDouble(),
+      totalReviews: parseNum(json['totalReviews']).toInt(),
+      description: json['description']?.toString(),
       images: parsedImages,
       storeName: sName,
       storeLogo: sLogo,

@@ -23,12 +23,12 @@ class ExceptionHandler {
           }
           return ApiException(message, statusCode: statusCode);
         case DioExceptionType.connectionError:
-          return const NetworkException('Unable to connect to the server. Please check your internet connection.');
+          return const NetworkException('Unable to connect the server . Please check your internet connection.');
         case DioExceptionType.cancel:
           return const ApiException('Request to API server was cancelled');
         case DioExceptionType.unknown:
           if (error.error is SocketException) {
-            return const NetworkException('Unable to connect to the server. Please check your internet connection.');
+            return const NetworkException('Unable to connect . Please check your internet connection.');
           }
           return const ApiException('Unexpected error occurred');
         default:

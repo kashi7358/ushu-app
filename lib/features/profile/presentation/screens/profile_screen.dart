@@ -6,6 +6,10 @@ import '../../../../app/theme/app_text_styles.dart';
 import '../controllers/profile_controller.dart';
 import 'browsing_history_screen.dart';
 import '../../../../core/utils/custom_popup.dart';
+import '../../../../core/utils/session_manager.dart';
+import '../../../../core/network/api_client.dart';
+import '../../../../core/network/api_endpoints.dart';
+import 'package:dio/dio.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -174,7 +178,7 @@ class ProfileScreen extends StatelessWidget {
                 ),
                 child: Column(
                   children: [
-                    _buildMenuTile(Icons.location_on_outlined, 'Shipping Addresses', ''),
+                    _buildMenuTile(Icons.location_on_outlined, 'Shipping Addresses', '', onTap: () => _showAddAddressSheet(context)),
                     _buildDivider(),
                     _buildMenuTile(Icons.credit_card_outlined, 'Payment Methods', ''),
                   ],
@@ -202,18 +206,26 @@ class ProfileScreen extends StatelessWidget {
                       onTap: () => Get.toNamed('/my-returns'),
                     ),
                     _buildDivider(),
-                    _buildMenuTile(
-                      Icons.logout_outlined, 
-                      'Logout', 
-                      '', 
-                      color: AppColors.error,
-                      onTap: () async {
-                        final confirm = await CustomPopup.showLogoutConfirmation();
-                        if (confirm ?? false) {
-                          controller.logout();
-                        }
-                      }
-                    ),
+                    SessionManager.isLoggedIn 
+                      ? _buildMenuTile(
+                          Icons.logout_outlined, 
+                          'Logout', 
+                          '', 
+                          color: AppColors.error,
+                          onTap: () async {
+                            final confirm = await CustomPopup.showLogoutConfirmation();
+                            if (confirm ?? false) {
+                              controller.logout();
+                            }
+                          }
+                        )
+                      : _buildMenuTile(
+                          Icons.login_outlined,
+                          'Login / Register',
+                          '',
+                          color: AppColors.primaryPurple,
+                          onTap: () => Get.toNamed('/login'),
+                        ),
                   ],
                 ),
               ),
@@ -223,6 +235,126 @@ class ProfileScreen extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+
+  void _showAddAddressSheet(BuildContext context) {
+    if (!SessionManager.isLoggedIn) {
+      CustomPopup.showLoginRequired();
+      return;
+    }
+
+    final fullNameCtrl = TextEditingController(text: SessionManager.fullName ?? '');
+    final phoneCtrl = TextEditingController();
+    final addressCtrl = TextEditingController();
+    final cityCtrl = TextEditingController();
+    final provinceCtrl = TextEditingController();
+    final countryCtrl = TextEditingController(text: 'Pakistan');
+    final postalCtrl = TextEditingController();
+    final isDefault = false.obs;
+    final isSaving = false.obs;
+
+    Get.bottomSheet(
+      Container(
+        padding: const EdgeInsets.all(20),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text('Add Delivery Address', style: AppTextStyles.bold.copyWith(fontSize: 18, color: AppColors.darkText)),
+              const SizedBox(height: 16),
+              TextField(controller: fullNameCtrl, decoration: const InputDecoration(labelText: 'Full Name', border: OutlineInputBorder())),
+              const SizedBox(height: 10),
+              TextField(controller: phoneCtrl, keyboardType: TextInputType.phone, decoration: const InputDecoration(labelText: 'Phone', border: OutlineInputBorder())),
+              const SizedBox(height: 10),
+              TextField(controller: addressCtrl, decoration: const InputDecoration(labelText: 'Address Line', border: OutlineInputBorder())),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Expanded(child: TextField(controller: cityCtrl, decoration: const InputDecoration(labelText: 'City', border: OutlineInputBorder()))),
+                  const SizedBox(width: 10),
+                  Expanded(child: TextField(controller: provinceCtrl, decoration: const InputDecoration(labelText: 'Province', border: OutlineInputBorder()))),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Expanded(child: TextField(controller: countryCtrl, decoration: const InputDecoration(labelText: 'Country', border: OutlineInputBorder()))),
+                  const SizedBox(width: 10),
+                  Expanded(child: TextField(controller: postalCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Postal Code', border: OutlineInputBorder()))),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Obx(() => CheckboxListTile(
+                contentPadding: EdgeInsets.zero,
+                value: isDefault.value,
+                onChanged: (val) => isDefault.value = val ?? false,
+                title: const Text('Set as default address'),
+              )),
+              const SizedBox(height: 16),
+              Obx(() => SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryPurple, foregroundColor: Colors.white),
+                  onPressed: isSaving.value ? null : () async {
+                    if (fullNameCtrl.text.trim().isEmpty || phoneCtrl.text.trim().isEmpty || addressCtrl.text.trim().isEmpty) {
+                      CustomPopup.showToast('Validation Error', 'Please fill required fields', isError: true);
+                      return;
+                    }
+                    try {
+                      isSaving.value = true;
+                      final apiClient = ApiClient();
+                      final response = await apiClient.dio.post(
+                        ApiEndpoints.addAddress,
+                        data: {
+                          'fullName': fullNameCtrl.text.trim(),
+                          'phone': phoneCtrl.text.trim(),
+                          'addressLine': addressCtrl.text.trim(),
+                          'city': cityCtrl.text.trim(),
+                          'province': provinceCtrl.text.trim(),
+                          'country': countryCtrl.text.trim(),
+                          'postalCode': postalCtrl.text.trim(),
+                          'isDefault': isDefault.value,
+                        },
+                        options: Options(validateStatus: (status) => true),
+                      );
+                      
+                      if (response.data != null && response.data['success'] == true) {
+                        Get.back();
+                        CustomPopup.showFastLottie('assets/lotties/done.json');
+                        CustomPopup.showToast('Success', 'Address Added Successfully!');
+                      } else {
+                        CustomPopup.showToast('Failed', response.data?['message'] ?? 'Could not add address', isError: true);
+                      }
+                    } catch (e) {
+                      CustomPopup.showToast('Error', 'An error occurred', isError: true);
+                    } finally {
+                      isSaving.value = false;
+                    }
+                  },
+                  child: isSaving.value ? const CircularProgressIndicator(color: Colors.white) : const Text('Save Address', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                ),
+              )),
+              const SizedBox(height: 20),
+            ],
+          ),
+        ),
+      ),
+      isScrollControlled: true,
     );
   }
 

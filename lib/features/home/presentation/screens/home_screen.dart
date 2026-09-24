@@ -26,9 +26,12 @@ class HomeScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.lightBackground,
       body: SafeArea(
-        child: CustomScrollView(
-          physics: const BouncingScrollPhysics(),
-          slivers: [
+        child: RefreshIndicator(
+          color: AppColors.primaryPurple,
+          onRefresh: controller.refreshHomeData,
+          child: CustomScrollView(
+            physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+            slivers: [
             // Greeting Top Area
             SliverToBoxAdapter(
               child: Container(
@@ -425,7 +428,8 @@ class HomeScreen extends StatelessWidget {
           ],
         ),
       ),
-    );
+    ),
+  );
   }
 }
 

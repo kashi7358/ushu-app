@@ -5,9 +5,9 @@ import '../../domain/usecases/get_flash_sale_usecase.dart';
 import '../../domain/usecases/get_trending_products_usecase.dart';
 import '../../domain/usecases/get_banner_products_usecase.dart';
 import '../../../../core/network/api_client.dart';
+import '../../../../core/utils/home_cache_manager.dart';
 import '../../data/datasources/home_remote_data_source.dart';
 import '../../data/repositories/home_repository_impl.dart';
-import '../../../../core/errors/exception_handler.dart';
 
 class HomeController extends GetxController {
   final RxList<ProductEntity> products = <ProductEntity>[].obs;
@@ -35,10 +35,25 @@ class HomeController extends GetxController {
     _getTrendingProductsUseCase = GetTrendingProductsUseCase(repository);
     _getBannerProductsUseCase = GetBannerProductsUseCase(repository);
     
-    fetchBannerProducts();
-    fetchProducts();
-    fetchFlashSale();
-    fetchTrendingProducts();
+    _loadInitialCache();
+    refreshHomeData();
+  }
+
+  Future<void> _loadInitialCache() async {
+    final cached = await HomeCacheManager.getHomepageProducts();
+    if (cached.isNotEmpty) {
+      products.assignAll(cached);
+      isLoading.value = false;
+    }
+  }
+
+  Future<void> refreshHomeData() async {
+    await Future.wait([
+      fetchBannerProducts(),
+      fetchProducts(),
+      fetchFlashSale(),
+      fetchTrendingProducts(),
+    ]);
   }
 
   Future<void> fetchBannerProducts() async {
@@ -59,8 +74,7 @@ class HomeController extends GetxController {
       final result = await _getHomeProductsUseCase.execute();
       products.assignAll(result);
     } catch (e) {
-      final error = ExceptionHandler.handle(e);
-      Get.snackbar('Error', 'Failed to fetch products: ${error.message}', snackPosition: SnackPosition.BOTTOM);
+      // Handle silently so UI remains responsive
     } finally {
       isLoading.value = false;
     }

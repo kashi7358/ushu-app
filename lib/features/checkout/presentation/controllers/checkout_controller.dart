@@ -233,4 +233,47 @@ class CheckoutController extends GetxController {
       isLoading.value = false;
     }
   }
+
+  Future<bool> saveAddress() async {
+    if (fullNameController.text.trim().isEmpty || 
+        phoneController.text.trim().isEmpty || 
+        addressLineController.text.trim().isEmpty || 
+        cityController.text.trim().isEmpty || 
+        provinceController.text.trim().isEmpty || 
+        countryController.text.trim().isEmpty) {
+      CustomPopup.showToast('Validation Error', 'Please fill all required address fields', isError: true);
+      return false;
+    }
+
+    try {
+      final response = await _apiClient.dio.post(
+        ApiEndpoints.addAddress,
+        data: {
+          'fullName': fullNameController.text.trim(),
+          'phone': phoneController.text.trim(),
+          'addressLine': addressLineController.text.trim(),
+          'city': cityController.text.trim(),
+          'province': provinceController.text.trim(),
+          'country': countryController.text.trim(),
+          'postalCode': postalCodeController.text.trim(),
+          'isDefault': isDefaultAddress.value,
+        },
+        options: Options(validateStatus: (status) => true),
+      );
+
+      final data = response.data;
+      if (data != null && data['success'] == true) {
+        CustomPopup.showFastLottie('assets/lotties/done.json');
+        CustomPopup.showToast('Success', 'Address Saved Successfully!');
+        return true;
+      } else {
+        CustomPopup.showToast('Notice', data?['message'] ?? 'Could not save address', isError: true);
+        return false;
+      }
+    } catch (e) {
+      CustomPopup.showToast('Error', 'An error occurred while saving address', isError: true);
+      return false;
+    }
+  }
 }
+

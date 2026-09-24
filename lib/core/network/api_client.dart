@@ -6,12 +6,15 @@ import 'package:get/get.dart';
 import '../utils/session_manager.dart';
 
 class ApiClient {
+  static final ApiClient _instance = ApiClient._internal();
+  factory ApiClient() => _instance;
+
   late final Dio _dio;
 
-  ApiClient() {
+  ApiClient._internal() {
     _dio = Dio(BaseOptions(
-      connectTimeout: const Duration(seconds: 30),
-      receiveTimeout: const Duration(seconds: 30),
+      connectTimeout: const Duration(seconds: 12),
+      receiveTimeout: const Duration(seconds: 12),
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
@@ -33,7 +36,7 @@ class ApiClient {
         requestHeader: false,
         requestBody: true,
         responseHeader: false,
-        responseBody: false, // Turned off to speed up parsing in debug mode
+        responseBody: false,
         error: true,
       ));
     }
@@ -55,7 +58,6 @@ class ApiClient {
             
             await SessionManager.clearSession();
             
-            // Wait for next tick to navigate
             Future.delayed(Duration.zero, () {
               Get.offAllNamed('/login');
               Get.snackbar('Session Expired', 'Please login again to continue.');

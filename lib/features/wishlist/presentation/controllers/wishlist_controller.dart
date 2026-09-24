@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'package:dio/dio.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/network/api_endpoints.dart';
 import '../../../../core/utils/session_manager.dart';
@@ -104,25 +105,39 @@ class WishlistController extends GetxController {
 
     try {
       if (isAlreadyWishlisted) {
-        await _apiClient.dio.delete(
+        final response = await _apiClient.dio.delete(
           ApiEndpoints.removeWishlist(productId),
+          data: {'productId': productId},
+          options: Options(validateStatus: (status) => status != null && status < 500),
         );
-        // No need to fetchWishlist() on remove since we optimistically removed it!
+        
+        final isSuccess = (response.statusCode == 200 || response.statusCode == 404) ||
+            (response.data is Map && response.data['success'] == true);
+            
+        if (!isSuccess) {
+          // Revert optimistic removal
+          wishlistedProductIds.add(productId);
+        }
       } else {
-        await _apiClient.dio.post(
+        final response = await _apiClient.dio.post(
           ApiEndpoints.addWishlist,
           data: {'productId': productId},
+          options: Options(validateStatus: (status) => status != null && status < 500),
         );
-        fetchWishlist(showLoading: false); // Fetch quietly in background
+        
+        if (response.data is Map && response.data['success'] == false) {
+          wishlistedProductIds.remove(productId);
+        } else {
+          fetchWishlist(showLoading: false); // Fetch quietly in background
+        }
       }
     } catch (e) {
-      // Revert optimistic update on failure
+      // Revert optimistic update on error
       if (isAlreadyWishlisted) {
         wishlistedProductIds.add(productId);
       } else {
         wishlistedProductIds.remove(productId);
       }
-      CustomPopup.showError('Error', 'Failed to update wishlist');
       debugPrint('Wishlist Error: $e');
     }
   }

@@ -128,7 +128,7 @@ class CheckoutScreen extends StatelessWidget {
               Text('Payment Method', style: AppTextStyles.bold.copyWith(fontSize: 16, color: AppColors.darkText)),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
           // COD Option (Active)
           Obx(() => GestureDetector(
             onTap: () => controller.selectedPaymentMethod.value = 'COD',
@@ -136,28 +136,28 @@ class CheckoutScreen extends StatelessWidget {
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 border: Border.all(
-                  color: controller.selectedPaymentMethod.value == 'COD' ? AppColors.primaryPurple : Colors.grey.shade200,
-                  width: controller.selectedPaymentMethod.value == 'COD' ? 1.5 : 1,
+                  color: AppColors.primaryPurple,
+                  width: 1.5,
                 ),
                 borderRadius: BorderRadius.circular(12),
-                color: controller.selectedPaymentMethod.value == 'COD' ? AppColors.primaryPurple.withValues(alpha: 0.03) : Colors.transparent,
+                color: AppColors.primaryPurple.withValues(alpha: 0.04),
               ),
               child: Row(
                 children: [
-                  Icon(
-                    controller.selectedPaymentMethod.value == 'COD' ? Icons.radio_button_checked : Icons.radio_button_off,
-                    color: controller.selectedPaymentMethod.value == 'COD' ? AppColors.primaryPurple : Colors.grey.shade400,
+                  const Icon(
+                    Icons.radio_button_checked,
+                    color: AppColors.primaryPurple,
                   ),
                   const SizedBox(width: 16),
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: controller.selectedPaymentMethod.value == 'COD' ? AppColors.primaryPurple.withValues(alpha: 0.1) : Colors.grey.shade100,
+                      color: AppColors.primaryPurple.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: Icon(
+                    child: const Icon(
                       Icons.local_shipping_outlined,
-                      color: controller.selectedPaymentMethod.value == 'COD' ? AppColors.primaryPurple : Colors.grey.shade600,
+                      color: AppColors.primaryPurple,
                       size: 24,
                     ),
                   ),
@@ -166,9 +166,9 @@ class CheckoutScreen extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Cash on Delivery', style: AppTextStyles.bold.copyWith(fontSize: 15, color: AppColors.darkText)),
+                        Text('Cash on Delivery (COD)', style: AppTextStyles.bold.copyWith(fontSize: 15, color: AppColors.darkText)),
                         const SizedBox(height: 2),
-                        Text('Pay cash when order arrives', style: AppTextStyles.regular.copyWith(fontSize: 12, color: AppColors.hintText)),
+                        Text('Pay cash when order arrives at your doorstep', style: AppTextStyles.regular.copyWith(fontSize: 12, color: AppColors.hintText)),
                       ],
                     ),
                   ),
@@ -176,41 +176,6 @@ class CheckoutScreen extends StatelessWidget {
               ),
             ),
           )),
-          const SizedBox(height: 12),
-          // Credit Card Option (Disabled / Coming Soon)
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey.shade200, width: 1),
-              borderRadius: BorderRadius.circular(12),
-              color: Colors.grey.shade50,
-            ),
-            child: Row(
-              children: [
-                Icon(Icons.radio_button_off, color: Colors.grey.shade300),
-                const SizedBox(width: 16),
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade200,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(Icons.credit_card_outlined, color: Colors.grey.shade400, size: 24),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Credit / Debit Card', style: AppTextStyles.bold.copyWith(fontSize: 15, color: Colors.grey.shade400)),
-                      const SizedBox(height: 2),
-                      Text('Coming soon', style: AppTextStyles.regular.copyWith(fontSize: 12, color: Colors.grey.shade400)),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
         ],
       ),
     );
@@ -241,12 +206,11 @@ class CheckoutScreen extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          ...controller.selectedItems.map((itemData) {
-            final item = itemData as Map<String, dynamic>;
-            final imageUrl = item['image'] ?? item['product']?['image'] ?? '';
-            final name = item['name'] ?? item['product']?['name'] ?? 'Product';
-            final quantity = item['quantity'] ?? 1;
-            final price = item['price'] ?? item['product']?['price'] ?? 0;
+          ...controller.selectedItems.map((item) {
+            final imageUrl = item.image;
+            final name = item.name;
+            final quantity = item.quantity;
+            final price = item.price;
             
             return Padding(
               padding: const EdgeInsets.only(bottom: 12),
@@ -260,7 +224,7 @@ class CheckoutScreen extends StatelessWidget {
                       width: 50,
                       height: 50,
                       fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Container(width: 50, height: 50, color: Colors.grey.shade100, child: const Icon(Icons.image_not_supported, color: Colors.grey)),
+                      errorBuilder: (_, __, ___) => Container(width: 50, height: 50, color: Colors.grey.shade100, child: const Icon(Icons.image_not_supported, color: Colors.grey, size: 20)),
                     ),
                   ),
                   const SizedBox(width: 12),

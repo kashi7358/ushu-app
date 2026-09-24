@@ -60,6 +60,54 @@ class CartController extends GetxController {
     }
   }
 
+  Future<bool> buyNow(String productId, int quantity, String productName) async {
+    if (isAddingToCart.value) return false;
+    
+    try {
+      isAddingToCart.value = true;
+      CustomPopup.showFastLottie('assets/lotties/add_to_cart_new.json');
+      
+      final response = await _apiClient.dio.post(
+        ApiEndpoints.addToCart,
+        data: {
+          "productId": productId,
+          "quantity": quantity
+        },
+        options: Options(validateStatus: (status) => true),
+      );
+      
+      final data = response.data;
+      if (data != null && data['success'] == true) {
+        _updateCartItems(data);
+        
+        final index = cartItems.indexWhere((item) => item.productId == productId || item.id == productId);
+        if (index != -1) {
+          final targetItem = cartItems[index];
+          if (!targetItem.isSelected) {
+            cartItems[index] = targetItem.copyWith(isSelected: true);
+            cartItems.refresh();
+          }
+          // Fire select call asynchronously so navigation is not blocked
+          _apiClient.dio.patch(
+            ApiEndpoints.selectCartItem,
+            data: {"itemId": targetItem.id},
+            options: Options(validateStatus: (status) => true),
+          );
+        }
+        return true;
+      } else {
+        CustomPopup.showToast('Failed', data?['message'] ?? 'Could not process Buy Now', isError: true);
+        return false;
+      }
+    } catch (e) {
+      print('Error during Buy Now: $e');
+      CustomPopup.showToast('Error', 'An error occurred during Buy Now', isError: true);
+      return false;
+    } finally {
+      isAddingToCart.value = false;
+    }
+  }
+
   Future<void> fetchCart() async {
     try {
       isLoadingCart.value = true;

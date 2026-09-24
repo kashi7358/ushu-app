@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:shimmer/shimmer.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_text_styles.dart';
 import '../controllers/cart_controller.dart';
@@ -28,8 +29,27 @@ class CartScreen extends StatelessWidget {
         centerTitle: true,
       ),
       body: Obx(() {
-        if (controller.isLoadingCart.value) {
-          return const Center(child: CircularProgressIndicator());
+        if (controller.isLoadingCart.value && controller.cartItems.isEmpty) {
+          return Shimmer.fromColors(
+            baseColor: Colors.grey.shade300,
+            highlightColor: Colors.grey.shade100,
+            child: ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: 4,
+              itemBuilder: (context, index) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Container(
+                    height: 100,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                );
+              },
+            ),
+          );
         }
 
         if (controller.cartItems.isEmpty) {

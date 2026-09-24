@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shimmer/shimmer.dart';
 import '../../../../app/theme/app_colors.dart';
-import '../../../../app/theme/app_dimensions.dart';
 import '../../../../app/theme/app_text_styles.dart';
 import '../../../../core/utils/session_manager.dart';
 import '../../../../core/utils/custom_popup.dart';
@@ -151,10 +150,12 @@ class ProductDetailScreen extends StatelessWidget {
                         CustomPopup.showLoginRequired();
                         return;
                       }
-                      // For Buy Now: Add to cart, wait, then redirect to checkout
                       final cartCtrl = Get.put(CartController());
-                      await cartCtrl.addToCart(controller.product.value!.id, 1, controller.product.value!.name);
-                      Get.toNamed('/checkout'); // Redirect directly to checkout
+                      final success = await cartCtrl.buyNow(controller.product.value!.id, 1, controller.product.value!.name);
+                      if (success) {
+                        await Future.delayed(const Duration(milliseconds: 300));
+                        Get.toNamed('/checkout');
+                      }
                     }
                   },
                   child: Container(

@@ -42,6 +42,9 @@ dependencies:
   add_to_cart_animation: ^2.0.4
   shimmer: ^3.0.0
   image_picker: ^1.2.2
+  connectivity_plus: ^7.3.1
+  flutter_screenutil: ^5.9.3
+  flutter_secure_storage: ^10.3.4
 
 dev_dependencies:
   flutter_test:
@@ -67,7 +70,8 @@ flutter:
 
   # To add assets to your application, add an assets section, like this:
   assets:
-
+    - assets/images/logo.png
+    - assets/images/
     - assets/lotties/done.json
     - assets/lotties/chatbot.json
     - assets/lotties/add_to_cart_new.json

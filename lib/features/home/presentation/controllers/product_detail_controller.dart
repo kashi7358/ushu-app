@@ -6,6 +6,9 @@ import '../../data/datasources/home_remote_data_source.dart';
 import '../../data/repositories/home_repository_impl.dart';
 import '../../../../core/errors/exception_handler.dart';
 
+import '../../../../core/utils/browsing_history.dart';
+import '../../data/models/product_model.dart';
+
 class ProductDetailController extends GetxController {
   final Rx<ProductEntity?> product = Rx<ProductEntity?>(null);
   final RxBool isLoading = true.obs;
@@ -35,6 +38,11 @@ class ProductDetailController extends GetxController {
       final result = await _getProductByIdUseCase.execute(productId);
       product.value = result;
       selectedImageIndex.value = 0;
+      
+      // Save to browsing history
+      if (result is ProductModel) {
+        BrowsingHistory.addProduct(result);
+      }
     } catch (e) {
       final error = ExceptionHandler.handle(e);
       Get.snackbar('Error', error.message, snackPosition: SnackPosition.BOTTOM);

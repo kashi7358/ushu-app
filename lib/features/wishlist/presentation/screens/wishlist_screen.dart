@@ -4,7 +4,6 @@ import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_text_styles.dart';
 import '../../../home/presentation/widgets/product_card.dart';
 import '../controllers/wishlist_controller.dart';
-import 'package:lottie/lottie.dart';
 import '../../../main_layout/presentation/controllers/main_layout_controller.dart';
 import '../../../../core/widgets/app_button.dart';
 

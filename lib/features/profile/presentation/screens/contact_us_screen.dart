@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../../app/theme/app_colors.dart';
+import '../../../../app/theme/app_dimensions.dart';
 import '../../../../app/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../controllers/contact_us_controller.dart';
@@ -13,88 +14,197 @@ class ContactUsScreen extends StatelessWidget {
     final controller = Get.put(ContactUsController());
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.lightBackground,
       appBar: AppBar(
-        title: Text('Contact Us', style: AppTextStyles.bold.copyWith(fontSize: 18, color: AppColors.darkText)),
         backgroundColor: Colors.white,
-        elevation: 0,
+        elevation: 0.5,
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.darkText),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.darkText, size: 18),
           onPressed: () => Get.back(),
         ),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        title: Column(
           children: [
-            Center(
-              child: Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: AppColors.primaryPurple.withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.support_agent_rounded, size: 64, color: AppColors.primaryPurple),
-              ),
+            Text(
+              'Customer Assistant',
+              style: AppTextStyles.bold.copyWith(fontSize: 17, color: AppColors.darkText),
             ),
-            const SizedBox(height: 24),
-            Center(
-              child: Text(
-                'Get in Touch',
-                style: AppTextStyles.extraBold.copyWith(fontSize: 24, color: AppColors.darkText),
-              ),
+            Text(
+              '24/7 Support Team',
+              style: AppTextStyles.medium.copyWith(fontSize: 11, color: AppColors.hintText),
             ),
-            const SizedBox(height: 8),
-            Center(
-              child: Text(
-                'We are here to help you. Send us a message and we will get back to you as soon as possible.',
-                style: AppTextStyles.medium.copyWith(fontSize: 14, color: AppColors.hintText, height: 1.5),
-                textAlign: TextAlign.center,
-              ),
-            ),
-            const SizedBox(height: 32),
-            
-            const SizedBox(height: 32),
-            Text('Send a Message', style: AppTextStyles.extraBold.copyWith(fontSize: 18, color: AppColors.darkText)),
-            const SizedBox(height: 16),
-            
-            _buildTextField(
-              controller: controller.emailController,
-              label: 'Email Address',
-              hint: 'Enter your email',
-              icon: Icons.email_outlined,
-              keyboardType: TextInputType.emailAddress,
-            ),
-            const SizedBox(height: 16),
-            _buildTextField(
-              controller: controller.subjectController,
-              label: 'Subject',
-              hint: 'What is this regarding?',
-              icon: Icons.subject_rounded,
-            ),
-            const SizedBox(height: 16),
-            _buildTextField(
-              controller: controller.messageController,
-              label: 'Message',
-              hint: 'Type your message here...',
-              icon: Icons.message_outlined,
-              maxLines: 5,
-            ),
-            const SizedBox(height: 32),
-            Obx(() => AppButton(
-              text: 'Send Message',
-              isLoading: controller.isLoading.value,
-              onPressed: controller.sendMessage,
-            )),
           ],
+        ),
+      ),
+      body: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              physics: const ClampingScrollPhysics(),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  minHeight: constraints.maxHeight,
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: AppDimensions.md, vertical: 12),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Top Hero Assistant Banner Card
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  AppColors.primaryPurple,
+                                  AppColors.primaryPurple.withValues(alpha: 0.85),
+                                ],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.primaryPurple.withValues(alpha: 0.25),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.2),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.support_agent_rounded,
+                                    size: 36,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                const SizedBox(width: 14),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Text(
+                                            'Ushu Support Assistant',
+                                            style: AppTextStyles.bold.copyWith(fontSize: 15, color: Colors.white),
+                                          ),
+                                          const SizedBox(width: 6),
+                                          Container(
+                                            width: 8,
+                                            height: 8,
+                                            decoration: const BoxDecoration(
+                                              color: Colors.greenAccent,
+                                              shape: BoxShape.circle,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        'Have a question or feedback? We are here to help you anytime.',
+                                        style: AppTextStyles.medium.copyWith(
+                                          fontSize: 11.5,
+                                          color: Colors.white.withValues(alpha: 0.9),
+                                          height: 1.3,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Contact Form Container Card
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.03),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 3),
+                                ),
+                              ],
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Send Us a Message',
+                                  style: AppTextStyles.bold.copyWith(fontSize: 15, color: AppColors.darkText),
+                                ),
+                                const SizedBox(height: 12),
+
+                                // Email Input
+                                _buildInputField(
+                                  controller: controller.emailController,
+                                  label: 'Your Email',
+                                  hint: 'Enter your email address',
+                                  icon: Icons.email_outlined,
+                                  keyboardType: TextInputType.emailAddress,
+                                ),
+                                const SizedBox(height: 12),
+
+                                // Subject Input
+                                _buildInputField(
+                                  controller: controller.subjectController,
+                                  label: 'Subject',
+                                  hint: 'What is your query about?',
+                                  icon: Icons.help_outline_rounded,
+                                ),
+                                const SizedBox(height: 12),
+
+                                // Message Input
+                                _buildInputField(
+                                  controller: controller.messageController,
+                                  label: 'Message',
+                                  hint: 'Type your message details here...',
+                                  icon: Icons.chat_bubble_outline_rounded,
+                                  maxLines: 3,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      // Bottom Submit Action Button
+                      Padding(
+                        padding: const EdgeInsets.only(top: 16, bottom: 10),
+                        child: Obx(() => AppButton(
+                          text: 'Send Message',
+                          isLoading: controller.isLoading.value,
+                          onPressed: controller.sendMessage,
+                        )),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
         ),
       ),
     );
   }
 
-  Widget _buildTextField({
+  Widget _buildInputField({
     required TextEditingController controller,
     required String label,
     required String hint,
@@ -105,19 +215,23 @@ class ContactUsScreen extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: AppTextStyles.bold.copyWith(fontSize: 14, color: AppColors.darkText)),
-        const SizedBox(height: 8),
+        Text(
+          label,
+          style: AppTextStyles.bold.copyWith(fontSize: 12.5, color: AppColors.darkText),
+        ),
+        const SizedBox(height: 6),
         TextField(
           controller: controller,
           maxLines: maxLines,
           keyboardType: keyboardType,
-          style: AppTextStyles.medium.copyWith(fontSize: 15),
+          style: AppTextStyles.medium.copyWith(fontSize: 13.5, color: AppColors.darkText),
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: AppTextStyles.regular.copyWith(color: AppColors.hintText),
-            prefixIcon: maxLines == 1 ? Icon(icon, color: AppColors.hintText) : null,
+            hintStyle: AppTextStyles.medium.copyWith(color: Colors.grey.shade400, fontSize: 13),
+            prefixIcon: maxLines == 1 ? Icon(icon, color: AppColors.hintText, size: 19) : null,
             filled: true,
             fillColor: Colors.grey.shade50,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide(color: Colors.grey.shade200),
@@ -130,7 +244,6 @@ class ContactUsScreen extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
               borderSide: const BorderSide(color: AppColors.primaryPurple, width: 1.5),
             ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           ),
         ),
       ],

@@ -45,4 +45,7 @@ class ApiEndpoints {
   // Returns
   static const String createReturnRequest = '$baseUrl/return/create-request';
   static const String getBuyerReturnRequests = '$baseUrl/return/buyer-request';
+  
+  // Search
+  static String searchKeyword(String keyword) => '$baseUrl/search/keyword?keyword=${Uri.encodeComponent(keyword)}';
 }

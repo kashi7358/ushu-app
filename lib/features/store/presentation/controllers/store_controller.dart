@@ -4,6 +4,8 @@ import '../../../../core/network/api_client.dart';
 import '../../../../core/network/api_endpoints.dart';
 import '../../../../core/utils/custom_popup.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/material.dart';
+import 'package:add_to_cart_animation/add_to_cart_animation.dart';
 
 class StoreController extends GetxController {
   final ApiClient _apiClient = ApiClient();
@@ -14,6 +16,10 @@ class StoreController extends GetxController {
   final RxList<dynamic> productsData = <dynamic>[].obs;
   
   late String storeId;
+
+  // AddToCartAnimation variables
+  GlobalKey<CartIconKey> cartKey = GlobalKey<CartIconKey>();
+  late Function(GlobalKey) runAddToCartAnimation;
 
   @override
   void onInit() {

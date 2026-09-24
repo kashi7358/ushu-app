@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:shimmer/shimmer.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_dimensions.dart';
 import '../controllers/home_controller.dart';
@@ -58,11 +59,16 @@ class _HomeSliderState extends State<HomeSlider> {
         return Container(
           height: 160,
           margin: const EdgeInsets.symmetric(horizontal: AppDimensions.md),
-          decoration: BoxDecoration(
-            color: Colors.grey.shade200,
-            borderRadius: BorderRadius.circular(12),
+          child: Shimmer.fromColors(
+            baseColor: Colors.grey.shade300,
+            highlightColor: Colors.grey.shade100,
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
           ),
-          child: const Center(child: CircularProgressIndicator()),
         );
       }
 
@@ -72,7 +78,7 @@ class _HomeSliderState extends State<HomeSlider> {
           height: 160,
           margin: const EdgeInsets.symmetric(horizontal: AppDimensions.md),
           decoration: BoxDecoration(
-            color: AppColors.primaryPurple.withOpacity(0.1),
+            color: AppColors.primaryPurple.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
           ),
           child: const Center(child: Text("Welcome to Ushu!", style: TextStyle(fontWeight: FontWeight.bold))),
@@ -133,7 +139,7 @@ class _HomeSliderState extends State<HomeSlider> {
                     width: _currentPage == index ? 20 : 6,
                     height: 6,
                     decoration: BoxDecoration(
-                      color: _currentPage == index ? AppColors.primaryPurple : Colors.white.withOpacity(0.8),
+                      color: _currentPage == index ? AppColors.primaryPurple : Colors.white.withValues(alpha: 0.8),
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
@@ -146,4 +152,3 @@ class _HomeSliderState extends State<HomeSlider> {
     });
   }
 }
-

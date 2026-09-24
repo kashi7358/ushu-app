@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../../../app/theme/app_colors.dart';
-import '../../../../app/theme/app_dimensions.dart';
-import '../../../../app/theme/app_text_styles.dart';
 import '../../domain/entities/product_entity.dart';
 import '../../../wishlist/presentation/controllers/wishlist_controller.dart';
 import '../../../cart/presentation/controllers/cart_controller.dart';
@@ -91,7 +89,7 @@ class ProductCard extends StatelessWidget {
                         }
                       },
                       child: Container(
-                        padding: const EdgeInsets.all(8),
+                        padding: const EdgeInsets.all(5),
                         decoration: BoxDecoration(
                           color: Colors.white.withValues(alpha: 0.9),
                           shape: BoxShape.circle,
@@ -101,12 +99,12 @@ class ProductCard extends StatelessWidget {
                         ),
                         child: Obx(() {
                           if (!Get.isRegistered<WishlistController>()) {
-                            return const Icon(Icons.favorite_border, size: 20, color: Colors.grey);
+                            return const Icon(Icons.favorite_border, size: 15, color: Colors.grey);
                           }
                           final isFav = Get.find<WishlistController>().isFavorite(product.id);
                           return Icon(
                             isFav ? Icons.favorite : Icons.favorite_border, 
-                            size: 20, 
+                            size: 15, 
                             color: isFav ? AppColors.error : Colors.grey
                           );
                         }),

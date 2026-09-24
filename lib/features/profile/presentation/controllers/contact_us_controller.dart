@@ -61,8 +61,12 @@ class ContactUsController extends GetxController {
 
       final data = response.data;
       if (data != null && data['success'] == true) {
-        CustomPopup.showToast('Success', 'Message sent successfully!');
-        Get.back(); // Go back after success
+        subjectController.clear();
+        messageController.clear();
+        CustomPopup.showSuccess(
+          'Message Sent!',
+          'Thank you for reaching out to us. Your message has been sent successfully, and our team will get back to you shortly.',
+        );
       } else {
         CustomPopup.showToast('Failed', data['message'] ?? 'Failed to send message', isError: true);
       }

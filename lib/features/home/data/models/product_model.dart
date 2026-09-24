@@ -76,4 +76,27 @@ class ProductModel extends ProductEntity {
       storeId: sId,
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      '_id': id,
+      'name': name,
+      'price': price,
+      'discountPriceOrg': discountPriceOrg,
+      'priceCurrency': priceCurrency,
+      'category': category,
+      'brand': brand,
+      'stock': stock,
+      'image': image,
+      'rating': rating,
+      'totalReviews': totalReviews,
+      'description': description,
+      'images': images,
+      'store': {
+        '_id': storeId,
+        'StoreName': storeName,
+        'logo': storeLogo,
+      },
+    };
+  }
 }

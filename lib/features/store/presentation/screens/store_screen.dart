@@ -6,6 +6,9 @@ import '../../../../app/theme/app_text_styles.dart';
 import '../controllers/store_controller.dart';
 import '../../../home/presentation/widgets/product_card.dart';
 import '../../../home/data/models/product_model.dart';
+import '../../../main_layout/presentation/controllers/main_layout_controller.dart';
+import '../../../cart/presentation/controllers/cart_controller.dart';
+import 'package:add_to_cart_animation/add_to_cart_animation.dart';
 
 class StoreScreen extends StatelessWidget {
   const StoreScreen({super.key});
@@ -14,9 +17,19 @@ class StoreScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final controller = Get.put(StoreController());
 
-    return Scaffold(
-      backgroundColor: Colors.grey.shade50,
-      body: Obx(() {
+    return AddToCartAnimation(
+      cartKey: controller.cartKey,
+      height: 30,
+      width: 30,
+      opacity: 0.85,
+      dragAnimation: const DragToCartAnimationOptions(rotation: false),
+      jumpAnimation: const JumpAnimationOptions(active: false),
+      createAddToCartAnimation: (runAddToCartAnimation) {
+        controller.runAddToCartAnimation = runAddToCartAnimation;
+      },
+      child: Scaffold(
+        backgroundColor: Colors.grey.shade50,
+        body: Obx(() {
         if (controller.isLoading.value) {
           return _buildShimmer();
         }
@@ -59,12 +72,18 @@ class StoreScreen extends StatelessWidget {
               iconTheme: const IconThemeData(color: Colors.white),
               actions: [
                 IconButton(
-                  icon: const Icon(Icons.shopping_cart_outlined),
+                  icon: AddToCartIcon(
+                    key: controller.cartKey,
+                    icon: const Icon(Icons.shopping_cart_outlined),
+                    badgeOptions: const BadgeOptions(active: false),
+                  ),
                   onPressed: () {
                     if (Get.isRegistered<MainLayoutController>()) {
-                      Get.find<MainLayoutController>().changePage(2); // Switch to Cart tab
+                      Get.until((route) => route.settings.name == '/main');
+                      Get.find<MainLayoutController>().changePage(2);
+                    } else {
+                      Get.offAllNamed('/main');
                     }
-                    Get.offAllNamed('/main');
                   },
                 ),
               ],
@@ -72,18 +91,23 @@ class StoreScreen extends StatelessWidget {
                 background: Stack(
                   fit: StackFit.expand,
                   children: [
-                    // Banner Image - blurred background
-                    if (storeBanner != null && storeBanner.isNotEmpty)
-                      Image.network(storeBanner, fit: BoxFit.cover),
-                    if (storeBanner != null && storeBanner.isNotEmpty)
-                      Container(color: Colors.black.withValues(alpha: 0.5)),
-                    
                     // Banner Image - actual
-                    Container(
-                      color: Colors.transparent,
+                    SizedBox(
+                      width: double.infinity,
+                      height: double.infinity,
                       child: storeBanner != null && storeBanner.isNotEmpty
-                          ? Image.network(storeBanner, fit: BoxFit.contain)
-                          : const Center(child: Icon(Icons.image, size: 50, color: AppColors.hintText)),
+                          ? Image.network(
+                              storeBanner,
+                              fit: BoxFit.fill,
+                              width: double.infinity,
+                              height: double.infinity,
+                            )
+                          : Container(
+                              color: AppColors.primaryPurple,
+                              child: const Center(
+                                child: Icon(Icons.image, size: 50, color: Colors.white54),
+                              ),
+                            ),
                     ),
                     // Gradient overlay to make back button visible
                     Container(
@@ -92,9 +116,9 @@ class StoreScreen extends StatelessWidget {
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
                           colors: [
-                            Colors.black.withValues(alpha: 0.7),
+                            Colors.black.withValues(alpha: 0.6),
                             Colors.transparent,
-                            Colors.transparent,
+                            Colors.black.withValues(alpha: 0.3),
                           ],
                         ),
                       ),
@@ -143,37 +167,7 @@ class StoreScreen extends StatelessWidget {
                                         style: AppTextStyles.bold.copyWith(fontSize: 18, color: AppColors.darkText),
                                       ),
                                     ),
-                                    Obx(() {
-                                      final isFollowing = controller.isFollowing.value;
-                                      return GestureDetector(
-                                        onTap: controller.toggleFollow,
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                          decoration: BoxDecoration(
-                                            color: isFollowing ? Colors.grey.shade200 : AppColors.primaryPurple,
-                                            borderRadius: BorderRadius.circular(16),
-                                          ),
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              Icon(
-                                                isFollowing ? Icons.check : Icons.add, 
-                                                color: isFollowing ? AppColors.darkText : Colors.white, 
-                                                size: 14
-                                              ),
-                                              const SizedBox(width: 2),
-                                              Text(
-                                                isFollowing ? 'Following' : 'Follow', 
-                                                style: AppTextStyles.bold.copyWith(
-                                                  color: isFollowing ? AppColors.darkText : Colors.white, 
-                                                  fontSize: 11
-                                                )
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      );
-                                    }),
+                                    const SizedBox.shrink(),
                                   ],
                                 ),
                                 if (tagline.isNotEmpty) ...[
@@ -211,14 +205,14 @@ class StoreScreen extends StatelessWidget {
                         child: Row(
                           children: [
                             if (processingTime.isNotEmpty) ...[
-                              _buildBadge(Icons.access_time, processingTime),
+                              _buildInfoChip(Icons.access_time, processingTime),
                               const SizedBox(width: 8),
                             ],
                             if (returnPolicy.isNotEmpty) ...[
-                              _buildBadge(Icons.assignment_return_outlined, returnPolicy),
+                              _buildInfoChip(Icons.assignment_return_outlined, returnPolicy),
                               const SizedBox(width: 8),
                             ],
-                            _buildBadge(Icons.verified_outlined, 'Verified Store'),
+                            _buildInfoChip(Icons.verified_outlined, 'Verified Store'),
                           ],
                         ),
                       ),
@@ -279,6 +273,15 @@ class StoreScreen extends StatelessWidget {
                           final productModel = ProductModel.fromJson(controller.productsData[index]);
                           return ProductCard(
                             product: productModel,
+                            onAddToCart: (imageKey) async {
+                              final cartCtrl = Get.put(CartController());
+                              // Fire the backend request and show center lottie
+                              cartCtrl.addToCart(productModel.id, 1, productModel.name);
+                              // Wait for center lottie to finish
+                              await Future.delayed(const Duration(milliseconds: 1500));
+                              // Then trigger the fly-to-cart animation to top right
+                              controller.runAddToCartAnimation(imageKey);
+                            },
                           );
                         },
                         childCount: controller.productsData.length,
@@ -290,6 +293,7 @@ class StoreScreen extends StatelessWidget {
           ],
         );
       }),
+      ),
     );
   }
 

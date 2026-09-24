@@ -4,6 +4,8 @@ import 'package:uhsu_buy/features/wishlist/presentation/controllers/wishlist_con
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_text_styles.dart';
 import '../controllers/profile_controller.dart';
+import 'browsing_history_screen.dart';
+import '../../../../core/utils/custom_popup.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -11,6 +13,7 @@ class ProfileScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = Get.put(ProfileController());
+    controller.loadFollowedStoresCount(); // Refresh count when screen is built
 
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
@@ -152,9 +155,9 @@ class ProfileScreen extends StatelessWidget {
                       );
                     }),
                     _buildDivider(),
-                    _buildMenuTile(Icons.storefront_outlined, 'Followed Stores', '${controller.followedStoresCount.value} stores'),
-                    _buildDivider(),
-                    _buildMenuTile(Icons.history, 'Browsing History', ''),
+                    _buildMenuTile(Icons.history, 'Browsing History', '', onTap: () {
+                      Get.to(() => const BrowsingHistoryScreen());
+                    }),
                   ],
                 ),
               ),
@@ -174,8 +177,6 @@ class ProfileScreen extends StatelessWidget {
                     _buildMenuTile(Icons.location_on_outlined, 'Shipping Addresses', ''),
                     _buildDivider(),
                     _buildMenuTile(Icons.credit_card_outlined, 'Payment Methods', ''),
-                    _buildDivider(),
-                    _buildMenuTile(Icons.confirmation_number_outlined, 'My Vouchers', '2 available', color: AppColors.primaryPurple),
                   ],
                 ),
               ),
@@ -206,27 +207,11 @@ class ProfileScreen extends StatelessWidget {
                       'Logout', 
                       '', 
                       color: AppColors.error,
-                      onTap: () {
-                        Get.dialog(
-                          AlertDialog(
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                            title: Text('Logout', style: AppTextStyles.bold),
-                            content: Text('Are you sure you want to logout?', style: AppTextStyles.regular),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Get.back(),
-                                child: Text('Cancel', style: AppTextStyles.semiBold.copyWith(color: AppColors.hintText)),
-                              ),
-                              TextButton(
-                                onPressed: () {
-                                  Get.back();
-                                  controller.logout();
-                                },
-                                child: Text('Logout', style: AppTextStyles.bold.copyWith(color: AppColors.error)),
-                              ),
-                            ],
-                          )
-                        );
+                      onTap: () async {
+                        final confirm = await CustomPopup.showLogoutConfirmation();
+                        if (confirm ?? false) {
+                          controller.logout();
+                        }
                       }
                     ),
                   ],

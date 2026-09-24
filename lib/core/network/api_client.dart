@@ -30,10 +30,10 @@ class ApiClient {
     if (kDebugMode) {
       _dio.interceptors.add(LogInterceptor(
         request: true,
-        requestHeader: true,
+        requestHeader: false,
         requestBody: true,
-        responseHeader: true,
-        responseBody: true,
+        responseHeader: false,
+        responseBody: false, // Turned off to speed up parsing in debug mode
         error: true,
       ));
     }

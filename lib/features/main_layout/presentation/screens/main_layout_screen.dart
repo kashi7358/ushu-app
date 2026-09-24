@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../../app/theme/app_colors.dart';
-import '../../../../app/theme/app_text_styles.dart';
-import '../../../../app/theme/app_dimensions.dart';
 import '../controllers/main_layout_controller.dart';
 import '../../../home/presentation/screens/home_screen.dart';
 import '../../../profile/presentation/screens/profile_screen.dart';
@@ -13,7 +11,9 @@ import 'package:lottie/lottie.dart';
 import '../../../../features/chatbot/presentation/screens/chatbot_screen.dart';
 import '../../../categories/presentation/screens/categories_screen.dart';
 
+import 'package:flutter/services.dart';
 import 'package:add_to_cart_animation/add_to_cart_animation.dart';
+import '../../../../core/utils/custom_popup.dart';
 
 class MainLayoutScreen extends StatelessWidget {
   const MainLayoutScreen({super.key});
@@ -42,8 +42,24 @@ class MainLayoutScreen extends StatelessWidget {
       createAddToCartAnimation: (runAddToCartAnimation) {
         controller.runAddToCartAnimation = runAddToCartAnimation;
       },
-      child: Scaffold(
-        body: Obx(() => IndexedStack(
+      child: PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, result) async {
+          if (didPop) return;
+          
+          if (controller.currentIndex.value != 0) {
+            controller.changePage(0);
+            return;
+          }
+
+          final shouldPop = await CustomPopup.showExitConfirmation();
+
+          if (shouldPop ?? false) {
+            SystemNavigator.pop();
+          }
+        },
+        child: Scaffold(
+          body: Obx(() => IndexedStack(
           index: controller.currentIndex.value,
           children: pages,
         )),
@@ -122,7 +138,9 @@ class MainLayoutScreen extends StatelessWidget {
             ),
           ),
         );
-      }),
+      }
+      ),
+        ),
       ),
     );
   }

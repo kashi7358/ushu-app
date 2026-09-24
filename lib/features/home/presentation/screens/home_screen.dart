@@ -11,7 +11,10 @@ import '../widgets/product_card.dart';
 import '../controllers/home_controller.dart';
 import '../../../cart/presentation/controllers/cart_controller.dart';
 import '../../../../features/main_layout/presentation/controllers/main_layout_controller.dart';
+import '../../../../features/search/presentation/widgets/search_bottom_sheet.dart';
 import 'package:shimmer/shimmer.dart';
+import 'top_selling_products_screen.dart';
+import 'for_you_products_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -106,6 +109,14 @@ class HomeScreen extends StatelessWidget {
                   ],
                 ),
                 child: TextField(
+                  readOnly: true,
+                  onTap: () {
+                    Get.bottomSheet(
+                      const SearchBottomSheet(),
+                      isScrollControlled: true,
+                      backgroundColor: Colors.transparent,
+                    );
+                  },
                   decoration: InputDecoration(
                     hintText: 'Search for products...',
                     hintStyle: AppTextStyles.medium.copyWith(color: Colors.grey.shade400, fontSize: 14),
@@ -155,7 +166,10 @@ class HomeScreen extends StatelessWidget {
                             Text('Our most popular products this week', style: AppTextStyles.medium.copyWith(fontSize: 12, color: AppColors.hintText)),
                           ],
                         ),
-                        TextButton(onPressed: () {}, child: Text('See All', style: AppTextStyles.bold.copyWith(color: AppColors.primaryPurple, fontSize: 13))),
+                        TextButton(
+                          onPressed: () => Get.to(() => const TopSellingProductsScreen()),
+                          child: Text('See All', style: AppTextStyles.bold.copyWith(color: AppColors.primaryPurple, fontSize: 13)),
+                        ),
                       ],
                     ),
                   ),
@@ -336,7 +350,10 @@ class HomeScreen extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: 8),
-                        TextButton(onPressed: () {}, child: Text('See All', style: AppTextStyles.bold.copyWith(color: AppColors.primaryPurple, fontSize: 13))),
+                        TextButton(
+                          onPressed: () => Get.to(() => const ForYouProductsScreen()),
+                          child: Text('See All', style: AppTextStyles.bold.copyWith(color: AppColors.primaryPurple, fontSize: 13)),
+                        ),
                       ],
                     ),
                   ),
@@ -422,9 +439,45 @@ class _CategorySection extends StatelessWidget {
 
     return Obx(() {
       if (controller.isLoading.value) {
-        return const SizedBox(
-          height: 100,
-          child: Center(child: CircularProgressIndicator(color: AppColors.primaryPurple)),
+        return SizedBox(
+          height: 110,
+          child: Shimmer.fromColors(
+            baseColor: Colors.grey.shade300,
+            highlightColor: Colors.grey.shade100,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: 6,
+              padding: const EdgeInsets.symmetric(horizontal: AppDimensions.md),
+              itemBuilder: (context, index) {
+                return Padding(
+                  padding: const EdgeInsets.only(right: AppDimensions.md),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        width: 65,
+                        height: 65,
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(height: AppDimensions.sm),
+                      Container(
+                        width: 50,
+                        height: 10,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
         );
       }
 

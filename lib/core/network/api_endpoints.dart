@@ -25,7 +25,7 @@ class ApiEndpoints {
   static String updateCartQuantity(String itemId) => '$baseUrl/cart/quantity/$itemId';
   static const String selectCartItem = '$baseUrl/cart/select';
   static String getStore(String id) => '$domain/store/get/$id';
-  static const String checkout = '$baseUrl/address/checkout';
+  static const String checkout = '$baseUrl/order/place';
   static const String addAddress = '$baseUrl/address/add';
   static const String getAddresses = '$baseUrl/address/all';
 

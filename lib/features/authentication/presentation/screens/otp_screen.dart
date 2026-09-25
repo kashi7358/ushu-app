@@ -6,8 +6,21 @@ import '../../../../app/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../controllers/auth_controller.dart';
 
-class OtpScreen extends StatelessWidget {
+class OtpScreen extends StatefulWidget {
   const OtpScreen({super.key});
+
+  @override
+  State<OtpScreen> createState() => _OtpScreenState();
+}
+
+class _OtpScreenState extends State<OtpScreen> {
+  @override
+  void initState() {
+    super.initState();
+    if (Get.isRegistered<AuthController>()) {
+      Get.find<AuthController>().startResendTimer();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -38,7 +51,7 @@ class OtpScreen extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(AppDimensions.xl),
                       decoration: BoxDecoration(
-                        color: AppColors.primaryPurple.withOpacity(0.05),
+                        color: AppColors.primaryPurple.withValues(alpha: 0.05),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(
@@ -78,7 +91,7 @@ class OtpScreen extends StatelessWidget {
                         borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
+                            color: Colors.black.withValues(alpha: 0.05),
                             blurRadius: 10,
                             offset: const Offset(0, 4),
                           ),
@@ -87,20 +100,20 @@ class OtpScreen extends StatelessWidget {
                       child: TextFormField(
                         controller: controller.otpController,
                         keyboardType: TextInputType.number,
-                        textAlign: TextAlign.center,
+                        textAlign: TextAlign.start,
                         maxLength: 6,
                         style: AppTextStyles.extraBold.copyWith(
-                          fontSize: 24,
-                          letterSpacing: 16.0,
+                          fontSize: 22,
+                          letterSpacing: 14.0,
                           color: AppColors.primaryPurple,
                         ),
                         decoration: InputDecoration(
                           counterText: "",
-                          hintText: '------',
+                          hintText: '••••••',
                           hintStyle: AppTextStyles.extraBold.copyWith(
-                            fontSize: 24,
-                            letterSpacing: 16.0,
-                            color: AppColors.hintText.withOpacity(0.5),
+                            fontSize: 22,
+                            letterSpacing: 14.0,
+                            color: AppColors.hintText.withValues(alpha: 0.4),
                           ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
@@ -108,7 +121,7 @@ class OtpScreen extends StatelessWidget {
                           ),
                           filled: true,
                           fillColor: AppColors.white,
-                          contentPadding: const EdgeInsets.symmetric(vertical: 20),
+                          contentPadding: const EdgeInsets.symmetric(vertical: 18, horizontal: 24),
                         ),
                       ),
                     ),
@@ -123,23 +136,30 @@ class OtpScreen extends StatelessWidget {
                     
                     const SizedBox(height: AppDimensions.xxl),
                     
-                    // Resend Link
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          "Didn't receive the code? ",
-                          style: AppTextStyles.regular.copyWith(color: AppColors.hintText),
-                        ),
-                        GestureDetector(
-                          onTap: controller.resendOtp,
-                          child: Text(
-                            'Resend OTP',
-                            style: AppTextStyles.semiBold.copyWith(color: AppColors.accentOrange),
+                    // Resend Link with Countdown Timer
+                    Obx(() {
+                      final canResend = controller.isResendEnabled.value;
+                      final seconds = controller.resendTimer.value;
+
+                      return Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            "Didn't receive the code? ",
+                            style: AppTextStyles.regular.copyWith(color: AppColors.hintText),
                           ),
-                        ),
-                      ],
-                    ),
+                          GestureDetector(
+                            onTap: (canResend && !controller.isLoading.value) ? controller.resendOtp : null,
+                            child: Text(
+                              canResend ? 'Resend OTP' : 'Resend in ${seconds}s',
+                              style: AppTextStyles.semiBold.copyWith(
+                                color: canResend ? AppColors.accentOrange : AppColors.hintText,
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    }),
                     const SizedBox(height: AppDimensions.lg),
                   ],
                 ),

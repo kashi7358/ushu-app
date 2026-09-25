@@ -11,12 +11,51 @@ class OrderController extends GetxController {
   
   final RxList<OrderModel> orders = <OrderModel>[].obs;
   final RxBool isLoading = false.obs;
+  final RxString selectedTab = 'all'.obs;
 
   @override
   void onInit() {
     super.onInit();
+    if (Get.arguments != null && Get.arguments['tab'] != null) {
+      selectedTab.value = Get.arguments['tab'].toString();
+    }
     if (SessionManager.isLoggedIn) {
       fetchMyOrders();
+    }
+  }
+
+  int get activeOrdersCount => orders.where((o) =>
+      o.status.toLowerCase() == 'pending' ||
+      o.status.toLowerCase() == 'processing' ||
+      o.status.toLowerCase() == 'shipped' ||
+      o.status.toLowerCase() == 'active').length;
+
+  int get completedOrdersCount => orders.where((o) =>
+      o.status.toLowerCase() == 'delivered' ||
+      o.status.toLowerCase() == 'completed').length;
+
+  int get cancelledOrdersCount => orders.where((o) =>
+      o.status.toLowerCase() == 'cancelled' ||
+      o.status.toLowerCase() == 'canceled').length;
+
+  List<OrderModel> get filteredOrders {
+    switch (selectedTab.value.toLowerCase()) {
+      case 'active':
+        return orders.where((o) =>
+            o.status.toLowerCase() == 'pending' ||
+            o.status.toLowerCase() == 'processing' ||
+            o.status.toLowerCase() == 'shipped' ||
+            o.status.toLowerCase() == 'active').toList();
+      case 'completed':
+        return orders.where((o) =>
+            o.status.toLowerCase() == 'delivered' ||
+            o.status.toLowerCase() == 'completed').toList();
+      case 'cancelled':
+        return orders.where((o) =>
+            o.status.toLowerCase() == 'cancelled' ||
+            o.status.toLowerCase() == 'canceled').toList();
+      default:
+        return orders;
     }
   }
 
@@ -28,11 +67,33 @@ class OrderController extends GetxController {
       final response = await _apiClient.dio.get(ApiEndpoints.myOrders);
       
       final data = response.data;
-      if (data != null && data['success'] == true) {
+      if (data != null && (data['success'] == true || data['status'] == 'success' || data is List)) {
         orders.clear();
-        final List<dynamic> ordersData = data['orders'] ?? data['data'] ?? [];
-        for (var orderJson in ordersData) {
-          orders.add(OrderModel.fromJson(orderJson));
+        final rawList = data is List ? data : (data['orders'] ?? data['data'] ?? []);
+        final List<dynamic> ordersData = rawList is List ? rawList : [];
+
+        for (var orderItem in ordersData) {
+          if (orderItem is Map) {
+            final mapData = Map<String, dynamic>.from(orderItem);
+            
+            if (mapData['subOrders'] is List && (mapData['subOrders'] as List).isNotEmpty) {
+              final subList = mapData['subOrders'] as List;
+              for (var subItem in subList) {
+                if (subItem is Map) {
+                  final subMap = Map<String, dynamic>.from(subItem);
+                  if (!subMap.containsKey('createdAt') && mapData.containsKey('createdAt')) {
+                    subMap['createdAt'] = mapData['createdAt'];
+                  }
+                  if (!subMap.containsKey('orderGroupId') && mapData.containsKey('orderGroupId')) {
+                    subMap['orderGroupId'] = mapData['orderGroupId'];
+                  }
+                  orders.add(OrderModel.fromJson(subMap));
+                }
+              }
+            } else {
+              orders.add(OrderModel.fromJson(mapData));
+            }
+          }
         }
       }
     } catch (e) {

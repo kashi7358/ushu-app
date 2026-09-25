@@ -134,6 +134,7 @@ class MainLayoutScreen extends StatelessWidget {
               child: Lottie.asset(
                 'assets/lotties/chatbot.json',
                 fit: BoxFit.cover,
+                frameRate: FrameRate(20),
               ),
             ),
           ),

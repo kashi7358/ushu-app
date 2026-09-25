@@ -94,7 +94,7 @@ class MyReturnsScreen extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'Order #${request['orderId']?.toString().substring(0, 8) ?? 'Unknown'}',
+                        'Order #${(request['orderId']?.toString().length ?? 0) >= 8 ? request['orderId'].toString().substring(0, 8).toUpperCase() : (request['orderId']?.toString().toUpperCase() ?? 'N/A')}',
                         style: AppTextStyles.bold.copyWith(fontSize: 14, color: AppColors.darkText),
                       ),
                       Container(

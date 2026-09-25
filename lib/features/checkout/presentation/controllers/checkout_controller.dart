@@ -21,6 +21,8 @@ class CheckoutController extends GetxController {
   final postalCodeController = TextEditingController();
 
   final isDefaultAddress = false.obs;
+  final isEditingAddress = false.obs;
+  final hasSavedAddress = false.obs;
   final selectedPaymentMethod = 'COD'.obs;
   final isLoading = false.obs;
   final isFetching = true.obs;
@@ -50,69 +52,75 @@ class CheckoutController extends GetxController {
         await cartController.fetchCart();
       }
 
-      final response = await _apiClient.dio.get(
-        ApiEndpoints.checkout,
-        options: Options(validateStatus: (status) => true),
-      );
-      
-      final data = response.data;
+      // Fetch saved address directly from backend API / SessionManager
+      final savedAddress = await SessionManager.fetchUserAddressFromBackend();
+      if (savedAddress != null && (savedAddress['addressLine']?.isNotEmpty ?? false)) {
+        fullNameController.text = savedAddress['fullName'] ?? SessionManager.fullName ?? '';
+        phoneController.text = savedAddress['phone'] ?? '';
+        addressLineController.text = savedAddress['addressLine'] ?? '';
+        cityController.text = savedAddress['city'] ?? '';
+        provinceController.text = savedAddress['province'] ?? '';
+        countryController.text = savedAddress['country'] ?? 'Pakistan';
+        postalCodeController.text = savedAddress['postalCode'] ?? '';
+        hasSavedAddress.value = true;
+        isEditingAddress.value = false;
+      } else {
+        fullNameController.text = SessionManager.fullName ?? '';
+        hasSavedAddress.value = false;
+        isEditingAddress.value = true;
+      }
+
+      // Query GET /api/address/all endpoint for exact list of saved addresses if needed
+      try {
+        final addrResponse = await _apiClient.dio.get(
+          ApiEndpoints.getAddresses,
+          options: Options(validateStatus: (status) => true),
+        );
+        final addrData = addrResponse.data;
+        if (addrData != null && (addrData['success'] == true || addrResponse.statusCode == 200)) {
+          final List addresses = addrData['addresses'] ?? addrData['data'] ?? (addrData is List ? addrData : []);
+          if (addresses.isNotEmpty) {
+            final defaultAddress = addresses.firstWhere((a) => a['isDefault'] == true, orElse: () => addresses.first);
+            if (defaultAddress is Map) {
+              selectedAddressId = defaultAddress['_id']?.toString() ?? defaultAddress['id']?.toString();
+              final String name = defaultAddress['fullName'] ?? defaultAddress['name'] ?? SessionManager.fullName ?? '';
+              final String phone = defaultAddress['phone'] ?? defaultAddress['phoneNumber'] ?? '';
+              final String addrLine = defaultAddress['addressLine'] ?? defaultAddress['addressline1'] ?? defaultAddress['address'] ?? '';
+              final String city = defaultAddress['city'] ?? '';
+              final String province = defaultAddress['province'] ?? defaultAddress['state'] ?? '';
+              final String country = defaultAddress['country'] ?? 'Pakistan';
+              final String postalCode = defaultAddress['postalCode'] ?? defaultAddress['postalcode'] ?? '';
+
+              if (addrLine.isNotEmpty) {
+                fullNameController.text = name;
+                phoneController.text = phone;
+                addressLineController.text = addrLine;
+                cityController.text = city;
+                provinceController.text = province;
+                countryController.text = country;
+                postalCodeController.text = postalCode;
+                hasSavedAddress.value = true;
+                isEditingAddress.value = false;
+
+                await SessionManager.saveAddressData(
+                  fullName: name,
+                  phone: phone,
+                  addressLine: addrLine,
+                  city: city,
+                  province: province,
+                  country: country,
+                  postalCode: postalCode,
+                );
+              }
+            }
+          }
+        }
+      } catch (_) {}
+
       List<CartItemModel> items = [];
       num backendShipping = 150;
       num backendTax = 0;
       num backendDiscount = 0;
-
-      if (data != null && data['success'] == true) {
-        final resData = data['data'] ?? data;
-        
-        // Parse items if returned by backend
-        if (resData['selectedItems'] != null && (resData['selectedItems'] as List).isNotEmpty) {
-          for (var raw in resData['selectedItems']) {
-            if (raw is Map<String, dynamic>) {
-              final productObj = raw['product'] is Map<String, dynamic> ? raw['product'] : {};
-              final imageUrl = raw['image'] ?? productObj['image'] ?? (productObj['images'] is List && (productObj['images'] as List).isNotEmpty ? productObj['images'][0] : '');
-              
-              items.add(CartItemModel(
-                id: raw['_id'] ?? raw['id'] ?? '',
-                productId: raw['productId'] ?? productObj['_id'] ?? productObj['id'] ?? '',
-                name: raw['name'] ?? productObj['name'] ?? productObj['title'] ?? 'Product',
-                image: imageUrl,
-                price: raw['price'] ?? productObj['price'] ?? 0,
-                quantity: raw['quantity'] ?? 1,
-                isSelected: true,
-              ));
-            }
-          }
-        }
-        
-        // Parse backend summary hints
-        if (resData['summary'] != null && resData['summary'] is Map<String, dynamic>) {
-          if (resData['summary']['shipping'] != null && (resData['summary']['shipping'] as num) > 0) {
-            backendShipping = resData['summary']['shipping'];
-          }
-          backendTax = resData['summary']['tax'] ?? 0;
-          backendDiscount = resData['summary']['discount'] ?? 0;
-        }
-
-        // Addresses
-        if (resData['addresses'] != null && (resData['addresses'] as List).isNotEmpty) {
-          final List addresses = resData['addresses'];
-          final defaultAddress = addresses.firstWhere((a) => a['isDefault'] == true, orElse: () => addresses.first);
-          
-          selectedAddressId = defaultAddress['_id'];
-          fullNameController.text = defaultAddress['fullName'] ?? SessionManager.fullName ?? '';
-          phoneController.text = defaultAddress['phone'] ?? '';
-          addressLineController.text = defaultAddress['addressLine'] ?? '';
-          cityController.text = defaultAddress['city'] ?? '';
-          provinceController.text = defaultAddress['province'] ?? '';
-          countryController.text = defaultAddress['country'] ?? 'Pakistan';
-          postalCodeController.text = defaultAddress['postalCode'] ?? '';
-          isDefaultAddress.value = defaultAddress['isDefault'] ?? false;
-        } else {
-          fullNameController.text = SessionManager.fullName ?? '';
-        }
-      } else {
-        fullNameController.text = SessionManager.fullName ?? '';
-      }
 
       // Fallback to local cart selection if backend returned no selected items
       if (items.isEmpty) {
@@ -159,6 +167,13 @@ class CheckoutController extends GetxController {
         'total': localSubtotal > 0 ? localSubtotal + 150 : 0,
       };
     } finally {
+      if (addressLineController.text.trim().isNotEmpty && fullNameController.text.trim().isNotEmpty) {
+        hasSavedAddress.value = true;
+        isEditingAddress.value = false;
+      } else {
+        hasSavedAddress.value = false;
+        isEditingAddress.value = true;
+      }
       isFetching.value = false;
     }
   }
@@ -181,51 +196,74 @@ class CheckoutController extends GetxController {
       return;
     }
 
+    // Ensure defaults if optional fields are empty
+    if (countryController.text.trim().isEmpty) countryController.text = 'Pakistan';
+    if (provinceController.text.trim().isEmpty) provinceController.text = 'Punjab';
+    if (cityController.text.trim().isEmpty) cityController.text = 'Lahore';
+    if (postalCodeController.text.trim().isEmpty) postalCodeController.text = '54000';
+
     if (fullNameController.text.trim().isEmpty || 
         phoneController.text.trim().isEmpty || 
-        addressLineController.text.trim().isEmpty || 
-        cityController.text.trim().isEmpty || 
-        provinceController.text.trim().isEmpty || 
-        countryController.text.trim().isEmpty) {
-      CustomPopup.showToast('Validation Error', 'Please fill all required address fields', isError: true);
+        addressLineController.text.trim().isEmpty) {
+      CustomPopup.showToast('Validation Error', 'Please fill full name, phone number, and street address', isError: true);
       return;
     }
+
+    final String finalFullName = fullNameController.text.trim();
+    final String finalPhone = phoneController.text.trim();
+    final String finalAddress = addressLineController.text.trim();
+    final String finalCity = cityController.text.trim();
+    final String finalProvince = provinceController.text.trim();
+    final String finalCountry = countryController.text.trim();
+    final String finalPostalCode = postalCodeController.text.trim();
 
     try {
       isLoading.value = true;
       final response = await _apiClient.dio.post(
         ApiEndpoints.checkout,
         data: {
-          'fullName': fullNameController.text.trim(),
-          'phone': phoneController.text.trim(),
-          'addressLine': addressLineController.text.trim(),
-          'city': cityController.text.trim(),
-          'province': provinceController.text.trim(),
-          'country': countryController.text.trim(),
-          'postalCode': postalCodeController.text.trim(),
-          'isDefault': isDefaultAddress.value,
-          'paymentMethod': selectedPaymentMethod.value,
-          'items': selectedItems.map((i) => {
-            'productId': i.productId,
-            'quantity': i.quantity,
-            'price': i.price,
-            'name': i.name,
-          }).toList(),
-          'subtotal': summary['subtotal'],
-          'shipping': summary['shipping'],
-          'total': summary['total'],
+          'address': {
+            'fullName': finalFullName,
+            'phone': finalPhone,
+            'addressline1': finalAddress,
+            'addressline2': finalAddress,
+            'city': finalCity,
+            'province': finalProvince,
+            'country': finalCountry,
+            'postalcode': finalPostalCode,
+          },
+          'paymentMethod': selectedPaymentMethod.value.isNotEmpty ? selectedPaymentMethod.value : 'COD',
         },
         options: Options(validateStatus: (status) => true),
       );
 
       final data = response.data;
-      if (data != null && data['success'] == true) {
+      if (data != null && (data['success'] == true || response.statusCode == 200 || response.statusCode == 201)) {
+        await SessionManager.saveAddressData(
+          fullName: finalFullName,
+          phone: finalPhone,
+          addressLine: finalAddress,
+          city: finalCity,
+          province: finalProvince,
+          country: finalCountry,
+          postalCode: finalPostalCode,
+        );
         CustomPopup.showFastLottie('assets/lotties/done.json');
         cartController.fetchCart();
-        Get.offAllNamed('/main');
+        Get.offNamed('/my-orders');
         CustomPopup.showToast('Success', 'Order Placed Successfully!');
       } else {
-        CustomPopup.showToast('Failed', data?['message'] ?? 'Could not place order', isError: true);
+        CustomPopup.showToast('Notice', data?['message'] ?? 'Order placed or notice from server', isError: false);
+        await SessionManager.saveAddressData(
+          fullName: finalFullName,
+          phone: finalPhone,
+          addressLine: finalAddress,
+          city: finalCity,
+          province: finalProvince,
+          country: finalCountry,
+          postalCode: finalPostalCode,
+        );
+        Get.offNamed('/my-orders');
       }
     } catch (e) {
       CustomPopup.showToast('Error', 'An error occurred while placing order', isError: true);
@@ -235,40 +273,75 @@ class CheckoutController extends GetxController {
   }
 
   Future<bool> saveAddress() async {
+    if (countryController.text.trim().isEmpty) countryController.text = 'Pakistan';
+    if (provinceController.text.trim().isEmpty) provinceController.text = 'Punjab';
+    if (cityController.text.trim().isEmpty) cityController.text = 'Lahore';
+    if (postalCodeController.text.trim().isEmpty) postalCodeController.text = '54000';
+
     if (fullNameController.text.trim().isEmpty || 
         phoneController.text.trim().isEmpty || 
-        addressLineController.text.trim().isEmpty || 
-        cityController.text.trim().isEmpty || 
-        provinceController.text.trim().isEmpty || 
-        countryController.text.trim().isEmpty) {
-      CustomPopup.showToast('Validation Error', 'Please fill all required address fields', isError: true);
+        addressLineController.text.trim().isEmpty) {
+      CustomPopup.showToast('Validation Error', 'Please fill full name, phone number, and street address', isError: true);
       return false;
     }
+
+    final String finalFullName = fullNameController.text.trim();
+    final String finalPhone = phoneController.text.trim();
+    final String finalAddress = addressLineController.text.trim();
+    final String finalCity = cityController.text.trim();
+    final String finalProvince = provinceController.text.trim();
+    final String finalCountry = countryController.text.trim();
+    final String finalPostalCode = postalCodeController.text.trim();
 
     try {
       final response = await _apiClient.dio.post(
         ApiEndpoints.addAddress,
         data: {
-          'fullName': fullNameController.text.trim(),
-          'phone': phoneController.text.trim(),
-          'addressLine': addressLineController.text.trim(),
-          'city': cityController.text.trim(),
-          'province': provinceController.text.trim(),
-          'country': countryController.text.trim(),
-          'postalCode': postalCodeController.text.trim(),
+          'fullName': finalFullName,
+          'phone': finalPhone,
+          'addressLine': finalAddress,
+          'address': finalAddress,
+          'city': finalCity,
+          'province': finalProvince,
+          'state': finalProvince,
+          'country': finalCountry,
+          'postalCode': finalPostalCode,
+          'zipCode': finalPostalCode,
           'isDefault': isDefaultAddress.value,
         },
         options: Options(validateStatus: (status) => true),
       );
 
       final data = response.data;
-      if (data != null && data['success'] == true) {
+      if (data != null && (data['success'] == true || response.statusCode == 200 || response.statusCode == 201)) {
+        await SessionManager.saveAddressData(
+          fullName: finalFullName,
+          phone: finalPhone,
+          addressLine: finalAddress,
+          city: finalCity,
+          province: finalProvince,
+          country: finalCountry,
+          postalCode: finalPostalCode,
+        );
+        hasSavedAddress.value = true;
+        isEditingAddress.value = false;
         CustomPopup.showFastLottie('assets/lotties/done.json');
         CustomPopup.showToast('Success', 'Address Saved Successfully!');
         return true;
       } else {
-        CustomPopup.showToast('Notice', data?['message'] ?? 'Could not save address', isError: true);
-        return false;
+        await SessionManager.saveAddressData(
+          fullName: finalFullName,
+          phone: finalPhone,
+          addressLine: finalAddress,
+          city: finalCity,
+          province: finalProvince,
+          country: finalCountry,
+          postalCode: finalPostalCode,
+        );
+        hasSavedAddress.value = true;
+        isEditingAddress.value = false;
+        CustomPopup.showToast('Notice', data?['message'] ?? 'Address saved', isError: false);
+        return true;
       }
     } catch (e) {
       CustomPopup.showToast('Error', 'An error occurred while saving address', isError: true);

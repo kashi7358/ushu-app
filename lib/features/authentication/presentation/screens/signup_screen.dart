@@ -37,27 +37,27 @@ class SignupScreen extends StatelessWidget {
                 children: [
                   // App Logo Clean Header
                   const Center(
-                    child: AppLogo(height: 75),
+                    child: AppLogo(height: 115),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 16),
                   Text(
                     'Create Account',
                     style: AppTextStyles.extraBold.copyWith(
-                      fontSize: 24,
+                      fontSize: 22,
                       color: AppColors.darkText,
                     ),
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 4),
                   Text(
                     'Join USHU BUY as a Customer',
                     style: AppTextStyles.medium.copyWith(
-                      fontSize: 14,
+                      fontSize: 13,
                       color: AppColors.hintText,
                     ),
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 28),
+                  const SizedBox(height: 24),
                   AppTextField(
                     controller: controller.signupNameController,
                     hintText: 'Full Name',

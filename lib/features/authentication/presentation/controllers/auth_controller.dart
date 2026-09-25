@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../../app/routes/app_routes.dart';
@@ -46,7 +47,26 @@ class AuthController extends GetxController {
   final RxBool isConfirmPasswordVisible = false.obs;
   final RxBool termsAccepted = false.obs;
 
-  String? currentBuyerId; 
+  // OTP Timer fields
+  final RxInt resendTimer = 60.obs;
+  final RxBool isResendEnabled = false.obs;
+  Timer? _timer;
+
+  String? currentBuyerId;
+
+  void startResendTimer() {
+    _timer?.cancel();
+    resendTimer.value = 60;
+    isResendEnabled.value = false;
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (resendTimer.value > 0) {
+        resendTimer.value--;
+      } else {
+        isResendEnabled.value = true;
+        _timer?.cancel();
+      }
+    });
+  }
 
   late final LoginUseCase _loginUseCase;
   late final SignupUseCase _signupUseCase;
@@ -93,6 +113,7 @@ class AuthController extends GetxController {
       );
       
       await SessionManager.saveSession(user.id, user.email, user.fullName, token: user.token);
+      await SessionManager.fetchUserAddressFromBackend();
       CustomPopup.showSuccess('Success!', 'Welcome back, ${user.fullName}!');
       Get.offAllNamed(AppRoutes.mainLayout);
       
@@ -145,11 +166,14 @@ class AuthController extends GetxController {
   Future<void> verifyEmail() async {
     final otp = otpController.text.trim();
     if (otp.isEmpty) {
-      CustomPopup.showError('Oops!', 'Please enter the OTP');
+      CustomPopup.showError('Oops!', 'Please enter the OTP code.');
       return;
     }
     if (currentBuyerId == null || currentBuyerId!.isEmpty) {
-      CustomPopup.showError('Oops!', 'Missing buyer reference. Please signup again.');
+      currentBuyerId = SessionManager.userId;
+    }
+    if (currentBuyerId == null || currentBuyerId!.isEmpty) {
+      CustomPopup.showError('Oops!', 'Missing buyer reference. Please login or signup again.');
       return;
     }
 
@@ -158,19 +182,39 @@ class AuthController extends GetxController {
       
       await _verifyEmailUseCase.execute(currentBuyerId!, otp);
 
-      CustomPopup.showSuccess('Success!', 'Email verified successfully! You can now login.');
-      
+      // Perform direct auto-login using signup credentials
+      if (signupEmailController.text.trim().isNotEmpty && signupPasswordController.text.isNotEmpty) {
+        try {
+          final user = await _loginUseCase.execute(
+            signupEmailController.text.trim(),
+            signupPasswordController.text,
+          );
+          await SessionManager.saveSession(user.id, user.email, user.fullName, token: user.token);
+        } catch (_) {
+          // Keep existing session saved from signup
+        }
+      }
+
+      CustomPopup.showSuccess('Success!', 'OTP Verified Successfully!');
       otpController.clear();
-      Get.offAllNamed(AppRoutes.login);
+      
+      // Delay milliseconds then navigate to home
+      await Future.delayed(const Duration(milliseconds: 600));
+      Get.offAllNamed(AppRoutes.mainLayout);
     } catch (e) {
       final error = ExceptionHandler.handle(e);
-      CustomPopup.showError('Oops!', error.message);
+      CustomPopup.showError('Invalid OTP', error.message.isNotEmpty ? error.message : 'Invalid OTP code. Please check and try again.');
     } finally {
       isLoading.value = false;
     }
   }
 
   Future<void> resendOtp() async {
+    if (!isResendEnabled.value && resendTimer.value > 0) return;
+
+    if (currentBuyerId == null || currentBuyerId!.isEmpty) {
+      currentBuyerId = SessionManager.userId;
+    }
     if (currentBuyerId == null || currentBuyerId!.isEmpty) {
       CustomPopup.showError('Oops!', 'Missing buyer reference.');
       return;
@@ -182,9 +226,10 @@ class AuthController extends GetxController {
       await _resendOtpUseCase.execute(currentBuyerId!);
 
       CustomPopup.showSuccess('Success!', 'OTP has been resent to your email.');
+      startResendTimer();
     } catch (e) {
       final error = ExceptionHandler.handle(e);
-      CustomPopup.showError('Oops!', error.message);
+      CustomPopup.showError('Error', error.message.isNotEmpty ? error.message : 'Could not resend OTP. Please try again.');
     } finally {
       isLoading.value = false;
     }
@@ -254,8 +299,7 @@ class AuthController extends GetxController {
 
   @override
   void onClose() {
-    // Removing manual dispose calls to prevent GetX routing race conditions
-    // where Get.offAllNamed disposes the controller while the new screen uses it.
+    _timer?.cancel();
     super.onClose();
   }
 }

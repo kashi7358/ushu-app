@@ -1,4 +1,7 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../network/api_client.dart';
+import '../network/api_endpoints.dart';
 
 class SessionManager {
   static const _storage = FlutterSecureStorage();
@@ -17,6 +20,10 @@ class SessionManager {
     _email = await _storage.read(key: 'email');
     _fullName = await _storage.read(key: 'fullName');
     _token = await _storage.read(key: 'token');
+
+    if (_isLoggedIn) {
+      fetchUserAddressFromBackend();
+    }
   }
 
   static Future<void> saveSession(String userId, String email, String fullName, {String? token}) async {
@@ -42,12 +49,114 @@ class SessionManager {
     _email = null;
     _fullName = null;
     _token = null;
+    _savedAddress = null;
 
     await _storage.delete(key: 'isLoggedIn');
     await _storage.delete(key: 'userId');
     await _storage.delete(key: 'email');
     await _storage.delete(key: 'fullName');
     await _storage.delete(key: 'token');
+    await _storage.delete(key: 'phone');
+    await _storage.delete(key: 'addressLine');
+    await _storage.delete(key: 'city');
+    await _storage.delete(key: 'province');
+    await _storage.delete(key: 'country');
+    await _storage.delete(key: 'postalCode');
+  }
+
+  static Map<String, String>? _savedAddress;
+
+  static Future<void> saveAddressData({
+    required String fullName,
+    required String phone,
+    required String addressLine,
+    required String city,
+    required String province,
+    required String country,
+    required String postalCode,
+  }) async {
+    _savedAddress = {
+      'fullName': fullName,
+      'phone': phone,
+      'addressLine': addressLine,
+      'city': city,
+      'province': province,
+      'country': country,
+      'postalCode': postalCode,
+    };
+    await _storage.write(key: 'fullName', value: fullName);
+    await _storage.write(key: 'phone', value: phone);
+    await _storage.write(key: 'addressLine', value: addressLine);
+    await _storage.write(key: 'city', value: city);
+    await _storage.write(key: 'province', value: province);
+    await _storage.write(key: 'country', value: country);
+    await _storage.write(key: 'postalCode', value: postalCode);
+  }
+
+  static Future<Map<String, String>?> getSavedAddress() async {
+    if (_savedAddress != null) return _savedAddress;
+    final addressLine = await _storage.read(key: 'addressLine');
+    if (addressLine == null || addressLine.isEmpty) {
+      return await fetchUserAddressFromBackend();
+    }
+    _savedAddress = {
+      'fullName': await _storage.read(key: 'fullName') ?? _fullName ?? '',
+      'phone': await _storage.read(key: 'phone') ?? '',
+      'addressLine': addressLine,
+      'city': await _storage.read(key: 'city') ?? '',
+      'province': await _storage.read(key: 'province') ?? '',
+      'country': await _storage.read(key: 'country') ?? 'Pakistan',
+      'postalCode': await _storage.read(key: 'postalCode') ?? '',
+    };
+    return _savedAddress;
+  }
+
+  static Future<Map<String, String>?> fetchUserAddressFromBackend() async {
+    if (!isLoggedIn) return null;
+    try {
+      final apiClient = ApiClient();
+      final response = await apiClient.dio.get(
+        ApiEndpoints.getAddresses,
+        options: Options(validateStatus: (status) => true),
+      );
+
+      final data = response.data;
+      if (data != null && (data['success'] == true || response.statusCode == 200)) {
+        final List addresses = data['addresses'] ?? data['data'] ?? (data is List ? data : []);
+        if (addresses.isNotEmpty) {
+          final defaultAddr = addresses.firstWhere((a) => a['isDefault'] == true, orElse: () => addresses.first);
+          if (defaultAddr is Map) {
+            final String name = defaultAddr['fullName']?.toString() ?? defaultAddr['name']?.toString() ?? _fullName ?? '';
+            final String phone = defaultAddr['phone']?.toString() ?? defaultAddr['phoneNumber']?.toString() ?? '';
+            final String addrLine = defaultAddr['addressLine']?.toString() ??
+                defaultAddr['addressline1']?.toString() ??
+                defaultAddr['address']?.toString() ??
+                defaultAddr['street']?.toString() ??
+                '';
+            final String city = defaultAddr['city']?.toString() ?? '';
+            final String province = defaultAddr['province']?.toString() ?? defaultAddr['state']?.toString() ?? '';
+            final String country = defaultAddr['country']?.toString() ?? 'Pakistan';
+            final String postalCode = defaultAddr['postalCode']?.toString() ?? defaultAddr['postalcode']?.toString() ?? defaultAddr['zipCode']?.toString() ?? '';
+
+            if (addrLine.isNotEmpty) {
+              await saveAddressData(
+                fullName: name,
+                phone: phone,
+                addressLine: addrLine,
+                city: city,
+                province: province,
+                country: country,
+                postalCode: postalCode,
+              );
+              return _savedAddress;
+            }
+          }
+        }
+      }
+    } catch (e) {
+      // Return local cache if remote fetch fails
+    }
+    return _savedAddress;
   }
 
   static bool get isLoggedIn => _isLoggedIn;

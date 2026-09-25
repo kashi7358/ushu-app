@@ -28,16 +28,17 @@ class LoginScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const SizedBox(height: 10),
-                  // App Logo Clean Header
+                  // App Logo Clean Header - Prominent & Well-Proportioned
                   const Center(
-                    child: AppLogo(height: 85),
+                    child: AppLogo(height: 115),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 20),
                   Text(
                     'Welcome Back',
                     style: AppTextStyles.extraBold.copyWith(
-                      fontSize: 24,
+                      fontSize: 22,
                       color: AppColors.darkText,
+                      letterSpacing: 0.2,
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -45,12 +46,12 @@ class LoginScreen extends StatelessWidget {
                   Text(
                     'Login to your USHU BUY account',
                     style: AppTextStyles.medium.copyWith(
-                      fontSize: 14,
+                      fontSize: 13.5,
                       color: AppColors.hintText,
                     ),
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 28),
                   AppTextField(
                     controller: controller.loginEmailController,
                     hintText: 'Email address',

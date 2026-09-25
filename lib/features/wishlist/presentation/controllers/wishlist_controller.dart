@@ -31,9 +31,12 @@ class WishlistController extends GetxController {
     
     try {
       if (showLoading) isLoading.value = true;
-      final response = await _apiClient.dio.get(ApiEndpoints.getWishlist);
+      final response = await _apiClient.dio.get(
+        ApiEndpoints.getWishlist,
+        options: Options(validateStatus: (status) => true),
+      );
       
-      if (response.data['success'] == true) {
+      if (response.data != null && response.data is Map && response.data['success'] == true) {
         wishlistProducts.clear();
         wishlistedProductIds.clear();
         

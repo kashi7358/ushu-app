@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shimmer/shimmer.dart';
@@ -15,7 +16,7 @@ class HomeSlider extends StatefulWidget {
 class _HomeSliderState extends State<HomeSlider> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
-  bool _isAutoPlaying = true;
+  Timer? _timer;
 
   @override
   void initState() {
@@ -24,8 +25,13 @@ class _HomeSliderState extends State<HomeSlider> {
   }
 
   void _startAutoPlay() {
-    Future.delayed(const Duration(seconds: 4), () {
-      if (!mounted || !_isAutoPlaying) return;
+    _timer?.cancel();
+    _timer = Timer.periodic(const Duration(seconds: 4), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+      if (!Get.isRegistered<HomeController>()) return;
       final controller = Get.find<HomeController>();
       final banners = controller.bannerProducts;
       if (banners.isNotEmpty && _pageController.hasClients) {
@@ -39,13 +45,12 @@ class _HomeSliderState extends State<HomeSlider> {
           curve: Curves.fastOutSlowIn,
         );
       }
-      _startAutoPlay();
     });
   }
 
   @override
   void dispose() {
-    _isAutoPlaying = false;
+    _timer?.cancel();
     _pageController.dispose();
     super.dispose();
   }

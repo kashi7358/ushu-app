@@ -2,7 +2,6 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
 import 'package:flutter/foundation.dart';
-import 'package:get/get.dart';
 import '../utils/session_manager.dart';
 
 class ApiClient {
@@ -55,13 +54,8 @@ class ApiClient {
           if (data['success'] == false && 
               data['message'] != null && 
               data['message'].toString().contains('Access Denied')) {
-            
+            // Only clear session in background, do NOT kick user out to login screen
             await SessionManager.clearSession();
-            
-            Future.delayed(Duration.zero, () {
-              Get.offAllNamed('/login');
-              Get.snackbar('Session Expired', 'Please login again to continue.');
-            });
           }
         }
         return handler.next(response);

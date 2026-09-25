@@ -5,6 +5,7 @@ import '../../../../core/network/api_client.dart';
 import '../../../../core/network/api_endpoints.dart';
 import '../../data/models/category_model.dart';
 import '../../../home/data/models/product_model.dart';
+import '../../../home/presentation/controllers/home_controller.dart';
 
 class CategoriesController extends GetxController {
   final ApiClient _apiClient = ApiClient();
@@ -17,6 +18,13 @@ class CategoriesController extends GetxController {
   final RxBool isLoading = false.obs;
   final RxBool isProductsLoading = false.obs;
   final RxInt selectedIndex = 0.obs;
+  final RxString categorySearchQuery = ''.obs;
+
+  List<CategoryModel> get filteredCategories {
+    if (categorySearchQuery.value.trim().isEmpty) return categoriesList;
+    final query = categorySearchQuery.value.trim().toLowerCase();
+    return categoriesList.where((c) => c.category.toLowerCase().contains(query)).toList();
+  }
 
   @override
   void onInit() {
@@ -48,6 +56,27 @@ class CategoriesController extends GetxController {
   }
 
   Future<void> fetchAllProducts() async {
+    if (Get.isRegistered<HomeController>()) {
+      final homeCtrl = Get.find<HomeController>();
+      if (homeCtrl.products.isNotEmpty) {
+        allProducts.value = homeCtrl.products.map((p) => ProductModel(
+          id: p.id,
+          name: p.name,
+          category: p.category,
+          price: p.price,
+          discountPriceOrg: p.discountPriceOrg,
+          priceCurrency: p.priceCurrency,
+          stock: p.stock,
+          rating: p.rating,
+          totalReviews: p.totalReviews,
+          image: p.image,
+          images: p.images,
+          description: p.description,
+          brand: p.brand,
+        )).toList();
+        return;
+      }
+    }
     try {
       final response = await _apiClient.dio.get(
         ApiEndpoints.allHomepageProducts,

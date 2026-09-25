@@ -105,11 +105,16 @@ class CustomPopup {
               width: width,
               height: height,
               repeat: false,
+              errorBuilder: (context, error, stackTrace) => const Icon(
+                Icons.check_circle_rounded,
+                color: AppColors.primaryPurple,
+                size: 60,
+              ),
             ),
           ),
         ),
       ),
-      barrierDismissible: false,
+      barrierDismissible: true,
       barrierColor: Colors.black.withValues(alpha: 0.1),
     );
 

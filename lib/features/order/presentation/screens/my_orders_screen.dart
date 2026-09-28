@@ -4,6 +4,7 @@ import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../controllers/order_controller.dart';
+import '../../../../core/widgets/no_internet_widget.dart';
 import '../../data/models/order_model.dart';
 
 class MyOrdersScreen extends StatelessWidget {
@@ -29,6 +30,9 @@ class MyOrdersScreen extends StatelessWidget {
         ),
       ),
       body: Obx(() {
+        if (controller.isNoInternet.value && controller.orders.isEmpty) {
+          return NoInternetWidget(onRetry: controller.fetchMyOrders);
+        }
         if (controller.isLoading.value) {
           return const Center(child: CircularProgressIndicator(color: AppColors.primaryPurple));
         }
@@ -38,15 +42,22 @@ class MyOrdersScreen extends StatelessWidget {
             // Top Status Tabs (Daraz Style)
             Container(
               color: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  _buildTabItem(controller, 'all', 'All', controller.orders.length),
-                  _buildTabItem(controller, 'active', 'Active', controller.activeOrdersCount),
-                  _buildTabItem(controller, 'completed', 'Completed', controller.completedOrdersCount),
-                  _buildTabItem(controller, 'cancelled', 'Cancelled', controller.cancelledOrdersCount),
-                ],
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Row(
+                    children: [
+                      _buildTabItem(controller, 'all', 'All', controller.orders.length),
+                      const SizedBox(width: 8),
+                      _buildTabItem(controller, 'active', 'Active', controller.activeOrdersCount),
+                      const SizedBox(width: 8),
+                      _buildTabItem(controller, 'completed', 'Completed', controller.completedOrdersCount),
+                      const SizedBox(width: 8),
+                      _buildTabItem(controller, 'cancelled', 'Cancelled', controller.cancelledOrdersCount),
+                    ],
+                  ),
+                ),
               ),
             ),
             const Divider(height: 1, color: Colors.grey),
@@ -191,16 +202,23 @@ class MyOrdersScreen extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  children: [
-                    const Icon(Icons.storefront_outlined, size: 18, color: AppColors.darkText),
-                    const SizedBox(width: 6),
-                    Text(
-                      'Order #${order.id.length >= 8 ? order.id.substring(0, 8).toUpperCase() : (order.id.isNotEmpty ? order.id.toUpperCase() : 'N/A')}',
-                      style: AppTextStyles.bold.copyWith(fontSize: 13, color: AppColors.darkText),
-                    ),
-                  ],
+                Expanded(
+                  child: Row(
+                    children: [
+                      const Icon(Icons.storefront_outlined, size: 18, color: AppColors.darkText),
+                      const SizedBox(width: 6),
+                      Flexible(
+                        child: Text(
+                          'Order #${order.id.length >= 8 ? order.id.substring(0, 8).toUpperCase() : (order.id.isNotEmpty ? order.id.toUpperCase() : 'N/A')}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTextStyles.bold.copyWith(fontSize: 13, color: AppColors.darkText),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
+                const SizedBox(width: 8),
                 Text(
                   order.status.toUpperCase(),
                   style: AppTextStyles.bold.copyWith(fontSize: 12, color: statusColor),
@@ -297,20 +315,28 @@ class MyOrdersScreen extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      _formatDate(order.createdAt),
-                      style: AppTextStyles.medium.copyWith(fontSize: 11, color: AppColors.hintText),
+                    Expanded(
+                      child: Text(
+                        _formatDate(order.createdAt),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTextStyles.medium.copyWith(fontSize: 11, color: AppColors.hintText),
+                      ),
                     ),
-                    RichText(
-                      text: TextSpan(
-                        text: 'Total (${totalItemCount > 0 ? totalItemCount : order.items.length} ${totalItemCount == 1 ? 'item' : 'items'}): ',
-                        style: AppTextStyles.medium.copyWith(fontSize: 12, color: AppColors.darkText),
-                        children: [
-                          TextSpan(
-                            text: 'Rs. ${order.totalAmount.toStringAsFixed(0)}',
-                            style: AppTextStyles.bold.copyWith(fontSize: 14, color: AppColors.primaryPurple),
-                          ),
-                        ],
+                    const SizedBox(width: 8),
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: RichText(
+                        text: TextSpan(
+                          text: 'Total (${totalItemCount > 0 ? totalItemCount : order.items.length} ${totalItemCount == 1 ? 'item' : 'items'}): ',
+                          style: AppTextStyles.medium.copyWith(fontSize: 12, color: AppColors.darkText),
+                          children: [
+                            TextSpan(
+                              text: 'Rs. ${order.totalAmount.toStringAsFixed(0)}',
+                              style: AppTextStyles.bold.copyWith(fontSize: 14, color: AppColors.primaryPurple),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ],

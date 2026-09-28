@@ -7,6 +7,7 @@ import '../../../../core/utils/custom_popup.dart';
 import '../../../../core/utils/session_manager.dart';
 import '../../../cart/data/models/cart_item_model.dart';
 import '../../../cart/presentation/controllers/cart_controller.dart';
+import '../../../order/presentation/controllers/order_controller.dart';
 
 class CheckoutController extends GetxController {
   final ApiClient _apiClient = ApiClient();
@@ -52,9 +53,14 @@ class CheckoutController extends GetxController {
         await cartController.fetchCart();
       }
 
-      // Fetch saved address directly from backend API / SessionManager
-      final savedAddress = await SessionManager.fetchUserAddressFromBackend();
-      if (savedAddress != null && (savedAddress['addressLine']?.isNotEmpty ?? false)) {
+      // Fetch saved address directly from SessionManager / local persistent storage
+      final savedAddress = await SessionManager.getSavedAddress();
+      final hasAddressData = savedAddress != null && 
+          ((savedAddress['addressLine']?.isNotEmpty ?? false) || 
+           (savedAddress['phone']?.isNotEmpty ?? false) || 
+           (savedAddress['city']?.isNotEmpty ?? false));
+
+      if (hasAddressData) {
         fullNameController.text = savedAddress['fullName'] ?? SessionManager.fullName ?? '';
         phoneController.text = savedAddress['phone'] ?? '';
         addressLineController.text = savedAddress['addressLine'] ?? '';
@@ -250,6 +256,12 @@ class CheckoutController extends GetxController {
         );
         CustomPopup.showFastLottie('assets/lotties/done.json');
         cartController.fetchCart();
+        
+        final orderCtrl = Get.isRegistered<OrderController>() 
+            ? Get.find<OrderController>() 
+            : Get.put(OrderController());
+        await orderCtrl.fetchMyOrders();
+
         Get.offNamed('/my-orders');
         CustomPopup.showToast('Success', 'Order Placed Successfully!');
       } else {
@@ -263,6 +275,12 @@ class CheckoutController extends GetxController {
           country: finalCountry,
           postalCode: finalPostalCode,
         );
+
+        final orderCtrl = Get.isRegistered<OrderController>() 
+            ? Get.find<OrderController>() 
+            : Get.put(OrderController());
+        await orderCtrl.fetchMyOrders();
+
         Get.offNamed('/my-orders');
       }
     } catch (e) {

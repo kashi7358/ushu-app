@@ -7,6 +7,7 @@ import '../controllers/cart_controller.dart';
 import '../../data/models/cart_item_model.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/utils/custom_popup.dart';
+import '../../../../core/widgets/no_internet_widget.dart';
 import '../../../main_layout/presentation/controllers/main_layout_controller.dart';
 
 class CartScreen extends StatelessWidget {
@@ -29,6 +30,9 @@ class CartScreen extends StatelessWidget {
         centerTitle: true,
       ),
       body: Obx(() {
+        if (controller.isNoInternet.value && controller.cartItems.isEmpty) {
+          return NoInternetWidget(onRetry: controller.fetchCart);
+        }
         if (controller.isLoadingCart.value && controller.cartItems.isEmpty) {
           return Shimmer.fromColors(
             baseColor: Colors.grey.shade300,

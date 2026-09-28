@@ -18,6 +18,7 @@ class HomeController extends GetxController {
   final RxBool isBannerLoading = true.obs;
   final RxBool isFlashSaleLoading = true.obs;
   final RxBool isTrendingLoading = true.obs;
+  final RxBool isNoInternet = false.obs;
 
   late final GetHomeProductsUseCase _getHomeProductsUseCase;
   late final GetFlashSaleUseCase _getFlashSaleUseCase;
@@ -48,6 +49,7 @@ class HomeController extends GetxController {
   }
 
   Future<void> refreshHomeData() async {
+    isNoInternet.value = false;
     await Future.wait([
       fetchBannerProducts(),
       fetchProducts(),
@@ -73,8 +75,11 @@ class HomeController extends GetxController {
       isLoading.value = true;
       final result = await _getHomeProductsUseCase.execute();
       products.assignAll(result);
+      isNoInternet.value = false;
     } catch (e) {
-      // Handle silently so UI remains responsive
+      if (products.isEmpty) {
+        isNoInternet.value = true;
+      }
     } finally {
       isLoading.value = false;
     }

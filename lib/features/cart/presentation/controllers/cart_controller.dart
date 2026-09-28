@@ -10,6 +10,7 @@ class CartController extends GetxController {
   final ApiClient _apiClient = ApiClient();
   final RxBool isAddingToCart = false.obs;
   final RxBool isLoadingCart = false.obs;
+  final RxBool isNoInternet = false.obs;
 
   final RxList<CartItemModel> cartItems = <CartItemModel>[].obs;
 
@@ -111,6 +112,7 @@ class CartController extends GetxController {
   Future<void> fetchCart() async {
     try {
       isLoadingCart.value = true;
+      isNoInternet.value = false;
       final response = await _apiClient.dio.get(
         ApiEndpoints.getCart,
         options: Options(validateStatus: (status) => true),
@@ -121,6 +123,9 @@ class CartController extends GetxController {
         _updateCartItems(data);
       }
     } catch (e) {
+      if (cartItems.isEmpty) {
+        isNoInternet.value = true;
+      }
       print('Error fetching cart: $e');
     } finally {
       isLoadingCart.value = false;

@@ -50,9 +50,41 @@ class CategoriesScreen extends StatelessWidget {
                     ),
                     IconButton(
                       icon: const Icon(Icons.close, color: AppColors.darkText),
-                      onPressed: () => Navigator.pop(context),
+                      onPressed: () {
+                        controller.categorySearchQuery.value = '';
+                        Navigator.pop(context);
+                      },
                     ),
                   ],
+                ),
+              ),
+              
+              // Category Search Bar inside Sheet
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Container(
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: TextField(
+                    onChanged: (val) => controller.categorySearchQuery.value = val,
+                    decoration: InputDecoration(
+                      hintText: 'Search categories...',
+                      hintStyle: AppTextStyles.medium.copyWith(color: AppColors.hintText, fontSize: 13),
+                      prefixIcon: const Icon(Icons.search, size: 20, color: AppColors.hintText),
+                      suffixIcon: Obx(() => controller.categorySearchQuery.value.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear, size: 18, color: AppColors.hintText),
+                              onPressed: () => controller.categorySearchQuery.value = '',
+                            )
+                          : const SizedBox.shrink()),
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                    ),
+                    style: AppTextStyles.medium.copyWith(fontSize: 13, color: AppColors.darkText),
+                  ),
                 ),
               ),
               const Divider(height: 1),

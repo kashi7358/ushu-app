@@ -15,6 +15,7 @@ import '../../../../features/search/presentation/widgets/search_bottom_sheet.dar
 import 'package:shimmer/shimmer.dart';
 import 'top_selling_products_screen.dart';
 import 'for_you_products_screen.dart';
+import '../../../../core/widgets/no_internet_widget.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -367,6 +368,12 @@ class HomeScreen extends StatelessWidget {
             
             // For You Grid (Optimized Sliver)
             Obx(() {
+              if (controller.isNoInternet.value && controller.products.isEmpty) {
+                return SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: NoInternetWidget(onRetry: controller.refreshHomeData),
+                );
+              }
               if (controller.isLoading.value && controller.products.isEmpty) {
                 return SliverPadding(
                   padding: const EdgeInsets.symmetric(horizontal: AppDimensions.md),

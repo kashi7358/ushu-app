@@ -50,14 +50,14 @@ class ProfileScreen extends StatelessWidget {
                     children: [
                       // Avatar
                       Container(
-                        width: 70,
-                        height: 70,
+                        width: 50,
+                        height: 50,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           color: Colors.white,
-                          border: Border.all(color: Colors.white.withValues(alpha: 0.5), width: 3),
+                          border: Border.all(color: Colors.white.withValues(alpha: 0.5), width: 2),
                         ),
-                        child: const Icon(Icons.person, size: 40, color: AppColors.primaryPurple),
+                        child: const Icon(Icons.person, size: 28, color: AppColors.primaryPurple),
                       ),
                       const SizedBox(width: 16),
                       // User Info

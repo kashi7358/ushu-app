@@ -12,8 +12,9 @@ class ApiClient {
 
   ApiClient._internal() {
     _dio = Dio(BaseOptions(
-      connectTimeout: const Duration(seconds: 12),
-      receiveTimeout: const Duration(seconds: 12),
+      connectTimeout: const Duration(seconds: 35),
+      receiveTimeout: const Duration(seconds: 35),
+      sendTimeout: const Duration(seconds: 35),
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
@@ -59,6 +60,29 @@ class ApiClient {
           }
         }
         return handler.next(response);
+      },
+      onError: (DioException err, handler) async {
+        final isTimeout = err.type == DioExceptionType.connectionTimeout ||
+            err.type == DioExceptionType.receiveTimeout ||
+            err.type == DioExceptionType.sendTimeout ||
+            err.type == DioExceptionType.connectionError;
+
+        final extra = err.requestOptions.extra;
+        final int retryCount = extra['retry_count'] ?? 0;
+
+        if (isTimeout && retryCount < 2) {
+          extra['retry_count'] = retryCount + 1;
+          await Future.delayed(Duration(milliseconds: 1200 * (retryCount + 1)));
+          try {
+            final response = await _dio.fetch(err.requestOptions);
+            return handler.resolve(response);
+          } catch (e) {
+            if (e is DioException) {
+              return handler.next(e);
+            }
+          }
+        }
+        return handler.next(err);
       },
     ));
   }

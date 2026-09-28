@@ -11,6 +11,7 @@ class OrderController extends GetxController {
   
   final RxList<OrderModel> orders = <OrderModel>[].obs;
   final RxBool isLoading = false.obs;
+  final RxBool isNoInternet = false.obs;
   final RxString selectedTab = 'all'.obs;
 
   @override
@@ -64,6 +65,7 @@ class OrderController extends GetxController {
     
     try {
       isLoading.value = true;
+      isNoInternet.value = false;
       final response = await _apiClient.dio.get(ApiEndpoints.myOrders);
       
       final data = response.data;
@@ -95,8 +97,22 @@ class OrderController extends GetxController {
             }
           }
         }
+        // Sort orders by newest first (descending order)
+        orders.sort((a, b) {
+          try {
+            final dateA = DateTime.parse(a.createdAt);
+            final dateB = DateTime.parse(b.createdAt);
+            return dateB.compareTo(dateA);
+          } catch (_) {
+            return 0;
+          }
+        });
+        orders.refresh();
       }
     } catch (e) {
+      if (orders.isEmpty) {
+        isNoInternet.value = true;
+      }
       debugPrint('Error fetching orders: $e');
     } finally {
       isLoading.value = false;

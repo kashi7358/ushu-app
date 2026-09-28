@@ -21,6 +21,9 @@ class SessionManager {
     _fullName = await _storage.read(key: 'fullName');
     _token = await _storage.read(key: 'token');
 
+    // Load saved address from local storage on app startup
+    await getSavedAddress();
+
     if (_isLoggedIn) {
       fetchUserAddressFromBackend();
     }
@@ -41,6 +44,9 @@ class SessionManager {
       _token = token;
       await _storage.write(key: 'token', value: token);
     }
+
+    // Preserve and re-hydrate saved address
+    await getSavedAddress();
   }
 
   static Future<void> clearSession() async {
@@ -49,19 +55,13 @@ class SessionManager {
     _email = null;
     _fullName = null;
     _token = null;
-    _savedAddress = null;
 
     await _storage.delete(key: 'isLoggedIn');
     await _storage.delete(key: 'userId');
     await _storage.delete(key: 'email');
     await _storage.delete(key: 'fullName');
     await _storage.delete(key: 'token');
-    await _storage.delete(key: 'phone');
-    await _storage.delete(key: 'addressLine');
-    await _storage.delete(key: 'city');
-    await _storage.delete(key: 'province');
-    await _storage.delete(key: 'country');
-    await _storage.delete(key: 'postalCode');
+    // Note: Retain saved address in FlutterSecureStorage so user data persists permanently
   }
 
   static Map<String, String>? _savedAddress;
@@ -94,25 +94,36 @@ class SessionManager {
   }
 
   static Future<Map<String, String>?> getSavedAddress() async {
-    if (_savedAddress != null) return _savedAddress;
-    final addressLine = await _storage.read(key: 'addressLine');
-    if (addressLine == null || addressLine.isEmpty) {
-      return await fetchUserAddressFromBackend();
+    if (_savedAddress != null && 
+        ((_savedAddress!['addressLine']?.isNotEmpty ?? false) || (_savedAddress!['phone']?.isNotEmpty ?? false))) {
+      return _savedAddress;
     }
-    _savedAddress = {
-      'fullName': await _storage.read(key: 'fullName') ?? _fullName ?? '',
-      'phone': await _storage.read(key: 'phone') ?? '',
-      'addressLine': addressLine,
-      'city': await _storage.read(key: 'city') ?? '',
-      'province': await _storage.read(key: 'province') ?? '',
-      'country': await _storage.read(key: 'country') ?? 'Pakistan',
-      'postalCode': await _storage.read(key: 'postalCode') ?? '',
-    };
-    return _savedAddress;
+
+    final addressLine = await _storage.read(key: 'addressLine') ?? '';
+    final phone = await _storage.read(key: 'phone') ?? '';
+    final fullName = await _storage.read(key: 'fullName') ?? _fullName ?? '';
+    final city = await _storage.read(key: 'city') ?? '';
+    final province = await _storage.read(key: 'province') ?? '';
+    final country = await _storage.read(key: 'country') ?? 'Pakistan';
+    final postalCode = await _storage.read(key: 'postalCode') ?? '';
+
+    if (addressLine.isNotEmpty || phone.isNotEmpty || city.isNotEmpty) {
+      _savedAddress = {
+        'fullName': fullName,
+        'phone': phone,
+        'addressLine': addressLine,
+        'city': city,
+        'province': province,
+        'country': country,
+        'postalCode': postalCode,
+      };
+      return _savedAddress;
+    }
+    return await fetchUserAddressFromBackend();
   }
 
   static Future<Map<String, String>?> fetchUserAddressFromBackend() async {
-    if (!isLoggedIn) return null;
+    if (!isLoggedIn) return _savedAddress;
     try {
       final apiClient = ApiClient();
       final response = await apiClient.dio.get(
@@ -154,7 +165,21 @@ class SessionManager {
         }
       }
     } catch (e) {
-      // Return local cache if remote fetch fails
+      // Fallback to local device storage
+    }
+    
+    // Always fall back to locally saved device storage if remote backend returned empty or errored
+    final localAddrLine = await _storage.read(key: 'addressLine');
+    if (localAddrLine != null && localAddrLine.isNotEmpty) {
+      _savedAddress = {
+        'fullName': await _storage.read(key: 'fullName') ?? _fullName ?? '',
+        'phone': await _storage.read(key: 'phone') ?? '',
+        'addressLine': localAddrLine,
+        'city': await _storage.read(key: 'city') ?? '',
+        'province': await _storage.read(key: 'province') ?? '',
+        'country': await _storage.read(key: 'country') ?? 'Pakistan',
+        'postalCode': await _storage.read(key: 'postalCode') ?? '',
+      };
     }
     return _savedAddress;
   }

@@ -5,6 +5,7 @@ import '../../../../app/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../controllers/order_controller.dart';
 import '../../../../core/widgets/no_internet_widget.dart';
+import '../../../../core/utils/session_manager.dart';
 import '../../data/models/order_model.dart';
 
 class MyOrdersScreen extends StatelessWidget {
@@ -33,50 +34,55 @@ class MyOrdersScreen extends StatelessWidget {
         if (controller.isNoInternet.value && controller.orders.isEmpty) {
           return NoInternetWidget(onRetry: controller.fetchMyOrders);
         }
-        if (controller.isLoading.value) {
+        if (controller.isLoading.value && controller.orders.isEmpty) {
           return const Center(child: CircularProgressIndicator(color: AppColors.primaryPurple));
         }
 
-        return Column(
-          children: [
-            // Top Status Tabs (Daraz Style)
-            Container(
-              color: Colors.white,
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: Row(
-                    children: [
-                      _buildTabItem(controller, 'all', 'All', controller.orders.length),
-                      const SizedBox(width: 8),
-                      _buildTabItem(controller, 'active', 'Active', controller.activeOrdersCount),
-                      const SizedBox(width: 8),
-                      _buildTabItem(controller, 'completed', 'Completed', controller.completedOrdersCount),
-                      const SizedBox(width: 8),
-                      _buildTabItem(controller, 'cancelled', 'Cancelled', controller.cancelledOrdersCount),
-                    ],
+        return RefreshIndicator(
+          onRefresh: controller.fetchMyOrders,
+          color: AppColors.primaryPurple,
+          child: Column(
+            children: [
+              // Top Status Tabs (Daraz Style)
+              Container(
+                color: Colors.white,
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Row(
+                      children: [
+                        _buildTabItem(controller, 'all', 'All', controller.orders.length),
+                        const SizedBox(width: 8),
+                        _buildTabItem(controller, 'active', 'Active', controller.activeOrdersCount),
+                        const SizedBox(width: 8),
+                        _buildTabItem(controller, 'completed', 'Completed', controller.completedOrdersCount),
+                        const SizedBox(width: 8),
+                        _buildTabItem(controller, 'cancelled', 'Cancelled', controller.cancelledOrdersCount),
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
-            const Divider(height: 1, color: Colors.grey),
+              const Divider(height: 1, color: Colors.grey),
 
-            // Orders List
-            Expanded(
-              child: controller.filteredOrders.isEmpty
-                  ? _buildEmptyState(context, controller)
-                  : ListView.separated(
-                      padding: const EdgeInsets.all(12),
-                      itemCount: controller.filteredOrders.length,
-                      separatorBuilder: (context, index) => const SizedBox(height: 12),
-                      itemBuilder: (context, index) {
-                        final order = controller.filteredOrders[index];
-                        return _buildOrderCard(context, controller, order);
-                      },
-                    ),
-            ),
-          ],
+              // Orders List
+              Expanded(
+                child: controller.filteredOrders.isEmpty
+                    ? _buildEmptyState(context, controller)
+                    : ListView.separated(
+                        padding: const EdgeInsets.all(12),
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        itemCount: controller.filteredOrders.length,
+                        separatorBuilder: (context, index) => const SizedBox(height: 12),
+                        itemBuilder: (context, index) {
+                          final order = controller.filteredOrders[index];
+                          return _buildOrderCard(context, controller, order);
+                        },
+                      ),
+              ),
+            ],
+          ),
         );
       }),
     );
@@ -220,7 +226,7 @@ class MyOrdersScreen extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  order.status.toUpperCase(),
+                  order.status.replaceAll('_', ' ').replaceAll('-', ' ').toUpperCase(),
                   style: AppTextStyles.bold.copyWith(fontSize: 12, color: statusColor),
                 ),
               ],
@@ -367,58 +373,89 @@ class MyOrdersScreen extends StatelessWidget {
                   ),
                 ],
 
-                if (order.status.toLowerCase() != 'pending' &&
-                    order.status.toLowerCase() != 'cancelled' &&
+                if ((order.status.toLowerCase() == 'delivered' || order.status.toLowerCase() == 'completed') &&
                     order.items.isNotEmpty) ...[
                   const SizedBox(height: 10),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      SizedBox(
-                        height: 34,
-                        child: OutlinedButton(
-                          onPressed: () {
-                            Get.toNamed('/return-request', arguments: {
-                              'orderId': order.id,
-                              'orderItemId': order.items[0].id,
-                              'quantity': order.items[0].quantity,
-                            });
-                          },
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: AppColors.primaryPurple,
-                            side: const BorderSide(color: AppColors.primaryPurple),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-                            padding: const EdgeInsets.symmetric(horizontal: 14),
-                          ),
-                          child: Text(
-                            'Return Item',
-                            style: AppTextStyles.bold.copyWith(fontSize: 12, color: AppColors.primaryPurple),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      SizedBox(
-                        height: 34,
-                        child: ElevatedButton(
-                          onPressed: () {
-                            Get.toNamed('/write-review', arguments: {
-                              'productId': order.items[0].productId,
-                              'orderId': order.id,
-                            });
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primaryPurple,
-                            elevation: 0,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-                            padding: const EdgeInsets.symmetric(horizontal: 14),
-                          ),
-                          child: Text(
-                            'Write Review',
-                            style: AppTextStyles.bold.copyWith(fontSize: 12, color: Colors.white),
-                          ),
-                        ),
-                      ),
-                    ],
+                  Builder(
+                    builder: (context) {
+                      final bool alreadyReviewed = order.isReviewed || SessionManager.isReviewed(order.id, order.items[0].productId);
+                      return Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          if (order.canReturn) ...[
+                            SizedBox(
+                              height: 34,
+                              child: OutlinedButton(
+                                onPressed: () {
+                                  Get.toNamed('/return-request', arguments: {
+                                    'orderId': order.id,
+                                    'orderItemId': order.items[0].id,
+                                    'quantity': order.items[0].quantity,
+                                  });
+                                },
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: AppColors.primaryPurple,
+                                  side: const BorderSide(color: AppColors.primaryPurple),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                                ),
+                                child: Text(
+                                  'Return Item',
+                                  style: AppTextStyles.bold.copyWith(fontSize: 12, color: AppColors.primaryPurple),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                          ],
+                          if (!alreadyReviewed) ...[
+                            SizedBox(
+                              height: 34,
+                              child: ElevatedButton(
+                                onPressed: () async {
+                                  final res = await Get.toNamed('/write-review', arguments: {
+                                    'productId': order.items[0].productId,
+                                    'orderId': order.id,
+                                  });
+                                  if (res == true || SessionManager.isReviewed(order.id, order.items[0].productId)) {
+                                    controller.fetchMyOrders();
+                                  }
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.primaryPurple,
+                                  elevation: 0,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                                ),
+                                child: Text(
+                                  'Write Review',
+                                  style: AppTextStyles.bold.copyWith(fontSize: 12, color: Colors.white),
+                                ),
+                              ),
+                            ),
+                          ] else ...[
+                            SizedBox(
+                              height: 34,
+                              child: OutlinedButton.icon(
+                                onPressed: () {
+                                  Get.toNamed('/product-detail', arguments: order.items[0].productId);
+                                },
+                                icon: const Icon(Icons.star_rounded, size: 16, color: Colors.amber),
+                                label: Text(
+                                  'View Review',
+                                  style: AppTextStyles.bold.copyWith(fontSize: 12, color: AppColors.darkText),
+                                ),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: AppColors.darkText,
+                                  side: BorderSide(color: Colors.grey.shade300),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      );
+                    },
                   ),
                 ],
               ],
@@ -430,18 +467,29 @@ class MyOrdersScreen extends StatelessWidget {
   }
 
   Color _getStatusColor(String status) {
-    switch (status.toLowerCase()) {
+    final s = status.toLowerCase().replaceAll('_', ' ').replaceAll('-', ' ').trim();
+    switch (s) {
       case 'pending':
-      case 'active':
         return Colors.orange.shade800;
-      case 'shipped':
+      case 'confirmed':
       case 'processing':
+      case 'picked':
+      case 'picking':
+      case 'packed':
+        return Colors.amber.shade900;
+      case 'shipped':
+      case 'shipping':
+      case 'in transit':
+      case 'out for delivery':
+      case 'active':
         return Colors.blue.shade700;
       case 'delivered':
       case 'completed':
         return Colors.green.shade700;
       case 'cancelled':
       case 'canceled':
+      case 'returned':
+      case 'refunded':
         return Colors.red.shade700;
       default:
         return AppColors.primaryPurple;

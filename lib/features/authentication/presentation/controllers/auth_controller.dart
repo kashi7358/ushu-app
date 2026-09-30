@@ -18,6 +18,7 @@ import '../../data/repositories/auth_repository_impl.dart';
 class AuthController extends GetxController {
   final loginFormKey = GlobalKey<FormState>();
   final signupFormKey = GlobalKey<FormState>();
+  final forgetPasswordFormKey = GlobalKey<FormState>();
   final resetPasswordFormKey = GlobalKey<FormState>();
 
   // Login controllers
@@ -236,6 +237,8 @@ class AuthController extends GetxController {
   }
 
   Future<void> forgetPassword() async {
+    if (!forgetPasswordFormKey.currentState!.validate()) return;
+    
     final email = forgetPasswordEmailController.text.trim();
     if (email.isEmpty) {
       CustomPopup.showError('Oops!', 'Please enter your email');
@@ -247,11 +250,16 @@ class AuthController extends GetxController {
       
       await _forgetPasswordUseCase.execute(email);
 
-      CustomPopup.showSuccess('Success!', 'A password reset token has been sent to your email.');
-      
       forgetPasswordEmailController.clear();
-      // Navigate to Reset Password Screen so they can enter the token
-      Get.toNamed(AppRoutes.resetPassword);
+      
+      // Navigate back to Login screen
+      Get.offAllNamed(AppRoutes.login);
+      
+      // Show professional popup
+      CustomPopup.showSuccess(
+        'Email Sent Successfully',
+        'A password reset link has been sent to your email address. Please check your inbox and click the link to create a new password.',
+      );
     } catch (e) {
       final error = ExceptionHandler.handle(e);
       CustomPopup.showError('Oops!', error.message);

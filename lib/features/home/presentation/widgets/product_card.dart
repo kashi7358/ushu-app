@@ -131,19 +131,26 @@ class ProductCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 6),
                     
-                    // Rating & Brand
+                    // Rating & Review Count & Brand
                     Row(
                       children: [
                         const Icon(Icons.star, color: Colors.amber, size: 14),
                         const SizedBox(width: 4),
                         Text(
-                          product.rating.toString(),
-                          style: const TextStyle(color: Colors.grey, fontSize: 11, fontWeight: FontWeight.w500),
+                          product.rating > 0 ? product.rating.toStringAsFixed(1) : '0.0',
+                          style: const TextStyle(color: Colors.black87, fontSize: 11, fontWeight: FontWeight.bold),
                         ),
+                        if (product.totalReviews > 0) ...[
+                          const SizedBox(width: 3),
+                          Text(
+                            '(${product.totalReviews})',
+                            style: const TextStyle(color: Colors.grey, fontSize: 11, fontWeight: FontWeight.w500),
+                          ),
+                        ],
                         if (product.brand.isNotEmpty) ...[
-                          const SizedBox(width: 8),
-                          Container(width: 4, height: 4, decoration: const BoxDecoration(color: Colors.grey, shape: BoxShape.circle)),
-                          const SizedBox(width: 8),
+                          const SizedBox(width: 6),
+                          Container(width: 3, height: 3, decoration: const BoxDecoration(color: Colors.grey, shape: BoxShape.circle)),
+                          const SizedBox(width: 6),
                           Expanded(
                             child: Text(
                               product.brand,
@@ -170,7 +177,7 @@ class ProductCard extends StatelessWidget {
                           const SizedBox(width: 4),
                           Expanded(
                             child: Text(
-                              '${product.discountPriceOrg!.toStringAsFixed(0)}',
+                              product.discountPriceOrg!.toStringAsFixed(0),
                               style: const TextStyle(
                                 color: Colors.grey,
                                 fontSize: 10,

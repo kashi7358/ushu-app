@@ -13,6 +13,11 @@ class SessionManager {
   static String? _fullName;
   static String? _token;
 
+  static final Set<String> _reviewedKeys = {};
+  static final Set<String> _returnedOrders = {};
+
+  static String get _addrPrefix => (_userId != null && _userId!.isNotEmpty) ? '${_userId}_' : '';
+
   static Future<void> init() async {
     final loggedInStr = await _storage.read(key: 'isLoggedIn');
     _isLoggedIn = loggedInStr == 'true';
@@ -20,6 +25,9 @@ class SessionManager {
     _email = await _storage.read(key: 'email');
     _fullName = await _storage.read(key: 'fullName');
     _token = await _storage.read(key: 'token');
+
+    await loadReviewedItems();
+    await loadReturnedItems();
 
     // Load saved address from local storage on app startup
     await getSavedAddress();
@@ -29,11 +37,59 @@ class SessionManager {
     }
   }
 
+  static Future<void> loadReturnedItems() async {
+    final prefix = _addrPrefix;
+    final str = await _storage.read(key: '${prefix}returned_orders') ?? await _storage.read(key: 'returned_orders') ?? '';
+    if (str.isNotEmpty) {
+      _returnedOrders.addAll(str.split(',').where((e) => e.trim().isNotEmpty));
+    }
+  }
+
+  static bool isReturned(String orderId) {
+    if (orderId.isEmpty) return false;
+    return _returnedOrders.contains(orderId);
+  }
+
+  static Future<void> markReturned(String orderId) async {
+    if (orderId.isEmpty) return;
+    _returnedOrders.add(orderId);
+    final prefix = _addrPrefix;
+    await _storage.write(key: '${prefix}returned_orders', value: _returnedOrders.join(','));
+  }
+
+  static Future<void> loadReviewedItems() async {
+    final prefix = _addrPrefix;
+    final str = await _storage.read(key: '${prefix}reviewed_items') ?? await _storage.read(key: 'reviewed_items') ?? '';
+    if (str.isNotEmpty) {
+      _reviewedKeys.addAll(str.split(',').where((e) => e.trim().isNotEmpty));
+    }
+  }
+
+  static bool isReviewed(String orderId, String productId) {
+    if (orderId.isEmpty) return false;
+    final key1 = '${orderId}_$productId';
+    final key2 = orderId;
+    return _reviewedKeys.contains(key1) || _reviewedKeys.contains(key2);
+  }
+
+  static Future<void> markReviewed(String orderId, String productId) async {
+    if (orderId.isEmpty) return;
+    final key1 = '${orderId}_$productId';
+    final key2 = orderId;
+    _reviewedKeys.add(key1);
+    _reviewedKeys.add(key2);
+    final prefix = _addrPrefix;
+    await _storage.write(key: '${prefix}reviewed_items', value: _reviewedKeys.join(','));
+  }
+
   static Future<void> saveSession(String userId, String email, String fullName, {String? token}) async {
     _isLoggedIn = true;
     _userId = userId;
     _email = email;
     _fullName = fullName;
+    _savedAddress = null;
+    _reviewedKeys.clear();
+    _returnedOrders.clear();
 
     await _storage.write(key: 'isLoggedIn', value: 'true');
     await _storage.write(key: 'userId', value: userId);
@@ -45,7 +101,10 @@ class SessionManager {
       await _storage.write(key: 'token', value: token);
     }
 
-    // Preserve and re-hydrate saved address
+    await loadReviewedItems();
+    await loadReturnedItems();
+
+    // Re-hydrate saved address for this specific logged-in user
     await getSavedAddress();
   }
 
@@ -55,13 +114,15 @@ class SessionManager {
     _email = null;
     _fullName = null;
     _token = null;
+    _savedAddress = null;
+    _reviewedKeys.clear();
+    _returnedOrders.clear();
 
     await _storage.delete(key: 'isLoggedIn');
     await _storage.delete(key: 'userId');
     await _storage.delete(key: 'email');
     await _storage.delete(key: 'fullName');
     await _storage.delete(key: 'token');
-    // Note: Retain saved address in FlutterSecureStorage so user data persists permanently
   }
 
   static Map<String, String>? _savedAddress;
@@ -84,13 +145,14 @@ class SessionManager {
       'country': country,
       'postalCode': postalCode,
     };
-    await _storage.write(key: 'fullName', value: fullName);
-    await _storage.write(key: 'phone', value: phone);
-    await _storage.write(key: 'addressLine', value: addressLine);
-    await _storage.write(key: 'city', value: city);
-    await _storage.write(key: 'province', value: province);
-    await _storage.write(key: 'country', value: country);
-    await _storage.write(key: 'postalCode', value: postalCode);
+    final prefix = _addrPrefix;
+    await _storage.write(key: '${prefix}fullName', value: fullName);
+    await _storage.write(key: '${prefix}phone', value: phone);
+    await _storage.write(key: '${prefix}addressLine', value: addressLine);
+    await _storage.write(key: '${prefix}city', value: city);
+    await _storage.write(key: '${prefix}province', value: province);
+    await _storage.write(key: '${prefix}country', value: country);
+    await _storage.write(key: '${prefix}postalCode', value: postalCode);
   }
 
   static Future<Map<String, String>?> getSavedAddress() async {
@@ -99,13 +161,14 @@ class SessionManager {
       return _savedAddress;
     }
 
-    final addressLine = await _storage.read(key: 'addressLine') ?? '';
-    final phone = await _storage.read(key: 'phone') ?? '';
-    final fullName = await _storage.read(key: 'fullName') ?? _fullName ?? '';
-    final city = await _storage.read(key: 'city') ?? '';
-    final province = await _storage.read(key: 'province') ?? '';
-    final country = await _storage.read(key: 'country') ?? 'Pakistan';
-    final postalCode = await _storage.read(key: 'postalCode') ?? '';
+    final prefix = _addrPrefix;
+    final addressLine = await _storage.read(key: '${prefix}addressLine') ?? '';
+    final phone = await _storage.read(key: '${prefix}phone') ?? '';
+    final fullName = await _storage.read(key: '${prefix}fullName') ?? _fullName ?? '';
+    final city = await _storage.read(key: '${prefix}city') ?? '';
+    final province = await _storage.read(key: '${prefix}province') ?? '';
+    final country = await _storage.read(key: '${prefix}country') ?? 'Pakistan';
+    final postalCode = await _storage.read(key: '${prefix}postalCode') ?? '';
 
     if (addressLine.isNotEmpty || phone.isNotEmpty || city.isNotEmpty) {
       _savedAddress = {
@@ -168,18 +231,21 @@ class SessionManager {
       // Fallback to local device storage
     }
     
-    // Always fall back to locally saved device storage if remote backend returned empty or errored
-    final localAddrLine = await _storage.read(key: 'addressLine');
+    // Always fall back to locally saved device storage for this specific user prefix
+    final prefix = _addrPrefix;
+    final localAddrLine = await _storage.read(key: '${prefix}addressLine');
     if (localAddrLine != null && localAddrLine.isNotEmpty) {
       _savedAddress = {
-        'fullName': await _storage.read(key: 'fullName') ?? _fullName ?? '',
-        'phone': await _storage.read(key: 'phone') ?? '',
+        'fullName': await _storage.read(key: '${prefix}fullName') ?? _fullName ?? '',
+        'phone': await _storage.read(key: '${prefix}phone') ?? '',
         'addressLine': localAddrLine,
-        'city': await _storage.read(key: 'city') ?? '',
-        'province': await _storage.read(key: 'province') ?? '',
-        'country': await _storage.read(key: 'country') ?? 'Pakistan',
-        'postalCode': await _storage.read(key: 'postalCode') ?? '',
+        'city': await _storage.read(key: '${prefix}city') ?? '',
+        'province': await _storage.read(key: '${prefix}province') ?? '',
+        'country': await _storage.read(key: '${prefix}country') ?? 'Pakistan',
+        'postalCode': await _storage.read(key: '${prefix}postalCode') ?? '',
       };
+    } else {
+      _savedAddress = null;
     }
     return _savedAddress;
   }

@@ -236,6 +236,20 @@ class ProfileScreen extends StatelessWidget {
                       onTap: () => Get.toNamed('/my-returns'),
                     ),
                     _buildDivider(),
+                    _buildMenuTile(
+                      Icons.shield_outlined,
+                      'Privacy Policy',
+                      '',
+                      onTap: () => Get.toNamed('/privacy-policy'),
+                    ),
+                    _buildDivider(),
+                    _buildMenuTile(
+                      Icons.info_outline,
+                      'About Us',
+                      '',
+                      onTap: () => Get.toNamed('/about-us'),
+                    ),
+                    _buildDivider(),
                     SessionManager.isLoggedIn 
                       ? _buildMenuTile(
                           Icons.logout_outlined, 

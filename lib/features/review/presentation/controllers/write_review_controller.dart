@@ -6,6 +6,8 @@ import 'dart:io';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/network/api_endpoints.dart';
 import '../../../../core/utils/custom_popup.dart';
+import '../../../../core/utils/session_manager.dart';
+import '../../../order/presentation/controllers/order_controller.dart';
 
 class WriteReviewController extends GetxController {
   final ApiClient _apiClient = ApiClient();
@@ -24,8 +26,8 @@ class WriteReviewController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    productId = Get.arguments['productId'];
-    orderId = Get.arguments['orderId'];
+    productId = Get.arguments['productId'] ?? '';
+    orderId = Get.arguments['orderId'] ?? '';
   }
 
   @override
@@ -80,7 +82,7 @@ class WriteReviewController extends GetxController {
 
       for (var file in selectedImages) {
         formData.files.add(MapEntry(
-          'images', // Key might be 'images' or 'images[]', assuming 'images' for now based on user prompt
+          'images',
           await dio.MultipartFile.fromFile(file.path, filename: file.path.split('/').last),
         ));
       }
@@ -97,11 +99,39 @@ class WriteReviewController extends GetxController {
       );
 
       final data = response.data;
-      if (data != null && data['success'] == true) {
+      final String msg = (data?['message'] ?? '').toString();
+      final bool isSuccess = response.statusCode == 200 ||
+          response.statusCode == 201 ||
+          (data != null && (data['success'] == true || data['status'] == 'success'));
+
+      if (isSuccess) {
+        await SessionManager.markReviewed(orderId, productId);
+
+        if (Get.isRegistered<OrderController>()) {
+          Get.find<OrderController>().fetchMyOrders();
+        }
+
         CustomPopup.showToast('Success', 'Review submitted successfully!');
-        Get.back(result: true);
+        
+        Get.until((route) => Get.currentRoute == '/my-orders' || Get.currentRoute == '/main');
+        if (Get.currentRoute != '/my-orders') {
+          Get.offNamed('/my-orders');
+        }
+      } else if (msg.toLowerCase().contains('already reviewed') || msg.toLowerCase().contains('already review')) {
+        await SessionManager.markReviewed(orderId, productId);
+
+        if (Get.isRegistered<OrderController>()) {
+          Get.find<OrderController>().fetchMyOrders();
+        }
+
+        CustomPopup.showToast('Notice', 'You have already reviewed this product for this order.');
+
+        Get.until((route) => Get.currentRoute == '/my-orders' || Get.currentRoute == '/main');
+        if (Get.currentRoute != '/my-orders') {
+          Get.offNamed('/my-orders');
+        }
       } else {
-        CustomPopup.showToast('Failed', data['message'] ?? 'Could not submit review', isError: true);
+        CustomPopup.showToast('Failed', msg.isNotEmpty ? msg : 'Could not submit review', isError: true);
       }
     } catch (e) {
       CustomPopup.showToast('Error', 'An error occurred while submitting review', isError: true);

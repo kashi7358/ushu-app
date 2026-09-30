@@ -64,6 +64,31 @@ class ProductModel extends ProductEntity {
       sId = json['createdBy'] is Map ? json['createdBy']['_id']?.toString() : json['createdBy']?.toString();
     }
 
+    num rawRating = json['rating'] ??
+        json['ratings'] ??
+        json['averageRating'] ??
+        json['avgRating'] ??
+        json['stars'] ??
+        json['ratingAverage'] ??
+        0;
+
+    int rawReviews = 0;
+    if (json['totalReviews'] != null) {
+      rawReviews = parseNum(json['totalReviews']).toInt();
+    } else if (json['numOfReviews'] != null) {
+      rawReviews = parseNum(json['numOfReviews']).toInt();
+    } else if (json['numReviews'] != null) {
+      rawReviews = parseNum(json['numReviews']).toInt();
+    } else if (json['reviewsCount'] != null) {
+      rawReviews = parseNum(json['reviewsCount']).toInt();
+    } else if (json['ratingsCount'] != null) {
+      rawReviews = parseNum(json['ratingsCount']).toInt();
+    } else if (json['reviewCount'] != null) {
+      rawReviews = parseNum(json['reviewCount']).toInt();
+    } else if (json['reviews'] != null && json['reviews'] is List) {
+      rawReviews = (json['reviews'] as List).length;
+    }
+
     return ProductModel(
       id: json['_id']?.toString() ?? json['id']?.toString() ?? '',
       name: json['name']?.toString() ?? json['title']?.toString() ?? '',
@@ -76,8 +101,8 @@ class ProductModel extends ProductEntity {
       brand: json['brand']?.toString() ?? '',
       stock: parseNum(json['stock']).toInt(),
       image: mainImage,
-      rating: parseNum(json['rating']).toDouble(),
-      totalReviews: parseNum(json['totalReviews']).toInt(),
+      rating: parseNum(rawRating).toDouble(),
+      totalReviews: rawReviews,
       description: json['description']?.toString(),
       images: parsedImages,
       storeName: sName,

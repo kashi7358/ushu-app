@@ -33,7 +33,7 @@ class ForgetPasswordScreen extends StatelessWidget {
               child: ConstrainedBox(
                 constraints: BoxConstraints(minHeight: constraints.maxHeight - 50),
                 child: Form(
-                  key: GlobalKey<FormState>(), // Dedicated form key if needed, or use controller's
+                  key: controller.forgetPasswordFormKey,
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -65,7 +65,7 @@ class ForgetPasswordScreen extends StatelessWidget {
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: AppDimensions.sm),
                         child: Text(
-                          'No worries! Enter your registered email address and we will send you a secure reset token.',
+                          'No worries! Enter your registered email address and we will send you a secure password reset link.',
                           style: AppTextStyles.regular.copyWith(
                             color: AppColors.hintText,
                             height: 1.5,

@@ -2,6 +2,8 @@ import 'package:get/get.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/network/api_endpoints.dart';
 import '../../../../core/utils/custom_popup.dart';
+import '../../../../core/utils/session_manager.dart';
+import '../../../order/presentation/controllers/order_controller.dart';
 import 'package:flutter/material.dart';
 
 import 'package:dio/dio.dart' as dio;
@@ -67,7 +69,11 @@ class ReturnController extends GetxController {
 
       CustomPopup.hideLoading();
 
-      if (response.statusCode == 200 || response.statusCode == 201 || (response.data['success'] == true)) {
+      if (response.statusCode == 200 || response.statusCode == 201 || (response.data != null && response.data['success'] == true)) {
+        await SessionManager.markReturned(orderId);
+        if (Get.isRegistered<OrderController>()) {
+          Get.find<OrderController>().fetchMyOrders();
+        }
         CustomPopup.showSuccess('Success', 'Return request submitted successfully!');
         Get.back(); // close the form
         fetchBuyerReturnRequests(); // Refresh list

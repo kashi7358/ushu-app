@@ -9,9 +9,121 @@ import '../controllers/product_detail_controller.dart';
 import '../../../cart/presentation/controllers/cart_controller.dart';
 import '../../../wishlist/presentation/controllers/wishlist_controller.dart';
 import '../../../chatbot/presentation/screens/chatbot_screen.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:share_plus/share_plus.dart';
 
 class ProductDetailScreen extends StatelessWidget {
   const ProductDetailScreen({super.key});
+
+  void _showShareOptions(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          child: Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Share via',
+                  style: AppTextStyles.bold.copyWith(fontSize: 18, color: AppColors.darkText),
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _buildShareIcon(
+                      icon: FontAwesomeIcons.whatsapp,
+                      color: const Color(0xFF25D366),
+                      label: 'WhatsApp',
+                      onTap: () {
+                        Get.back();
+                        final product = Get.find<ProductDetailController>().product.value;
+                        final shareText = 'Check out ${product?.name ?? 'this product'} on Ushu!';
+                        Share.share(shareText);
+                      },
+                    ),
+                    _buildShareIcon(
+                      icon: FontAwesomeIcons.facebook,
+                      color: const Color(0xFF1877F2),
+                      label: 'Facebook',
+                      onTap: () {
+                        Get.back();
+                        final product = Get.find<ProductDetailController>().product.value;
+                        final shareText = 'Check out ${product?.name ?? 'this product'} on Ushu!';
+                        Share.share(shareText);
+                      },
+                    ),
+                    _buildShareIcon(
+                      icon: FontAwesomeIcons.instagram,
+                      color: const Color(0xFFE4405F),
+                      isInstagram: true,
+                      label: 'Instagram',
+                      onTap: () {
+                        Get.back();
+                        final product = Get.find<ProductDetailController>().product.value;
+                        final shareText = 'Check out ${product?.name ?? 'this product'} on Ushu!';
+                        Share.share(shareText);
+                      },
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildShareIcon({
+    required dynamic icon,
+    required Color color,
+    required String label,
+    required VoidCallback onTap,
+    bool isInstagram = false,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: isInstagram ? Colors.transparent : color.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: isInstagram
+                ? ShaderMask(
+                    shaderCallback: (Rect bounds) {
+                      return const LinearGradient(
+                        colors: [
+                          Color(0xFFf09433),
+                          Color(0xFFe6683c),
+                          Color(0xFFdc2743),
+                          Color(0xFFcc2366),
+                          Color(0xFFbc1888)
+                        ],
+                        begin: Alignment.bottomLeft,
+                        end: Alignment.topRight,
+                      ).createShader(bounds);
+                    },
+                    child: FaIcon(icon, color: Colors.white, size: 30),
+                  )
+                : FaIcon(icon, color: color, size: 30),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            label,
+            style: AppTextStyles.medium.copyWith(fontSize: 12, color: AppColors.darkText),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -61,7 +173,9 @@ class ProductDetailScreen extends StatelessWidget {
             decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.3), shape: BoxShape.circle),
             child: IconButton(
               icon: const Icon(Icons.share, color: AppColors.white, size: 20),
-              onPressed: () {},
+              onPressed: () {
+                _showShareOptions(context);
+              },
             ),
           ),
         ],

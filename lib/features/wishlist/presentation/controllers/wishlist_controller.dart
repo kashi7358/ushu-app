@@ -100,7 +100,7 @@ class WishlistController extends GetxController {
     if (isAlreadyWishlisted) {
       wishlistedProductIds.remove(productId);
       wishlistProducts.removeWhere((p) => p.id == productId);
-      CustomPopup.showFastLottie('assets/lotties/done.json');
+      CustomPopup.showFastLottie('assets/lotties/delete.json');
     } else {
       wishlistedProductIds.add(productId);
       CustomPopup.showFastLottie('assets/lotties/done.json');

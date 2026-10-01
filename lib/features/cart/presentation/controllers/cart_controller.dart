@@ -135,7 +135,7 @@ class CartController extends GetxController {
   Future<void> removeFromCart(String itemId) async {
     // Optimistic UI Update: immediately remove from UI & show lottie
     cartItems.removeWhere((item) => item.id == itemId);
-    CustomPopup.showFastLottie('assets/lotties/done.json');
+    CustomPopup.showFastLottie('assets/lotties/delete.json');
 
     try {
       final response = await _apiClient.dio.delete(

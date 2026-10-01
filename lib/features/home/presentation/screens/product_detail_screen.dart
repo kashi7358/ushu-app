@@ -9,7 +9,7 @@ import '../controllers/product_detail_controller.dart';
 import '../../../cart/presentation/controllers/cart_controller.dart';
 import '../../../wishlist/presentation/controllers/wishlist_controller.dart';
 import '../../../chatbot/presentation/screens/chatbot_screen.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:share_plus/share_plus.dart';
 
 class ProductDetailScreen extends StatelessWidget {
@@ -35,7 +35,7 @@ class ProductDetailScreen extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
                     _buildShareIcon(
-                      icon: FontAwesomeIcons.whatsapp,
+                      assetPath: 'assets/images/whatsapp.svg',
                       color: const Color(0xFF25D366),
                       label: 'WhatsApp',
                       onTap: () {
@@ -46,7 +46,7 @@ class ProductDetailScreen extends StatelessWidget {
                       },
                     ),
                     _buildShareIcon(
-                      icon: FontAwesomeIcons.facebook,
+                      assetPath: 'assets/images/facebook.svg',
                       color: const Color(0xFF1877F2),
                       label: 'Facebook',
                       onTap: () {
@@ -57,9 +57,8 @@ class ProductDetailScreen extends StatelessWidget {
                       },
                     ),
                     _buildShareIcon(
-                      icon: FontAwesomeIcons.instagram,
+                      assetPath: 'assets/images/instagram.svg',
                       color: const Color(0xFFE4405F),
-                      isInstagram: true,
                       label: 'Instagram',
                       onTap: () {
                         Get.back();
@@ -79,11 +78,10 @@ class ProductDetailScreen extends StatelessWidget {
   }
 
   Widget _buildShareIcon({
-    required dynamic icon,
+    required String assetPath,
     required Color color,
     required String label,
     required VoidCallback onTap,
-    bool isInstagram = false,
   }) {
     return GestureDetector(
       onTap: onTap,
@@ -93,27 +91,16 @@ class ProductDetailScreen extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: isInstagram ? Colors.transparent : color.withValues(alpha: 0.1),
+              color: color.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
-            child: isInstagram
-                ? ShaderMask(
-                    shaderCallback: (Rect bounds) {
-                      return const LinearGradient(
-                        colors: [
-                          Color(0xFFf09433),
-                          Color(0xFFe6683c),
-                          Color(0xFFdc2743),
-                          Color(0xFFcc2366),
-                          Color(0xFFbc1888)
-                        ],
-                        begin: Alignment.bottomLeft,
-                        end: Alignment.topRight,
-                      ).createShader(bounds);
-                    },
-                    child: FaIcon(icon, color: Colors.white, size: 30),
-                  )
-                : FaIcon(icon, color: color, size: 30),
+            child: SizedBox(
+              width: 30,
+              height: 30,
+              child: SvgPicture.asset(
+                assetPath,
+              ),
+            ),
           ),
           const SizedBox(height: 8),
           Text(

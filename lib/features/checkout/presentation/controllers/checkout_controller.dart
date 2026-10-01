@@ -245,6 +245,27 @@ class CheckoutController extends GetxController {
 
       final data = response.data;
       if (data != null && (data['success'] == true || response.statusCode == 200 || response.statusCode == 201)) {
+        // Silently save address to backend profile so it's available on web/other devices
+        try {
+          await _apiClient.dio.post(
+            ApiEndpoints.addAddress,
+            data: {
+              'fullName': finalFullName,
+              'phone': finalPhone,
+              'addressLine': finalAddress,
+              'address': finalAddress,
+              'city': finalCity,
+              'province': finalProvince,
+              'state': finalProvince,
+              'country': finalCountry,
+              'postalCode': finalPostalCode,
+              'zipCode': finalPostalCode,
+              'isDefault': true,
+            },
+            options: Options(validateStatus: (status) => true),
+          );
+        } catch (_) {}
+
         await SessionManager.saveAddressData(
           fullName: finalFullName,
           phone: finalPhone,

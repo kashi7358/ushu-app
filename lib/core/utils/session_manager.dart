@@ -196,7 +196,7 @@ class SessionManager {
 
       final data = response.data;
       if (data != null && (data['success'] == true || response.statusCode == 200)) {
-        final List addresses = data['addresses'] ?? data['data'] ?? (data is List ? data : []);
+        final List addresses = data['addresses'] ?? data['address'] ?? data['data'] ?? (data is List ? data : []);
         if (addresses.isNotEmpty) {
           final defaultAddr = addresses.firstWhere((a) => a['isDefault'] == true, orElse: () => addresses.first);
           if (defaultAddr is Map) {

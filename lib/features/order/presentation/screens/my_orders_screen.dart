@@ -412,6 +412,9 @@ class MyOrdersScreen extends StatelessWidget {
                               height: 34,
                               child: ElevatedButton(
                                 onPressed: () async {
+                                  final isAlreadyReviewed = await controller.checkAndNavigateToReview(order.id, order.items[0].productId);
+                                  if (isAlreadyReviewed) return;
+
                                   final res = await Get.toNamed('/write-review', arguments: {
                                     'productId': order.items[0].productId,
                                     'orderId': order.id,

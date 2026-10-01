@@ -143,14 +143,34 @@ class OrderModel {
         }
       }
     }
+    bool itemReviewed = false;
+    if (itemsList.isNotEmpty) {
+      final firstItem = itemsList[0];
+      if (firstItem is Map) {
+        itemReviewed = firstItem['isReviewed'] == true ||
+            firstItem['isReviewed']?.toString() == 'true' ||
+            firstItem['reviewed'] == true ||
+            firstItem['reviewed']?.toString() == 'true' ||
+            firstItem['hasReview'] == true ||
+            firstItem['hasReview']?.toString() == 'true' ||
+            firstItem['alreadyReviewed'] == true ||
+            firstItem['alreadyReviewed']?.toString() == 'true';
+      }
+    }
 
     bool hasBeenReviewed = json['isReviewed'] == true ||
+        json['isReviewed']?.toString() == 'true' ||
         json['reviewed'] == true ||
+        json['reviewed']?.toString() == 'true' ||
         json['hasReview'] == true ||
+        json['hasReview']?.toString() == 'true' ||
         json['isReviewedByUser'] == true ||
+        json['isReviewedByUser']?.toString() == 'true' ||
         json['alreadyReviewed'] == true ||
-        json['reviewStatus'] == 'reviewed' ||
-        json['reviewStatus'] == 'completed' ||
+        json['alreadyReviewed']?.toString() == 'true' ||
+        json['reviewStatus']?.toString().toLowerCase() == 'reviewed' ||
+        json['reviewStatus']?.toString().toLowerCase() == 'completed' ||
+        itemReviewed ||
         SessionManager.isReviewed(ordId, prodId);
 
     if (hasBeenReviewed && ordId.isNotEmpty) {

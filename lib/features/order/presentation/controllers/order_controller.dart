@@ -176,4 +176,37 @@ class OrderController extends GetxController {
       CustomPopup.showToast('Success', 'Order cancelled successfully');
     }
   }
+
+  Future<bool> checkAndNavigateToReview(String orderId, String productId) async {
+    CustomPopup.showLoading('Checking...');
+    try {
+      final response = await _apiClient.dio.get(ApiEndpoints.getReviews(productId), options: Options(validateStatus: (status) => true));
+      final data = response.data;
+      if (data != null) {
+        final List list = data['reviews'] ?? data['data'] ?? (data is List ? data : []);
+        final currentUserId = SessionManager.userId;
+        bool found = false;
+        if (currentUserId != null) {
+          for (var rev in list) {
+            final user = rev['user'] ?? rev['buyer'];
+            if (user is Map) {
+              final uid = user['_id'] ?? user['id'] ?? user['userId'];
+              if (uid == currentUserId) found = true;
+            } else if (user.toString() == currentUserId) {
+              found = true;
+            }
+          }
+        }
+        if (found) {
+          await SessionManager.markReviewed(orderId, productId);
+          Get.back(); // hide loading
+          CustomPopup.showToast('Notice', 'You have already reviewed this product.');
+          fetchMyOrders();
+          return true; // Already reviewed
+        }
+      }
+    } catch (_) {}
+    Get.back(); // hide loading
+    return false; // Not reviewed
+  }
 }

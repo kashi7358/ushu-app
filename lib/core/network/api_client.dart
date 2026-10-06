@@ -21,16 +21,16 @@ class ApiClient {
       },
     ));
 
-    _dio.httpClientAdapter = IOHttpClientAdapter(
-      createHttpClient: () {
-        final client = HttpClient();
-        client.badCertificateCallback =
-            (X509Certificate cert, String host, int port) => true;
-        return client;
-      },
-    );
-
     if (kDebugMode) {
+      _dio.httpClientAdapter = IOHttpClientAdapter(
+        createHttpClient: () {
+          final client = HttpClient();
+          client.badCertificateCallback =
+              (X509Certificate cert, String host, int port) => true;
+          return client;
+        },
+      );
+
       _dio.interceptors.add(LogInterceptor(
         request: true,
         requestHeader: false,
@@ -62,6 +62,10 @@ class ApiClient {
         return handler.next(response);
       },
       onError: (DioException err, handler) async {
+        if (err.response?.statusCode == 401) {
+          await SessionManager.clearSession();
+        }
+
         final isTimeout = err.type == DioExceptionType.connectionTimeout ||
             err.type == DioExceptionType.receiveTimeout ||
             err.type == DioExceptionType.sendTimeout ||

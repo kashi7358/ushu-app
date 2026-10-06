@@ -18,8 +18,15 @@ class ExceptionHandler {
           final statusCode = error.response?.statusCode;
           final responseData = error.response?.data;
           String message = 'Something went wrong';
-          if (responseData != null && responseData is Map && responseData['message'] != null) {
-            message = responseData['message'];
+          if (responseData != null && responseData is Map) {
+            final rawMsg = responseData['message'] ?? responseData['error'] ?? responseData['msg'];
+            if (rawMsg is List) {
+              message = rawMsg.join(', ');
+            } else if (rawMsg != null) {
+              message = rawMsg.toString();
+            }
+          } else if (responseData is String && responseData.isNotEmpty) {
+            message = responseData;
           }
           return ApiException(message, statusCode: statusCode);
         case DioExceptionType.connectionError:

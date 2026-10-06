@@ -14,7 +14,6 @@ class AppTheme {
         primary: AppColors.primaryPurple,
         secondary: AppColors.accentOrange,
         error: AppColors.error,
-        background: AppColors.lightBackground,
         surface: AppColors.white,
       ),
       textTheme: TextTheme(

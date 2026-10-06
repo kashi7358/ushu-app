@@ -5,7 +5,7 @@ import 'app_colors.dart';
 class AppTextStyles {
   AppTextStyles._();
 
-  static TextStyle _baseTextStyle = GoogleFonts.poppins(
+  static final TextStyle _baseTextStyle = GoogleFonts.poppins(
     color: AppColors.darkText,
   );
 

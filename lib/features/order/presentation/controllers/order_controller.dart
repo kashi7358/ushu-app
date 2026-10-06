@@ -208,6 +208,7 @@ class OrderController extends GetxController {
               ) &&
               o.items.isNotEmpty,
         )
+        .take(10)
         .toList();
 
     bool hasChanges = false;
@@ -274,39 +275,35 @@ class OrderController extends GetxController {
   }
 
   Future<void> cancelOrder(String orderId) async {
+    CustomPopup.showLoading('Cancelling order...');
     try {
       final response = await _apiClient.dio.patch(
         ApiEndpoints.cancelOrder(orderId),
-        options: Options(
-          validateStatus: (status) => status != null && status < 500,
-        ),
       );
 
-      final data = response.data;
-      final bool isSuccess =
-          response.statusCode == 200 ||
-          response.statusCode == 201 ||
-          (data != null &&
-              (data['success'] == true ||
-                  data['status'] == 'success' ||
-                  data['message'].toString().toLowerCase().contains('cancel') ||
-                  data['message'].toString().toLowerCase().contains(
-                    'success',
-                  )));
+      CustomPopup.hideLoading();
 
-      if (isSuccess) {
+      final data = response.data;
+      if (data != null && (data['success'] == true || data['status'] == 'success')) {
         CustomPopup.showToast('Success', 'Order cancelled successfully');
         await fetchMyOrders(); // Refresh the list
       } else {
-        final msg = data is Map
-            ? (data['message'] ?? 'Could not cancel order')
-            : 'Could not cancel order';
+        final msg = data is Map ? (data['message'] ?? 'Could not cancel order') : 'Could not cancel order';
         CustomPopup.showToast('Failed', msg.toString(), isError: true);
       }
     } catch (e) {
+      CustomPopup.hideLoading();
       debugPrint('Error cancelling order: $e');
-      await fetchMyOrders();
-      CustomPopup.showToast('Success', 'Order cancelled successfully');
+      String errorMessage = 'Could not cancel order. Please try again.';
+      if (e is DioException) {
+        final serverResponse = e.response?.data;
+        if (serverResponse is Map && serverResponse['message'] != null) {
+          errorMessage = serverResponse['message'].toString();
+        } else if (e.response?.statusCode != null) {
+          errorMessage = 'Server error (${e.response?.statusCode}). Please try again.';
+        }
+      }
+      CustomPopup.showToast('Failed', errorMessage, isError: true);
     }
   }
 

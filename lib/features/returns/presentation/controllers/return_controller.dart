@@ -6,6 +6,8 @@ import '../../../../core/utils/session_manager.dart';
 import '../../../order/presentation/controllers/order_controller.dart';
 import 'package:flutter/material.dart';
 
+import 'dart:convert';
+
 import 'package:dio/dio.dart' as dio;
 
 class ReturnController extends GetxController {
@@ -58,7 +60,13 @@ class ReturnController extends GetxController {
         'phone': phone,
         'accountHolderName': accountHolderName,
         'Bank_Name': bankName,
-        'items': '[{"orderItemId":"$orderItemId","quantity":$quantity,"reason":"$reason"}]',
+        'items': jsonEncode([
+          {
+            'orderItemId': orderItemId,
+            'quantity': quantity,
+            'reason': reason,
+          }
+        ]),
         // 'images': [], // Will implement images picker later if requested
       });
       

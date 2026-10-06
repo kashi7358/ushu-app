@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:dio/dio.dart';
 import '../../../../core/network/api_client.dart';
@@ -101,7 +102,7 @@ class CartController extends GetxController {
         return false;
       }
     } catch (e) {
-      print('Error during Buy Now: $e');
+      debugPrint('Error during Buy Now: $e');
       CustomPopup.showToast('Error', 'An error occurred during Buy Now', isError: true);
       return false;
     } finally {
@@ -126,7 +127,7 @@ class CartController extends GetxController {
       if (cartItems.isEmpty) {
         isNoInternet.value = true;
       }
-      print('Error fetching cart: $e');
+      debugPrint('Error fetching cart: $e');
     } finally {
       isLoadingCart.value = false;
     }
@@ -173,7 +174,7 @@ class CartController extends GetxController {
       );
       // Fire and forget - DO NOT update from backend here to prevent bouncing UI
     } catch (e) {
-      print('Error updating quantity: $e');
+      debugPrint('Error updating quantity: $e');
     }
   }
 
@@ -194,7 +195,7 @@ class CartController extends GetxController {
       );
       // Removed _updateCartItems(data) here to prevent multiple-select race conditions from backend
     } catch (e) {
-      print('Error selecting item: $e');
+      debugPrint('Error selecting item: $e');
     }
   }
 

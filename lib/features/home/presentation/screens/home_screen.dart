@@ -45,7 +45,7 @@ class HomeScreen extends StatelessWidget {
                       children: [
                         CircleAvatar(
                           radius: 22,
-                          backgroundColor: AppColors.primaryPurple.withOpacity(0.1),
+                          backgroundColor: AppColors.primaryPurple.withValues(alpha: 0.1),
                           child: const Icon(Icons.person, color: AppColors.primaryPurple),
                         ),
                         const SizedBox(width: AppDimensions.sm),
@@ -64,7 +64,7 @@ class HomeScreen extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: AppColors.white,
                         borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
-                        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))],
+                        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4))],
                       ),
                       child: Stack(
                         alignment: Alignment.center,
@@ -106,7 +106,7 @@ class HomeScreen extends StatelessWidget {
                   borderRadius: BorderRadius.circular(30),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.04),
+                      color: Colors.black.withValues(alpha: 0.04),
                       blurRadius: 10,
                       offset: const Offset(0, 2),
                     ),

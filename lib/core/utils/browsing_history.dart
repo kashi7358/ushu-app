@@ -26,22 +26,26 @@ class BrowsingHistory {
       }
 
       await prefs.setStringList(_key, historyStrings);
-    } catch (e) {
-      print('Error saving browsing history: $e');
-    }
+    } catch (_) {}
   }
 
   static Future<List<ProductModel>> getHistory() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       List<String> historyStrings = prefs.getStringList(_key) ?? [];
-      
-      return historyStrings.map((item) {
-        final decoded = jsonDecode(item);
-        return ProductModel.fromJson(decoded);
-      }).toList();
-    } catch (e) {
-      print('Error getting browsing history: $e');
+      final List<ProductModel> products = [];
+      for (var item in historyStrings) {
+        try {
+          final decoded = jsonDecode(item);
+          if (decoded is Map<String, dynamic>) {
+            products.add(ProductModel.fromJson(decoded));
+          } else if (decoded is Map) {
+            products.add(ProductModel.fromJson(Map<String, dynamic>.from(decoded)));
+          }
+        } catch (_) {}
+      }
+      return products;
+    } catch (_) {
       return [];
     }
   }
@@ -52,14 +56,16 @@ class BrowsingHistory {
       List<String> historyStrings = prefs.getStringList(_key) ?? [];
       
       historyStrings.removeWhere((item) {
-        final decoded = jsonDecode(item);
-        return decoded['_id'] == productId;
+        try {
+          final decoded = jsonDecode(item);
+          return decoded['_id'] == productId;
+        } catch (_) {
+          return false;
+        }
       });
 
       await prefs.setStringList(_key, historyStrings);
-    } catch (e) {
-      print('Error removing item from history: $e');
-    }
+    } catch (_) {}
   }
 
   static Future<void> clearHistory() async {

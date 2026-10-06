@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/network/api_endpoints.dart';
@@ -45,7 +46,7 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
           try {
             result.add(ProductModel.fromJson(p));
           } catch (e) {
-            print('Error parsing product item: $e');
+            debugPrint('Error parsing product item: $e');
           }
         }
       }
@@ -54,7 +55,7 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
       }
       return result;
     } catch (e) {
-      print('Error loading homepage products: $e');
+      debugPrint('Error loading homepage products: $e');
       return await HomeCacheManager.getHomepageProducts();
     }
   }
@@ -90,7 +91,7 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
           try {
             result.add(ProductModel.fromJson(p));
           } catch (e) {
-            print('Error parsing flash sale product: $e');
+            debugPrint('Error parsing flash sale product: $e');
           }
         }
       }
@@ -127,7 +128,7 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
           try {
             result.add(ProductModel.fromJson(p));
           } catch (e) {
-            print('Error parsing trending product: $e');
+            debugPrint('Error parsing trending product: $e');
           }
         }
       }
@@ -162,7 +163,7 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
           try {
             result.add(ProductModel.fromJson(p));
           } catch (e) {
-            print('Error parsing banner product: $e');
+            debugPrint('Error parsing banner product: $e');
           }
         }
       }

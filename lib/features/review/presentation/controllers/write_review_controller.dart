@@ -26,8 +26,14 @@ class WriteReviewController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    productId = Get.arguments['productId'] ?? '';
-    orderId = Get.arguments['orderId'] ?? '';
+    final args = Get.arguments;
+    if (args is Map) {
+      productId = args['productId']?.toString() ?? '';
+      orderId = args['orderId']?.toString() ?? '';
+    } else {
+      productId = '';
+      orderId = '';
+    }
   }
 
   @override
@@ -83,7 +89,7 @@ class WriteReviewController extends GetxController {
       for (var file in selectedImages) {
         formData.files.add(MapEntry(
           'images',
-          await dio.MultipartFile.fromFile(file.path, filename: file.path.split('/').last),
+          await dio.MultipartFile.fromFile(file.path, filename: file.path.split(RegExp(r'[/\\]')).last),
         ));
       }
 

@@ -42,7 +42,7 @@ class ProductDetailScreen extends StatelessWidget {
                         Get.back();
                         final product = Get.find<ProductDetailController>().product.value;
                         final shareText = 'Check out ${product?.name ?? 'this product'} on Ushu!';
-                        Share.share(shareText);
+                        SharePlus.instance.share(ShareParams(text: shareText));
                       },
                     ),
                     _buildShareIcon(
@@ -53,7 +53,7 @@ class ProductDetailScreen extends StatelessWidget {
                         Get.back();
                         final product = Get.find<ProductDetailController>().product.value;
                         final shareText = 'Check out ${product?.name ?? 'this product'} on Ushu!';
-                        Share.share(shareText);
+                        SharePlus.instance.share(ShareParams(text: shareText));
                       },
                     ),
                     _buildShareIcon(
@@ -64,7 +64,7 @@ class ProductDetailScreen extends StatelessWidget {
                         Get.back();
                         final product = Get.find<ProductDetailController>().product.value;
                         final shareText = 'Check out ${product?.name ?? 'this product'} on Ushu!';
-                        Share.share(shareText);
+                        SharePlus.instance.share(ShareParams(text: shareText));
                       },
                     ),
                   ],

@@ -25,7 +25,12 @@ class ProductDetailController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    productId = Get.arguments as String;
+    final args = Get.arguments;
+    if (args is Map) {
+      productId = args['id']?.toString() ?? args['productId']?.toString() ?? '';
+    } else {
+      productId = args?.toString() ?? '';
+    }
     
     final apiClient = ApiClient();
     final remoteDataSource = HomeRemoteDataSourceImpl(apiClient);

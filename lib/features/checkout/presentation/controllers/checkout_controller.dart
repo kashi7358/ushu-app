@@ -153,7 +153,7 @@ class CheckoutController extends GetxController {
         'total': finalTotal < 0 ? 0 : finalTotal,
       };
     } catch (e) {
-      print('Checkout GET API error: $e');
+      debugPrint('Checkout GET API error: $e');
       fullNameController.text = SessionManager.fullName ?? '';
 
       final activeCart = cartController.cartItems.where((i) => i.isSelected).toList();
@@ -286,23 +286,8 @@ class CheckoutController extends GetxController {
         Get.offNamed('/my-orders');
         CustomPopup.showToast('Success', 'Order Placed Successfully!');
       } else {
-        CustomPopup.showToast('Notice', data?['message'] ?? 'Order placed or notice from server', isError: false);
-        await SessionManager.saveAddressData(
-          fullName: finalFullName,
-          phone: finalPhone,
-          addressLine: finalAddress,
-          city: finalCity,
-          province: finalProvince,
-          country: finalCountry,
-          postalCode: finalPostalCode,
-        );
-
-        final orderCtrl = Get.isRegistered<OrderController>() 
-            ? Get.find<OrderController>() 
-            : Get.put(OrderController());
-        await orderCtrl.fetchMyOrders();
-
-        Get.offNamed('/my-orders');
+        final errorMsg = data?['message'] ?? 'Could not place order. Please try again.';
+        CustomPopup.showToast('Order Failed', errorMsg.toString(), isError: true);
       }
     } catch (e) {
       CustomPopup.showToast('Error', 'An error occurred while placing order', isError: true);

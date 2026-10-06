@@ -62,7 +62,7 @@ class ChatbotScreen extends StatelessWidget {
                           color: AppColors.white,
                           borderRadius: BorderRadius.circular(16).copyWith(topLeft: const Radius.circular(4)),
                           boxShadow: [
-                            BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 5, offset: const Offset(0, 2)),
+                            BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 5, offset: const Offset(0, 2)),
                           ],
                         ),
                         child: const SizedBox(
@@ -92,7 +92,7 @@ class ChatbotScreen extends StatelessWidget {
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
+                            color: Colors.black.withValues(alpha: 0.05),
                             blurRadius: 5,
                             offset: const Offset(0, 2),
                           ),
@@ -153,7 +153,7 @@ class ChatbotScreen extends StatelessWidget {
             decoration: BoxDecoration(
               color: AppColors.white,
               boxShadow: [
-                BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -5)),
+                BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, -5)),
               ],
             ),
             child: Row(

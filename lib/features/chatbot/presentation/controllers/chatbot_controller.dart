@@ -42,6 +42,11 @@ class ChatbotController extends GetxController {
       final userId = SessionManager.userId ?? '';
       final reply = await _remoteDataSource.sendMessage(text, userId, sessionId);
       messages.add(reply);
+    } catch (e) {
+      messages.add(ChatMessage(
+        text: 'Sorry, I encountered a connection issue. Please try again.',
+        isUser: false,
+      ));
     } finally {
       isLoading.value = false;
     }

@@ -6,12 +6,20 @@ import '../network/api_endpoints.dart';
 class SessionManager {
   static const _storage = FlutterSecureStorage();
 
-  // In-memory cache for synchronous access
+  // In-memory cache for synchronous access (Buyer)
   static bool _isLoggedIn = false;
   static String? _userId;
   static String? _email;
   static String? _fullName;
   static String? _token;
+
+  // In-memory cache for Seller session (isolated from buyer)
+  static bool _isSellerLoggedIn = false;
+  static String? _sellerId;
+  static String? _sellerToken;
+  static String? _sellerEmail;
+  static String? _sellerName;
+  static String? _sellerStatus;
 
   static final Set<String> _reviewedKeys = {};
   static final Set<String> _returnedOrders = {};
@@ -25,6 +33,14 @@ class SessionManager {
     _email = await _storage.read(key: 'email');
     _fullName = await _storage.read(key: 'fullName');
     _token = await _storage.read(key: 'token');
+
+    final sellerLoggedInStr = await _storage.read(key: 'isSellerLoggedIn');
+    _isSellerLoggedIn = sellerLoggedInStr == 'true';
+    _sellerId = await _storage.read(key: 'sellerId');
+    _sellerToken = await _storage.read(key: 'sellerToken');
+    _sellerEmail = await _storage.read(key: 'sellerEmail');
+    _sellerName = await _storage.read(key: 'sellerName');
+    _sellerStatus = await _storage.read(key: 'sellerStatus');
 
     await loadReviewedItems();
     await loadReturnedItems();
@@ -255,4 +271,50 @@ class SessionManager {
   static String? get email => _email;
   static String? get fullName => _fullName;
   static String? get token => _token;
+
+  // Seller session methods & getters
+  static bool get isSellerLoggedIn => _isSellerLoggedIn;
+  static String? get sellerId => _sellerId;
+  static String? get sellerToken => _sellerToken;
+  static String? get sellerEmail => _sellerEmail;
+  static String? get sellerName => _sellerName;
+  static String? get sellerStatus => _sellerStatus;
+
+  static Future<void> saveSellerSession({
+    required String sellerId,
+    String? token,
+    String? email,
+    String? name,
+    String? status,
+  }) async {
+    _isSellerLoggedIn = true;
+    _sellerId = sellerId;
+    _sellerToken = token;
+    _sellerEmail = email;
+    _sellerName = name;
+    _sellerStatus = status;
+
+    await _storage.write(key: 'isSellerLoggedIn', value: 'true');
+    await _storage.write(key: 'sellerId', value: sellerId);
+    if (token != null) await _storage.write(key: 'sellerToken', value: token);
+    if (email != null) await _storage.write(key: 'sellerEmail', value: email);
+    if (name != null) await _storage.write(key: 'sellerName', value: name);
+    if (status != null) await _storage.write(key: 'sellerStatus', value: status);
+  }
+
+  static Future<void> clearSellerSession() async {
+    _isSellerLoggedIn = false;
+    _sellerId = null;
+    _sellerToken = null;
+    _sellerEmail = null;
+    _sellerName = null;
+    _sellerStatus = null;
+
+    await _storage.delete(key: 'isSellerLoggedIn');
+    await _storage.delete(key: 'sellerId');
+    await _storage.delete(key: 'sellerToken');
+    await _storage.delete(key: 'sellerEmail');
+    await _storage.delete(key: 'sellerName');
+    await _storage.delete(key: 'sellerStatus');
+  }
 }

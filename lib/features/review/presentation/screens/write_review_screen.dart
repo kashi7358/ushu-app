@@ -31,20 +31,37 @@ class WriteReviewScreen extends StatelessWidget {
           children: [
             Text('Overall Rating', style: AppTextStyles.bold.copyWith(fontSize: 16, color: AppColors.darkText)),
             const SizedBox(height: 12),
-            Obx(() => Row(
-              mainAxisAlignment: MainAxisAlignment.start,
-              children: List.generate(5, (index) {
-                return IconButton(
-                  onPressed: () => controller.setRating(index + 1),
-                  icon: Icon(
-                    index < controller.rating.value ? Icons.star_rounded : Icons.star_outline_rounded,
-                    color: index < controller.rating.value ? Colors.amber : Colors.grey.shade400,
-                    size: 40,
+            Obx(() => Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: List.generate(5, (index) {
+                    final isSelected = index < controller.rating.value;
+                    return GestureDetector(
+                      onTap: () => controller.setRating(index + 1),
+                      behavior: HitTestBehavior.opaque,
+                      child: Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: Icon(
+                          isSelected ? Icons.star_rounded : Icons.star_outline_rounded,
+                          color: isSelected ? const Color(0xFFFFB800) : Colors.grey.shade300,
+                          size: 38,
+                        ),
+                      ),
+                    );
+                  }),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  controller.ratingLabel,
+                  style: TextStyle(
+                    color: controller.rating.value > 0 ? AppColors.primaryPurple : AppColors.hintText,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
                   ),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                );
-              }),
+                ),
+              ],
             )),
             const SizedBox(height: 24),
             Text('Add a Headline', style: AppTextStyles.bold.copyWith(fontSize: 16, color: AppColors.darkText)),
@@ -66,7 +83,7 @@ class WriteReviewScreen extends StatelessWidget {
               controller: controller.bodyController,
               maxLines: 5,
               decoration: InputDecoration(
-                hintText: 'What did you like or dislike?',
+                hintText: 'What did you like or dislike about this product?',
                 hintStyle: AppTextStyles.regular.copyWith(color: AppColors.hintText),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.grey.shade300)),
                 enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.grey.shade300)),
@@ -74,24 +91,42 @@ class WriteReviewScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 24),
-            Text('Add Photos', style: AppTextStyles.bold.copyWith(fontSize: 16, color: AppColors.darkText)),
+            Obx(() => Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Add Photos', style: AppTextStyles.bold.copyWith(fontSize: 16, color: AppColors.darkText)),
+                Text(
+                  '${controller.selectedImages.length}/5 photos',
+                  style: AppTextStyles.medium.copyWith(fontSize: 12, color: AppColors.hintText),
+                ),
+              ],
+            )),
             const SizedBox(height: 8),
             Obx(() => Wrap(
               spacing: 12,
               runSpacing: 12,
               children: [
-                InkWell(
-                  onTap: controller.pickImages,
-                  child: Container(
-                    width: 80,
-                    height: 80,
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey.shade300, style: BorderStyle.solid),
-                      borderRadius: BorderRadius.circular(8),
+                if (controller.selectedImages.length < 5)
+                  InkWell(
+                    onTap: controller.pickImages,
+                    borderRadius: BorderRadius.circular(8),
+                    child: Container(
+                      width: 80,
+                      height: 80,
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey.shade300, style: BorderStyle.solid),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.add_a_photo_outlined, color: AppColors.primaryPurple, size: 28),
+                          SizedBox(height: 4),
+                          Text('Upload', style: TextStyle(color: AppColors.primaryPurple, fontSize: 11, fontWeight: FontWeight.w600)),
+                        ],
+                      ),
                     ),
-                    child: const Icon(Icons.add_a_photo_outlined, color: AppColors.primaryPurple, size: 30),
                   ),
-                ),
                 ...List.generate(controller.selectedImages.length, (index) {
                   return Stack(
                     children: [
@@ -105,13 +140,18 @@ class WriteReviewScreen extends StatelessWidget {
                         ),
                       ),
                       Positioned(
-                        right: -5,
-                        top: -5,
-                        child: IconButton(
-                          icon: const Icon(Icons.remove_circle, color: Colors.red),
-                          onPressed: () => controller.removeImage(index),
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(),
+                        right: 4,
+                        top: 4,
+                        child: GestureDetector(
+                          onTap: () => controller.removeImage(index),
+                          child: Container(
+                            padding: const EdgeInsets.all(3),
+                            decoration: const BoxDecoration(
+                              color: Colors.red,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.close, color: Colors.white, size: 12),
+                          ),
                         ),
                       ),
                     ],

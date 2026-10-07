@@ -6,21 +6,46 @@ import '../../app/theme/app_text_styles.dart';
 
 class CustomPopup {
   static void showLoading([String message = 'Please wait...']) {
+    if (Get.isDialogOpen ?? false) {
+      Get.back();
+    }
     Get.dialog(
-      Center(
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const CircularProgressIndicator(color: AppColors.primaryPurple),
-              const SizedBox(width: 16),
-              Text(message, style: AppTextStyles.bold.copyWith(color: AppColors.darkText)),
-            ],
+      Dialog(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        child: Center(
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.1),
+                  blurRadius: 25,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(
+                  width: 44,
+                  height: 44,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 3.5,
+                    valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryPurple),
+                  ),
+                ),
+                const SizedBox(height: 18),
+                Text(
+                  message,
+                  style: AppTextStyles.bold.copyWith(color: AppColors.darkText, fontSize: 14),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -34,7 +59,12 @@ class CustomPopup {
     }
   }
 
-  static void showSuccess(String title, String message) {
+  static void showSuccess(
+    String title,
+    String message, {
+    VoidCallback? onConfirm,
+    String buttonText = 'Continue',
+  }) {
     _showDialog(
       title: title,
       message: message,
@@ -42,6 +72,8 @@ class CustomPopup {
       iconColor: AppColors.success,
       lottieAsset: 'assets/lotties/done.json',
       emoji: '🎉',
+      onConfirm: onConfirm,
+      buttonText: buttonText,
     );
   }
 
@@ -473,6 +505,8 @@ class CustomPopup {
     required Color iconColor,
     String? emoji,
     String? lottieAsset,
+    VoidCallback? onConfirm,
+    String buttonText = 'Okay',
   }) {
     Get.dialog(
       Dialog(
@@ -508,19 +542,41 @@ class CustomPopup {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: iconColor.withValues(alpha: 0.1),
-                    shape: BoxShape.circle,
+                if (lottieAsset != null)
+                  SizedBox(
+                    height: 90,
+                    width: 90,
+                    child: Lottie.asset(
+                      lottieAsset,
+                      repeat: false,
+                      errorBuilder: (context, error, stackTrace) => Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: iconColor.withValues(alpha: 0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          icon,
+                          size: 48,
+                          color: iconColor,
+                        ),
+                      ),
+                    ),
+                  )
+                else
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: iconColor.withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      icon,
+                      size: 48,
+                      color: iconColor,
+                    ),
                   ),
-                  child: Icon(
-                    icon,
-                    size: 48,
-                    color: iconColor,
-                  ),
-                ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 18),
                 Text(
                   title,
                   style: AppTextStyles.extraBold.copyWith(fontSize: 20, color: AppColors.darkText),
@@ -537,7 +593,10 @@ class CustomPopup {
                   width: double.infinity,
                   height: 48,
                   child: ElevatedButton(
-                    onPressed: () => Get.back(),
+                    onPressed: () {
+                      Get.back();
+                      onConfirm?.call();
+                    },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryPurple,
                       foregroundColor: Colors.white,
@@ -549,7 +608,7 @@ class CustomPopup {
                     ),
                     child: Center(
                       child: Text(
-                        'Okay',
+                        buttonText,
                         style: AppTextStyles.bold.copyWith(
                           fontSize: 16,
                           color: Colors.white,

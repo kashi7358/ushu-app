@@ -13,6 +13,8 @@ class WriteReviewController extends GetxController {
   final ApiClient _apiClient = ApiClient();
   final ImagePicker _picker = ImagePicker();
 
+  static const int maxImages = 5;
+
   final rating = 0.obs;
   final titleController = TextEditingController();
   final bodyController = TextEditingController();
@@ -22,6 +24,23 @@ class WriteReviewController extends GetxController {
   
   late String productId;
   late String orderId;
+
+  String get ratingLabel {
+    switch (rating.value) {
+      case 1:
+        return 'Poor';
+      case 2:
+        return 'Fair';
+      case 3:
+        return 'Good';
+      case 4:
+        return 'Very Good';
+      case 5:
+        return 'Excellent!';
+      default:
+        return 'Tap a star to rate';
+    }
+  }
 
   @override
   void onInit() {
@@ -33,6 +52,15 @@ class WriteReviewController extends GetxController {
     } else {
       productId = '';
       orderId = '';
+    }
+
+    if (productId.isEmpty || orderId.isEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        CustomPopup.showToast('Error', 'Product or order information is missing', isError: true);
+        if (Get.context != null && Navigator.of(Get.context!).canPop()) {
+          Get.back();
+        }
+      });
     }
   }
 
@@ -48,10 +76,19 @@ class WriteReviewController extends GetxController {
   }
 
   Future<void> pickImages() async {
+    if (selectedImages.length >= maxImages) {
+      CustomPopup.showToast('Limit Reached', 'You can upload up to $maxImages photos only.', isError: true);
+      return;
+    }
     try {
       final List<XFile> images = await _picker.pickMultiImage(imageQuality: 70);
       if (images.isNotEmpty) {
-        selectedImages.addAll(images.map((img) => File(img.path)));
+        final remaining = maxImages - selectedImages.length;
+        final toAdd = images.take(remaining).map((img) => File(img.path));
+        selectedImages.addAll(toAdd);
+        if (images.length > remaining) {
+          CustomPopup.showToast('Notice', 'Maximum $maxImages photos allowed. First $remaining were added.');
+        }
       }
     } catch (e) {
       CustomPopup.showToast('Error', 'Could not pick images', isError: true);
@@ -59,20 +96,22 @@ class WriteReviewController extends GetxController {
   }
 
   void removeImage(int index) {
-    selectedImages.removeAt(index);
+    if (index >= 0 && index < selectedImages.length) {
+      selectedImages.removeAt(index);
+    }
   }
 
   Future<void> submitReview() async {
     if (rating.value == 0) {
-      CustomPopup.showToast('Validation Error', 'Please give a rating', isError: true);
+      CustomPopup.showToast('Validation Error', 'Please select a star rating', isError: true);
       return;
     }
     if (titleController.text.trim().isEmpty) {
-      CustomPopup.showToast('Validation Error', 'Please enter a title', isError: true);
+      CustomPopup.showToast('Validation Error', 'Please enter a review headline', isError: true);
       return;
     }
     if (bodyController.text.trim().isEmpty) {
-      CustomPopup.showToast('Validation Error', 'Please enter your review', isError: true);
+      CustomPopup.showToast('Validation Error', 'Please write your review', isError: true);
       return;
     }
 
@@ -119,10 +158,7 @@ class WriteReviewController extends GetxController {
 
         CustomPopup.showToast('Success', 'Review submitted successfully!');
         
-        Get.until((route) => Get.currentRoute == '/my-orders' || Get.currentRoute == '/main');
-        if (Get.currentRoute != '/my-orders') {
-          Get.offNamed('/my-orders');
-        }
+        _navigateBack();
       } else if (msg.toLowerCase().contains('already reviewed') || msg.toLowerCase().contains('already review')) {
         await SessionManager.markReviewed(orderId, productId);
 
@@ -132,10 +168,7 @@ class WriteReviewController extends GetxController {
 
         CustomPopup.showToast('Notice', 'You have already reviewed this product for this order.');
 
-        Get.until((route) => Get.currentRoute == '/my-orders' || Get.currentRoute == '/main');
-        if (Get.currentRoute != '/my-orders') {
-          Get.offNamed('/my-orders');
-        }
+        _navigateBack();
       } else {
         CustomPopup.showToast('Failed', msg.isNotEmpty ? msg : 'Could not submit review', isError: true);
       }
@@ -143,6 +176,14 @@ class WriteReviewController extends GetxController {
       CustomPopup.showToast('Error', 'An error occurred while submitting review', isError: true);
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  void _navigateBack() {
+    if (Get.context != null && Navigator.of(Get.context!).canPop()) {
+      Get.back(result: true);
+    } else {
+      Get.offNamed('/my-orders');
     }
   }
 }

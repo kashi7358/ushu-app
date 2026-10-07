@@ -10,6 +10,7 @@ import '../../../../core/utils/custom_popup.dart';
 import '../../../../core/utils/session_manager.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/network/api_endpoints.dart';
+import '../../../../app/routes/app_routes.dart';
 import 'package:dio/dio.dart';
 
 class ProfileScreen extends StatelessWidget {
@@ -211,6 +212,13 @@ class ProfileScreen extends StatelessWidget {
                     _buildMenuTile(Icons.location_on_outlined, 'Shipping Addresses', '', onTap: () => _showAddAddressSheet(context)),
                     _buildDivider(),
                     _buildMenuTile(Icons.credit_card_outlined, 'Payment Methods', ''),
+                    _buildDivider(),
+                    _buildMenuTile(
+                      Icons.storefront_outlined,
+                      'Become a Seller',
+                      '',
+                      onTap: () => Get.toNamed(AppRoutes.sellerLogin),
+                    ),
                   ],
                 ),
               ),

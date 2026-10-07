@@ -12,6 +12,7 @@ import '../../data/repositories/home_repository_impl.dart';
 import '../../../../core/errors/exception_handler.dart';
 import '../../../../core/utils/browsing_history.dart';
 import '../../data/models/product_model.dart';
+import '../../../review/data/models/review_model.dart';
 
 class ProductDetailController extends GetxController {
   final Rx<ProductEntity?> product = Rx<ProductEntity?>(null);
@@ -70,7 +71,15 @@ class ProductDetailController extends GetxController {
       final data = response.data;
       if (data != null) {
         final List list = data['reviews'] ?? data['data'] ?? (data is List ? data : []);
-        reviews.assignAll(list);
+        final parsed = list.map((item) {
+          if (item is Map<String, dynamic>) {
+            return ReviewModel.fromJson(item);
+          } else if (item is Map) {
+            return ReviewModel.fromJson(Map<String, dynamic>.from(item));
+          }
+          return item;
+        }).toList();
+        reviews.assignAll(parsed);
       }
     } catch (e) {
       debugPrint('Error fetching reviews: $e');
@@ -105,7 +114,10 @@ class ProductDetailController extends GetxController {
 
       if (isSuccess) {
         if (reviewIndex != null && reviewIndex >= 0 && reviewIndex < reviews.length) {
-          final Map<String, dynamic> item = Map<String, dynamic>.from(reviews[reviewIndex] as Map);
+          final dynamic current = reviews[reviewIndex];
+          final Map<String, dynamic> item = (current is ReviewModel) 
+              ? current.toJson() 
+              : Map<String, dynamic>.from(current as Map);
           final resData = data is Map ? (data['data'] ?? data['result'] ?? data) : null;
 
           if (resData is Map) {
@@ -131,7 +143,7 @@ class ProductDetailController extends GetxController {
               item['downvotes'] = curr + 1;
             }
           }
-          reviews[reviewIndex] = item;
+          reviews[reviewIndex] = ReviewModel.fromJson(item);
           reviews.refresh();
         }
 

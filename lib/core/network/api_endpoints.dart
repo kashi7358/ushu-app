@@ -3,7 +3,6 @@ class ApiEndpoints {
 
   static const String domain = 'https://ecombackend.ushu.pk';
   static const String baseUrl = '$domain/api';
-  
   static const String registerBuyer = '$baseUrl/buyer/register';
   static const String loginBuyer = '$baseUrl/buyer/login';
   static const String verifyEmail = '$baseUrl/buyer/verify-email';
@@ -45,10 +44,24 @@ class ApiEndpoints {
   static String createReview(String productId) => '$baseUrl/review/create/$productId';
   static String getReviews(String productId) => '$baseUrl/review/all/$productId';
   static String voteReview(String reviewId) => '$baseUrl/review/vote/$reviewId';
+
   // Returns
   static const String createReturnRequest = '$baseUrl/return/create-request';
   static const String getBuyerReturnRequests = '$baseUrl/return/buyer-request';
   
   // Search
   static String searchKeyword(String keyword) => '$baseUrl/search/keyword?keyword=${Uri.encodeComponent(keyword)}';
+
+
+  // ==========================================
+  // SELLER APIS
+  // ==========================================
+  static const String createSeller = '$baseUrl/seller/create';
+  static const String verifySellerEmail = '$baseUrl/seller/verify-email';
+  static const String resendSellerOtp = '$baseUrl/seller/resend-otp';
+  static const String loginSeller = '$baseUrl/seller/login';
+  static const String sellerForgetPassword = '$baseUrl/seller/forget-password';
+  static const String createStore = '$domain/store/create';
+
+
 }

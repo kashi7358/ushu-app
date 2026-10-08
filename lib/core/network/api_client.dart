@@ -43,7 +43,9 @@ class ApiClient {
 
     _dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) {
-        final token = SessionManager.token; 
+        final sellerToken = SessionManager.sellerToken;
+        final buyerToken = SessionManager.token;
+        final token = (sellerToken != null && sellerToken.isNotEmpty) ? sellerToken : buyerToken;
         if (token != null && token.isNotEmpty) {
           options.headers['Authorization'] = 'Bearer $token';
         }

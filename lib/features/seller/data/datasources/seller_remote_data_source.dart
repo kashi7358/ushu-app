@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/network/api_endpoints.dart';
+import '../models/create_product_request_model.dart';
 import '../models/create_store_request_model.dart';
 import '../models/seller_registration_model.dart';
 
@@ -11,6 +12,8 @@ abstract class SellerRemoteDataSource {
   Future<dynamic> loginSeller(String email, String password);
   Future<dynamic> forgetPassword(String email);
   Future<dynamic> createStore(CreateStoreRequestModel model);
+  Future<dynamic> createProduct({required String storeId, required CreateProductRequestModel model});
+  Future<dynamic> getDashboardStats();
 }
 
 class SellerRemoteDataSourceImpl implements SellerRemoteDataSource {
@@ -99,6 +102,31 @@ class SellerRemoteDataSourceImpl implements SellerRemoteDataSource {
       ),
     );
 
+    return response.data;
+  }
+
+  @override
+  Future<dynamic> createProduct({required String storeId, required CreateProductRequestModel model}) async {
+    final formData = await model.toFormData();
+
+    final response = await apiClient.dio.post(
+      ApiEndpoints.createProduct(storeId),
+      data: formData,
+      options: Options(
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      ),
+    );
+
+    return response.data;
+  }
+
+  @override
+  Future<dynamic> getDashboardStats() async {
+    final response = await apiClient.dio.get(
+      ApiEndpoints.sellerDashboardStats,
+    );
     return response.data;
   }
 }

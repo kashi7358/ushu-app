@@ -102,7 +102,7 @@ class LoginScreen extends StatelessWidget {
                     onPressed: controller.login,
                     isLoading: controller.isLoading.value,
                   )),
-                  const SizedBox(height: 28),
+                  const SizedBox(height: 24),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [

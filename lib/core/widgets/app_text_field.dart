@@ -13,6 +13,8 @@ class AppTextField extends StatelessWidget {
   final int? maxLength;
   final List<TextInputFormatter>? inputFormatters;
   final bool showCounter;
+  final bool readOnly;
+  final bool? enabled;
 
   const AppTextField({
     super.key,
@@ -27,12 +29,16 @@ class AppTextField extends StatelessWidget {
     this.maxLength,
     this.inputFormatters,
     this.showCounter = false,
+    this.readOnly = false,
+    this.enabled,
   });
 
   @override
   Widget build(BuildContext context) {
     return TextFormField(
       controller: controller,
+      readOnly: readOnly,
+      enabled: enabled,
       obscureText: isPassword,
       keyboardType: keyboardType,
       validator: validator,

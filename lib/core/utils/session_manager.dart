@@ -20,6 +20,7 @@ class SessionManager {
   static String? _sellerEmail;
   static String? _sellerName;
   static String? _sellerStatus;
+  static String? _sellerStoreId;
 
   static final Set<String> _reviewedKeys = {};
   static final Set<String> _returnedOrders = {};
@@ -41,6 +42,7 @@ class SessionManager {
     _sellerEmail = await _storage.read(key: 'sellerEmail');
     _sellerName = await _storage.read(key: 'sellerName');
     _sellerStatus = await _storage.read(key: 'sellerStatus');
+    _sellerStoreId = await _storage.read(key: 'sellerStoreId');
 
     await loadReviewedItems();
     await loadReturnedItems();
@@ -279,6 +281,7 @@ class SessionManager {
   static String? get sellerEmail => _sellerEmail;
   static String? get sellerName => _sellerName;
   static String? get sellerStatus => _sellerStatus;
+  static String? get sellerStoreId => _sellerStoreId;
 
   static Future<void> saveSellerSession({
     required String sellerId,
@@ -286,6 +289,7 @@ class SessionManager {
     String? email,
     String? name,
     String? status,
+    String? storeId,
   }) async {
     _isSellerLoggedIn = true;
     _sellerId = sellerId;
@@ -293,6 +297,7 @@ class SessionManager {
     _sellerEmail = email;
     _sellerName = name;
     _sellerStatus = status;
+    if (storeId != null) _sellerStoreId = storeId;
 
     await _storage.write(key: 'isSellerLoggedIn', value: 'true');
     await _storage.write(key: 'sellerId', value: sellerId);
@@ -300,6 +305,12 @@ class SessionManager {
     if (email != null) await _storage.write(key: 'sellerEmail', value: email);
     if (name != null) await _storage.write(key: 'sellerName', value: name);
     if (status != null) await _storage.write(key: 'sellerStatus', value: status);
+    if (storeId != null) await _storage.write(key: 'sellerStoreId', value: storeId);
+  }
+
+  static Future<void> saveSellerStoreId(String storeId) async {
+    _sellerStoreId = storeId;
+    await _storage.write(key: 'sellerStoreId', value: storeId);
   }
 
   static Future<void> clearSellerSession() async {
@@ -309,6 +320,7 @@ class SessionManager {
     _sellerEmail = null;
     _sellerName = null;
     _sellerStatus = null;
+    _sellerStoreId = null;
 
     await _storage.delete(key: 'isSellerLoggedIn');
     await _storage.delete(key: 'sellerId');
@@ -316,5 +328,6 @@ class SessionManager {
     await _storage.delete(key: 'sellerEmail');
     await _storage.delete(key: 'sellerName');
     await _storage.delete(key: 'sellerStatus');
+    await _storage.delete(key: 'sellerStoreId');
   }
 }

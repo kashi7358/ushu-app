@@ -10,8 +10,8 @@ import '../../../../core/utils/custom_popup.dart';
 import '../../../../core/utils/session_manager.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/network/api_endpoints.dart';
-import '../../../../app/routes/app_routes.dart';
 import 'package:dio/dio.dart';
+import '../../../../app/routes/app_routes.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -217,7 +217,7 @@ class ProfileScreen extends StatelessWidget {
                       Icons.storefront_outlined,
                       'Become a Seller',
                       '',
-                      onTap: () => Get.toNamed(AppRoutes.sellerLogin),
+                      onTap: () => Get.toNamed(AppRoutes.sellerRegister),
                     ),
                   ],
                 ),

@@ -1,5 +1,6 @@
 import '../../domain/repositories/seller_repository.dart';
 import '../datasources/seller_remote_data_source.dart';
+import '../models/create_product_request_model.dart';
 import '../models/create_store_request_model.dart';
 import '../models/seller_registration_model.dart';
 
@@ -36,5 +37,15 @@ class SellerRepositoryImpl implements SellerRepository {
   @override
   Future<dynamic> createStore(CreateStoreRequestModel model) {
     return remoteDataSource.createStore(model);
+  }
+
+  @override
+  Future<dynamic> createProduct({required String storeId, required CreateProductRequestModel model}) {
+    return remoteDataSource.createProduct(storeId: storeId, model: model);
+  }
+
+  @override
+  Future<dynamic> getDashboardStats() {
+    return remoteDataSource.getDashboardStats();
   }
 }

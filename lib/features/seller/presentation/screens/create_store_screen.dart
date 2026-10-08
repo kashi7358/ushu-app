@@ -215,14 +215,14 @@ class CreateStoreScreen extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           _buildLabel('Language *'),
-          _buildSelectionDropdown(
-            value: controller.languageController.text,
+          Obx(() => _buildSelectionDropdown(
+            value: controller.selectedLanguage.value,
             items: controller.languages,
             prefixIcon: Icons.language_outlined,
             onChanged: (val) {
-              if (val != null) controller.languageController.text = val;
+              if (val != null) controller.setLanguage(val);
             },
-          ),
+          )),
           const SizedBox(height: 12),
         ],
       ),
@@ -310,44 +310,44 @@ class CreateStoreScreen extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           _buildLabel('Return Policy *'),
-          _buildSelectionDropdown(
-            value: controller.returnPolicyController.text,
+          Obx(() => _buildSelectionDropdown(
+            value: controller.selectedReturnPolicy.value,
             items: controller.returnPolicies,
             prefixIcon: Icons.assignment_return_outlined,
             onChanged: (val) {
-              if (val != null) controller.returnPolicyController.text = val;
+              if (val != null) controller.setReturnPolicy(val);
             },
-          ),
+          )),
           const SizedBox(height: 16),
           _buildLabel('Warranty *'),
-          _buildSelectionDropdown(
-            value: controller.warrantyController.text,
+          Obx(() => _buildSelectionDropdown(
+            value: controller.selectedWarranty.value,
             items: controller.warranties,
             prefixIcon: Icons.verified_user_outlined,
             onChanged: (val) {
-              if (val != null) controller.warrantyController.text = val;
+              if (val != null) controller.setWarranty(val);
             },
-          ),
+          )),
           const SizedBox(height: 16),
           _buildLabel('Processing Time *'),
-          _buildSelectionDropdown(
-            value: controller.processingTimeController.text,
+          Obx(() => _buildSelectionDropdown(
+            value: controller.selectedProcessingTime.value,
             items: controller.processingTimes,
             prefixIcon: Icons.timer_outlined,
             onChanged: (val) {
-              if (val != null) controller.processingTimeController.text = val;
+              if (val != null) controller.setProcessingTime(val);
             },
-          ),
+          )),
           const SizedBox(height: 16),
           _buildLabel('Cancellation Policy *'),
-          _buildSelectionDropdown(
-            value: controller.cancellationPolicyController.text,
+          Obx(() => _buildSelectionDropdown(
+            value: controller.selectedCancellationPolicy.value,
             items: controller.cancellationPolicies,
             prefixIcon: Icons.cancel_outlined,
             onChanged: (val) {
-              if (val != null) controller.cancellationPolicyController.text = val;
+              if (val != null) controller.setCancellationPolicy(val);
             },
-          ),
+          )),
           const SizedBox(height: 24),
 
           _buildSectionHeader(
@@ -356,24 +356,24 @@ class CreateStoreScreen extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           _buildLabel('Shipping Method *'),
-          _buildSelectionDropdown(
-            value: controller.shippingMethodController.text,
+          Obx(() => _buildSelectionDropdown(
+            value: controller.selectedShippingMethod.value,
             items: controller.shippingMethods,
             prefixIcon: Icons.local_shipping_outlined,
             onChanged: (val) {
-              if (val != null) controller.shippingMethodController.text = val;
+              if (val != null) controller.setShippingMethod(val);
             },
-          ),
+          )),
           const SizedBox(height: 16),
           _buildLabel('Delivery Zones *'),
-          _buildSelectionDropdown(
-            value: controller.deliveryZonesController.text,
+          Obx(() => _buildSelectionDropdown(
+            value: controller.selectedDeliveryZone.value,
             items: controller.deliveryZonesList,
             prefixIcon: Icons.map_outlined,
             onChanged: (val) {
-              if (val != null) controller.deliveryZonesController.text = val;
+              if (val != null) controller.setDeliveryZone(val);
             },
-          ),
+          )),
           const SizedBox(height: 16),
           _buildLabel('Shipping Charges (PKR) *'),
           AppTextField(

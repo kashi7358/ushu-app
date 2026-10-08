@@ -62,6 +62,7 @@ class ApiEndpoints {
   static const String loginSeller = '$baseUrl/seller/login';
   static const String sellerForgetPassword = '$baseUrl/seller/forget-password';
   static const String createStore = '$domain/store/create';
-
+  static String createProduct(String storeId) => '$baseUrl/product/create/$storeId';
+  static const String sellerDashboardStats = '$baseUrl/dashboard/stats';
 
 }

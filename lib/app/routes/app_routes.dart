@@ -21,6 +21,8 @@ import '../../features/seller/presentation/screens/seller_otp_screen.dart';
 import '../../features/seller/presentation/screens/create_store_screen.dart';
 import '../../features/seller/presentation/screens/seller_pending_approval_screen.dart';
 import '../../features/seller/presentation/screens/seller_forget_password_screen.dart';
+import '../../features/seller/presentation/screens/create_product_screen.dart';
+import '../../features/seller/presentation/screens/seller_dashboard_screen.dart';
 
 class AppRoutes {
   AppRoutes._();
@@ -51,6 +53,8 @@ class AppRoutes {
   static const String sellerForgetPassword = '/seller/forget-password';
   static const String sellerCreateStore = '/seller/create-store';
   static const String sellerPendingApproval = '/seller/pending-approval';
+  static const String sellerCreateProduct = '/seller/create-product';
+  static const String sellerDashboard = '/seller/dashboard';
 
   static final routes = [
     GetPage(name: login, page: () => const LoginScreen()),
@@ -75,5 +79,7 @@ class AppRoutes {
     GetPage(name: sellerForgetPassword, page: () => const SellerForgetPasswordScreen()),
     GetPage(name: sellerCreateStore, page: () => const CreateStoreScreen()),
     GetPage(name: sellerPendingApproval, page: () => const SellerPendingApprovalScreen()),
+    GetPage(name: sellerCreateProduct, page: () => const CreateProductScreen()),
+    GetPage(name: sellerDashboard, page: () => const SellerDashboardScreen()),
   ];
 }

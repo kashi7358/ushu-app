@@ -129,6 +129,24 @@ class SellerLoginController extends GetxController {
         return;
       }
 
+      // 2. Check if Store is Created
+      bool hasStore = false;
+      String? storeId;
+      if (response is Map) {
+        if (response['hasStore'] == true || response['storeCreated'] == true) {
+          hasStore = true;
+        }
+        if (response['storeId'] != null) {
+          storeId = response['storeId'].toString();
+          hasStore = true;
+        }
+        if (response['store'] != null && response['store'] is Map && (response['store'] as Map).isNotEmpty) {
+          hasStore = true;
+          final storeMap = response['store'] as Map;
+          storeId ??= storeMap['_id']?.toString() ?? storeMap['id']?.toString();
+        }
+      }
+
       // If approved, save session
       await SessionManager.saveSellerSession(
         sellerId: sellerId ?? '',
@@ -136,17 +154,8 @@ class SellerLoginController extends GetxController {
         email: emailController.text.trim(),
         name: name,
         status: status ?? 'Approved',
+        storeId: storeId,
       );
-
-      // 2. Check if Store is Created
-      bool hasStore = false;
-      if (response is Map) {
-        if (response['hasStore'] == true || response['storeCreated'] == true) {
-          hasStore = true;
-        } else if (response['store'] != null && response['store'] is Map && (response['store'] as Map).isNotEmpty) {
-          hasStore = true;
-        }
-      }
 
       // Navigate directly without intermediate popup button
       if (!hasStore) {
@@ -159,7 +168,7 @@ class SellerLoginController extends GetxController {
           },
         );
       } else {
-        Get.offAllNamed(AppRoutes.mainLayout);
+        Get.offAllNamed(AppRoutes.sellerDashboard);
       }
     } catch (e) {
       final error = ExceptionHandler.handle(e);

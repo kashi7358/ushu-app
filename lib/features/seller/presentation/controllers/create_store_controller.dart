@@ -5,6 +5,7 @@ import '../../../../app/routes/app_routes.dart';
 import '../../../../core/errors/exception_handler.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/utils/custom_popup.dart';
+import '../../../../core/utils/session_manager.dart';
 import '../../data/datasources/seller_remote_data_source.dart';
 import '../../data/models/create_store_request_model.dart';
 import '../../data/repositories/seller_repository_impl.dart';
@@ -30,6 +31,50 @@ class CreateStoreController extends GetxController {
   final shippingMethodController = TextEditingController(text: 'Ecomme  service ');
   final deliveryZonesController = TextEditingController(text: 'All over Pakistan');
   final shippingChargesController = TextEditingController(text: '200');
+
+  // Reactive dropdown selection variables
+  final RxString selectedLanguage = 'Urdu'.obs;
+  final RxString selectedReturnPolicy = '14 days'.obs;
+  final RxString selectedWarranty = '6 months'.obs;
+  final RxString selectedProcessingTime = '5-6 working days'.obs;
+  final RxString selectedCancellationPolicy = 'No'.obs;
+  final RxString selectedShippingMethod = 'Ecomme  service '.obs;
+  final RxString selectedDeliveryZone = 'All over Pakistan'.obs;
+
+  void setLanguage(String val) {
+    selectedLanguage.value = val;
+    languageController.text = val;
+  }
+
+  void setReturnPolicy(String val) {
+    selectedReturnPolicy.value = val;
+    returnPolicyController.text = val;
+  }
+
+  void setWarranty(String val) {
+    selectedWarranty.value = val;
+    warrantyController.text = val;
+  }
+
+  void setProcessingTime(String val) {
+    selectedProcessingTime.value = val;
+    processingTimeController.text = val;
+  }
+
+  void setCancellationPolicy(String val) {
+    selectedCancellationPolicy.value = val;
+    cancellationPolicyController.text = val;
+  }
+
+  void setShippingMethod(String val) {
+    selectedShippingMethod.value = val;
+    shippingMethodController.text = val;
+  }
+
+  void setDeliveryZone(String val) {
+    selectedDeliveryZone.value = val;
+    deliveryZonesController.text = val;
+  }
 
   String sellerId = '';
 
@@ -215,14 +260,34 @@ class CreateStoreController extends GetxController {
       final response = await _repository.createStore(model);
       CustomPopup.hideLoading();
 
+      // Extract and save storeId
+      String? newStoreId;
+      if (response is Map) {
+        newStoreId = response['storeId']?.toString() ??
+            response['_id']?.toString() ??
+            response['id']?.toString();
+        if (newStoreId == null && response['store'] is Map) {
+          final sMap = response['store'] as Map;
+          newStoreId = sMap['_id']?.toString() ?? sMap['id']?.toString();
+        }
+        if (newStoreId == null && response['data'] is Map) {
+          final dMap = response['data'] as Map;
+          newStoreId = dMap['_id']?.toString() ?? dMap['id']?.toString() ?? dMap['storeId']?.toString();
+        }
+      }
+
+      if (newStoreId != null && newStoreId.isNotEmpty) {
+        await SessionManager.saveSellerStoreId(newStoreId);
+      }
+
       final message = (response is Map && response['message'] != null)
           ? response['message'].toString()
           : 'Store created successfully!';
 
       CustomPopup.showSuccess('Store Created!', message);
 
-      // Navigate to Pending Admin Approval Screen / Store Created Success state
-      Get.offAllNamed(AppRoutes.sellerPendingApproval);
+      // Navigate directly to Seller Dashboard
+      Get.offAllNamed(AppRoutes.sellerDashboard);
     } catch (e) {
       CustomPopup.hideLoading();
       final error = ExceptionHandler.handle(e);

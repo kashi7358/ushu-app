@@ -106,21 +106,20 @@ class AuthController extends GetxController {
   Future<void> login() async {
     if (!loginFormKey.currentState!.validate()) return;
     
+    final email = loginEmailController.text.trim();
+    final password = loginPasswordController.text;
+
     try {
       isLoading.value = true;
-      final user = await _loginUseCase.execute(
-        loginEmailController.text.trim(),
-        loginPasswordController.text,
-      );
+      final user = await _loginUseCase.execute(email, password);
       
       await SessionManager.saveSession(user.id, user.email, user.fullName, token: user.token);
       await SessionManager.fetchUserAddressFromBackend();
-      CustomPopup.showSuccess('Success!', 'Welcome back, ${user.fullName}!');
       Get.offAllNamed(AppRoutes.mainLayout);
       
     } catch (e) {
       final error = ExceptionHandler.handle(e);
-      CustomPopup.showError('Oops!', error.message);
+      CustomPopup.showToast('Login Failed', error.message, isError: true);
     } finally {
       isLoading.value = false;
     }
@@ -129,11 +128,11 @@ class AuthController extends GetxController {
   Future<void> signup() async {
     if (!signupFormKey.currentState!.validate()) return;
     if (!termsAccepted.value) {
-      CustomPopup.showError('Oops!', 'Please accept the Terms and Conditions');
+      CustomPopup.showToast('Notice', 'Please accept Terms and Conditions', isError: true);
       return;
     }
     if (signupPasswordController.text != signupConfirmPasswordController.text) {
-      CustomPopup.showError('Oops!', 'Passwords do not match');
+      CustomPopup.showToast('Notice', 'Passwords do not match', isError: true);
       return;
     }
 
@@ -150,15 +149,11 @@ class AuthController extends GetxController {
       );
 
       currentBuyerId = user.id;
-      
-      // Save session if signup automatically logs the user in (adjust as per backend flow)
       await SessionManager.saveSession(user.id, user.email, user.fullName, token: user.token);
-      
-      CustomPopup.showSuccess('Success!', 'Account created successfully. Please verify your email.');
       Get.toNamed(AppRoutes.otp);
     } catch (e) {
       final error = ExceptionHandler.handle(e);
-      CustomPopup.showError('Oops!', error.message);
+      CustomPopup.showToast('Signup Failed', error.message, isError: true);
     } finally {
       isLoading.value = false;
     }
@@ -167,20 +162,19 @@ class AuthController extends GetxController {
   Future<void> verifyEmail() async {
     final otp = otpController.text.trim();
     if (otp.isEmpty) {
-      CustomPopup.showError('Oops!', 'Please enter the OTP code.');
+      CustomPopup.showToast('Notice', 'Please enter the OTP code', isError: true);
       return;
     }
     if (currentBuyerId == null || currentBuyerId!.isEmpty) {
       currentBuyerId = SessionManager.userId;
     }
     if (currentBuyerId == null || currentBuyerId!.isEmpty) {
-      CustomPopup.showError('Oops!', 'Missing buyer reference. Please login or signup again.');
+      CustomPopup.showToast('Error', 'Missing buyer reference. Please login or signup again.', isError: true);
       return;
     }
 
     try {
       isLoading.value = true;
-      
       await _verifyEmailUseCase.execute(currentBuyerId!, otp);
 
       // Perform direct auto-login using signup credentials
@@ -191,20 +185,14 @@ class AuthController extends GetxController {
             signupPasswordController.text,
           );
           await SessionManager.saveSession(user.id, user.email, user.fullName, token: user.token);
-        } catch (_) {
-          // Keep existing session saved from signup
-        }
+        } catch (_) {}
       }
 
-      CustomPopup.showSuccess('Success!', 'OTP Verified Successfully!');
       otpController.clear();
-      
-      // Delay milliseconds then navigate to home
-      await Future.delayed(const Duration(milliseconds: 600));
       Get.offAllNamed(AppRoutes.mainLayout);
     } catch (e) {
       final error = ExceptionHandler.handle(e);
-      CustomPopup.showError('Invalid OTP', error.message.isNotEmpty ? error.message : 'Invalid OTP code. Please check and try again.');
+      CustomPopup.showToast('Verification Failed', error.message.isNotEmpty ? error.message : 'Invalid OTP code. Please check and try again.', isError: true);
     } finally {
       isLoading.value = false;
     }

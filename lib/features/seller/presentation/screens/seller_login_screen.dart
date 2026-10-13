@@ -8,6 +8,9 @@ import '../../../../core/widgets/app_logo.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import '../controllers/seller_login_controller.dart';
 
+import '../../../../core/utils/session_manager.dart';
+import '../../../../app/routes/app_routes.dart';
+
 class SellerLoginScreen extends StatelessWidget {
   const SellerLoginScreen({super.key});
 
@@ -15,21 +18,33 @@ class SellerLoginScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final controller = Get.put(SellerLoginController());
 
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.darkText),
-          onPressed: () => Get.back(),
+    return PopScope(
+      canPop: true,
+      onPopInvokedWithResult: (didPop, _) {
+        SessionManager.setLastScreen(null);
+      },
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, color: AppColors.darkText),
+            onPressed: () {
+              SessionManager.setLastScreen(null);
+              if (Navigator.of(context).canPop()) {
+                Get.back();
+              } else {
+                Get.offAllNamed(AppRoutes.mainLayout);
+              }
+            },
+          ),
+          title: Text(
+            'Seller Center',
+            style: AppTextStyles.bold.copyWith(color: AppColors.darkText, fontSize: 17),
+          ),
+          centerTitle: true,
         ),
-        title: Text(
-          'Seller Center',
-          style: AppTextStyles.bold.copyWith(color: AppColors.darkText, fontSize: 17),
-        ),
-        centerTitle: true,
-      ),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -142,6 +157,7 @@ class SellerLoginScreen extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }

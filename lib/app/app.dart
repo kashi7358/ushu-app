@@ -26,7 +26,7 @@ class UshuApp extends StatelessWidget {
           title: 'USHU',
           theme: AppTheme.lightTheme,
           initialBinding: InitialBindings(),
-          initialRoute: AppRoutes.mainLayout,
+          initialRoute: AppRoutes.getInitialRoute(),
           getPages: AppRoutes.routes,
           debugShowCheckedModeBanner: false,
         );

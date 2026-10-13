@@ -28,6 +28,17 @@ class SellerLoginController extends GetxController {
     final apiClient = ApiClient();
     final remoteDataSource = SellerRemoteDataSourceImpl(apiClient);
     _repository = SellerRepositoryImpl(remoteDataSource);
+
+    // If seller is already logged in AND has a created store, redirect directly to Seller Dashboard
+    final hasStore = SessionManager.sellerStoreId != null &&
+        SessionManager.sellerStoreId!.trim().isNotEmpty;
+    if (SessionManager.isSellerLoggedIn && hasStore) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Get.offAllNamed(AppRoutes.sellerDashboard);
+      });
+    } else {
+      SessionManager.setLastScreen(AppRoutes.sellerLogin);
+    }
   }
 
   @override
@@ -108,12 +119,10 @@ class SellerLoginController extends GetxController {
         return;
       }
 
-      // 1. Check if Admin has approved the account
+      // 1. Check if Admin has specifically blocked or pending the account
       final statusLower = status?.toLowerCase() ?? '';
-      final isPending = statusLower == 'pending' ||
-          statusLower == 'under review' ||
-          statusLower == 'in review' ||
-          isApproved == false;
+      final isPending = (statusLower == 'pending' || statusLower == 'under review' || statusLower == 'in review') ||
+          (isApproved == false && (statusLower.isNotEmpty && statusLower != 'active' && statusLower != 'approved'));
       final isRejected = statusLower == 'rejected' || statusLower == 'declined';
 
       if (isPending) {
@@ -132,33 +141,160 @@ class SellerLoginController extends GetxController {
       // 2. Check if Store is Created
       bool hasStore = false;
       String? storeId;
+
+      final userEmail = emailController.text.trim();
+
+      // Check if store ID was previously saved for this specific email or in current session
+      final emailSavedStoreId = await SessionManager.getSavedStoreIdForEmail(userEmail);
+      if (emailSavedStoreId != null && emailSavedStoreId.isNotEmpty) {
+        storeId = emailSavedStoreId;
+        hasStore = true;
+      } else if (SessionManager.sellerStoreId != null && SessionManager.sellerStoreId!.isNotEmpty) {
+        storeId = SessionManager.sellerStoreId;
+        hasStore = true;
+      }
+
       if (response is Map) {
-        if (response['hasStore'] == true || response['storeCreated'] == true) {
+        if (response['hasStore'] == true || response['storeCreated'] == true || response['isStoreCreated'] == true) {
           hasStore = true;
         }
-        if (response['storeId'] != null) {
+        if (response['storeId'] != null && response['storeId'].toString().isNotEmpty) {
           storeId = response['storeId'].toString();
           hasStore = true;
         }
-        if (response['store'] != null && response['store'] is Map && (response['store'] as Map).isNotEmpty) {
+        if (response['store_id'] != null && response['store_id'].toString().isNotEmpty) {
+          storeId = response['store_id'].toString();
           hasStore = true;
-          final storeMap = response['store'] as Map;
-          storeId ??= storeMap['_id']?.toString() ?? storeMap['id']?.toString();
+        }
+        if (response['store'] != null) {
+          if (response['store'] is Map && (response['store'] as Map).isNotEmpty) {
+            hasStore = true;
+            final storeMap = response['store'] as Map;
+            storeId ??= storeMap['_id']?.toString() ?? storeMap['id']?.toString();
+          } else if (response['store'] is String && response['store'].toString().isNotEmpty && response['store'] != 'null') {
+            storeId ??= response['store'].toString();
+            hasStore = true;
+          }
+        }
+
+        // Also inspect nested seller or data payload
+        final sellerPayload = response['seller'] ?? response['data'];
+        if (sellerPayload is Map) {
+          if (sellerPayload['hasStore'] == true || sellerPayload['storeCreated'] == true || sellerPayload['isStoreCreated'] == true) {
+            hasStore = true;
+          }
+          if (sellerPayload['storeId'] != null && sellerPayload['storeId'].toString().isNotEmpty) {
+            storeId = sellerPayload['storeId'].toString();
+            hasStore = true;
+          }
+          if (sellerPayload['store_id'] != null && sellerPayload['store_id'].toString().isNotEmpty) {
+            storeId = sellerPayload['store_id'].toString();
+            hasStore = true;
+          }
+          if (sellerPayload['store'] != null) {
+            if (sellerPayload['store'] is Map && (sellerPayload['store'] as Map).isNotEmpty) {
+              hasStore = true;
+              final sMap = sellerPayload['store'] as Map;
+              storeId ??= sMap['_id']?.toString() ?? sMap['id']?.toString();
+            } else if (sellerPayload['store'] is String && sellerPayload['store'].toString().isNotEmpty && sellerPayload['store'] != 'null') {
+              storeId ??= sellerPayload['store'].toString();
+              hasStore = true;
+            }
+          }
         }
       }
 
-      // If approved, save session
-      await SessionManager.saveSellerSession(
-        sellerId: sellerId ?? '',
-        token: token,
-        email: emailController.text.trim(),
-        name: name,
-        status: status ?? 'Approved',
-        storeId: storeId,
-      );
+      // Check backend stats API with token explicitly attached
+      try {
+        final statsResponse = await _repository.getDashboardStats(token);
+        if (statsResponse is Map) {
+          final statsMap = statsResponse['stats'] is Map
+              ? statsResponse['stats'] as Map
+              : (statsResponse['data'] is Map ? statsResponse['data'] as Map : statsResponse);
 
-      // Navigate directly without intermediate popup button
+          final sName = statsResponse['storeName']?.toString() ??
+              statsMap['storeName']?.toString() ??
+              statsResponse['store']?['StoreName']?.toString() ??
+              statsResponse['store']?['storeName']?.toString() ??
+              statsMap['store']?['StoreName']?.toString() ??
+              statsMap['store']?['storeName']?.toString();
+
+          final sId = statsResponse['storeId']?.toString() ??
+              statsMap['storeId']?.toString() ??
+              statsResponse['store']?['_id']?.toString() ??
+              statsResponse['store']?['id']?.toString() ??
+              statsMap['store']?['_id']?.toString() ??
+              statsMap['store']?['id']?.toString();
+
+          if ((sName != null && sName.isNotEmpty && sName != 'null') || (sId != null && sId.isNotEmpty)) {
+            hasStore = true;
+            if (sId != null && sId.isNotEmpty) {
+              storeId = sId;
+              await SessionManager.saveStoreIdForEmail(userEmail, sId);
+              await SessionManager.saveSellerStoreId(sId);
+            }
+            if (sName != null && sName.isNotEmpty && sName != 'null') {
+              await SessionManager.saveStoreNameForEmail(userEmail, sName);
+              await SessionManager.saveSellerStoreDetails(storeName: sName);
+            }
+          } else if (statsResponse['success'] == true && (statsResponse['data'] != null || statsResponse['stats'] != null)) {
+            // Stats API succeeded which means seller account is already active with store
+            hasStore = true;
+          }
+        }
+      } catch (_) {
+        // Ignored, check my-store below
+      }
+
+      // Check /store/my-store API directly
+      try {
+        final myStoreResponse = await _repository.getMyStore(token);
+        if (myStoreResponse is Map && myStoreResponse['success'] == true) {
+          final storeData = myStoreResponse['data'];
+          if (storeData is Map && storeData.isNotEmpty) {
+            hasStore = true;
+            final fetchedStoreId = storeData['_id']?.toString() ?? storeData['id']?.toString();
+            final fetchedStoreName = storeData['StoreName']?.toString() ?? storeData['storeName']?.toString();
+            final fetchedLogo = storeData['logo']?.toString();
+
+            if (fetchedStoreId != null && fetchedStoreId.isNotEmpty) {
+              storeId = fetchedStoreId;
+              await SessionManager.saveStoreIdForEmail(userEmail, fetchedStoreId);
+              await SessionManager.saveSellerStoreId(fetchedStoreId);
+            }
+            if (fetchedStoreName != null && fetchedStoreName.isNotEmpty) {
+              await SessionManager.saveStoreNameForEmail(userEmail, fetchedStoreName);
+              await SessionManager.saveSellerStoreDetails(
+                storeName: fetchedStoreName,
+                logoPath: fetchedLogo,
+                fullDetails: Map<String, dynamic>.from(storeData),
+              );
+            }
+          }
+        }
+      } catch (_) {
+        // Store genuinely does not exist yet
+      }
+
+      if (storeId != null && storeId.isNotEmpty) {
+        await SessionManager.saveStoreIdForEmail(userEmail, storeId);
+      }
+
+      await SessionManager.setLastScreen(null);
+
+      // Navigate based on whether store exists
       if (!hasStore) {
+        // Save session with isLoggedIn: false so user CANNOT bypass to dashboard on restart
+        await SessionManager.saveSellerSession(
+          sellerId: sellerId ?? '',
+          token: token,
+          email: emailController.text.trim(),
+          name: name,
+          status: status ?? 'Approved',
+          storeId: null,
+          isLoggedIn: false,
+        );
+
         Get.offAllNamed(
           AppRoutes.sellerCreateStore,
           arguments: {
@@ -168,6 +304,17 @@ class SellerLoginController extends GetxController {
           },
         );
       } else {
+        // Store genuinely exists -> save full session and allow dashboard
+        await SessionManager.saveSellerSession(
+          sellerId: sellerId ?? '',
+          token: token,
+          email: emailController.text.trim(),
+          name: name,
+          status: status ?? 'Approved',
+          storeId: storeId,
+          isLoggedIn: true,
+        );
+
         Get.offAllNamed(AppRoutes.sellerDashboard);
       }
     } catch (e) {

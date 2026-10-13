@@ -9,9 +9,11 @@ class SellerDashboardStatsModel {
   final int cancelledOrders;
   final int returnedOrders;
   final double earningAmount;
+  final double paidAmount;
+  final double unpaidAmount;
 
   const SellerDashboardStatsModel({
-    this.storeName = 'Fashion Store',
+    this.storeName = '',
     this.sellerName = '',
     this.sellerEmail = '',
     this.totalProducts = 0,
@@ -21,7 +23,11 @@ class SellerDashboardStatsModel {
     this.cancelledOrders = 0,
     this.returnedOrders = 0,
     this.earningAmount = 0.0,
+    this.paidAmount = 0.0,
+    this.unpaidAmount = 0.0,
   });
+
+  int get totalOrders => activeOrders + deliveredOrders + cancelledOrders + returnedOrders;
 
   factory SellerDashboardStatsModel.fromJson(Map<String, dynamic> json) {
     int parseInt(dynamic val) {
@@ -45,11 +51,18 @@ class SellerDashboardStatsModel {
             ? json['data'] as Map<String, dynamic>
             : json;
 
+    final double totalEarning = parseDouble(stats['earningAmount'] ?? stats['totalEarnings'] ?? stats['earnings'] ?? stats['revenue']);
+    final double paid = parseDouble(stats['paidAmount'] ?? stats['paidEarnings'] ?? stats['paid'] ?? stats['payoutPaid'] ?? stats['settledEarnings']);
+    final double unpaid = parseDouble(stats['unpaidAmount'] ?? stats['unpaidEarnings'] ?? stats['unpaid'] ?? stats['payoutUnpaid'] ?? stats['pendingEarnings']);
+
     return SellerDashboardStatsModel(
       storeName: json['storeName']?.toString() ??
           stats['storeName']?.toString() ??
           json['store']?['StoreName']?.toString() ??
-          'My Store',
+          json['store']?['storeName']?.toString() ??
+          stats['store']?['StoreName']?.toString() ??
+          stats['store']?['storeName']?.toString() ??
+          '',
       sellerName: json['sellerName']?.toString() ??
           stats['sellerName']?.toString() ??
           json['seller']?['name']?.toString() ??
@@ -64,7 +77,9 @@ class SellerDashboardStatsModel {
       deliveredOrders: parseInt(stats['deliveredOrders'] ?? stats['completedOrders']),
       cancelledOrders: parseInt(stats['cancelledOrders'] ?? stats['canceledOrders']),
       returnedOrders: parseInt(stats['returnedOrders'] ?? stats['returnsCount']),
-      earningAmount: parseDouble(stats['earningAmount'] ?? stats['totalEarnings'] ?? stats['earnings'] ?? stats['revenue']),
+      earningAmount: totalEarning,
+      paidAmount: paid,
+      unpaidAmount: unpaid > 0 ? unpaid : (totalEarning > paid ? totalEarning - paid : 0.0),
     );
   }
 }

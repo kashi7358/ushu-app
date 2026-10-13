@@ -23,9 +23,36 @@ import '../../features/seller/presentation/screens/seller_pending_approval_scree
 import '../../features/seller/presentation/screens/seller_forget_password_screen.dart';
 import '../../features/seller/presentation/screens/create_product_screen.dart';
 import '../../features/seller/presentation/screens/seller_dashboard_screen.dart';
+import '../../features/seller/presentation/screens/manage_products_screen.dart';
+import '../../features/seller/presentation/screens/create_flash_sale_screen.dart';
+import '../../features/seller/presentation/screens/manage_flash_sales_screen.dart';
+import '../../features/seller/presentation/screens/seller_orders_screen.dart';
+import '../../features/seller/presentation/screens/seller_promotions_screen.dart';
+import '../../features/seller/presentation/screens/create_banner_screen.dart';
+import '../../core/utils/session_manager.dart';
 
 class AppRoutes {
   AppRoutes._();
+
+  static String getInitialRoute() {
+    final bool hasStore = SessionManager.sellerStoreId != null &&
+        SessionManager.sellerStoreId!.trim().isNotEmpty;
+
+    if (SessionManager.isSellerLoggedIn && hasStore) {
+      return sellerDashboard;
+    }
+
+    if (SessionManager.lastScreen != null && SessionManager.lastScreen!.isNotEmpty) {
+      if (SessionManager.lastScreen == sellerDashboard || SessionManager.lastScreen == sellerCreateStore) {
+        if (!hasStore) {
+          return sellerLogin;
+        }
+      }
+      return SessionManager.lastScreen!;
+    }
+
+    return mainLayout;
+  }
 
   static const String login = '/login';
   static const String signup = '/signup';
@@ -54,7 +81,13 @@ class AppRoutes {
   static const String sellerCreateStore = '/seller/create-store';
   static const String sellerPendingApproval = '/seller/pending-approval';
   static const String sellerCreateProduct = '/seller/create-product';
+  static const String sellerManageProducts = '/seller/manage-products';
   static const String sellerDashboard = '/seller/dashboard';
+  static const String sellerCreateFlashSale = '/seller/create-flash-sale';
+  static const String sellerManageFlashSales = '/seller/manage-flash-sales';
+  static const String sellerOrders = '/seller/orders';
+  static const String sellerPromotions = '/seller/promotions';
+  static const String sellerCreateBanner = '/seller/create-banner';
 
   static final routes = [
     GetPage(name: login, page: () => const LoginScreen()),
@@ -80,6 +113,12 @@ class AppRoutes {
     GetPage(name: sellerCreateStore, page: () => const CreateStoreScreen()),
     GetPage(name: sellerPendingApproval, page: () => const SellerPendingApprovalScreen()),
     GetPage(name: sellerCreateProduct, page: () => const CreateProductScreen()),
+    GetPage(name: sellerManageProducts, page: () => const ManageProductsScreen()),
     GetPage(name: sellerDashboard, page: () => const SellerDashboardScreen()),
+    GetPage(name: sellerCreateFlashSale, page: () => const CreateFlashSaleScreen()),
+    GetPage(name: sellerManageFlashSales, page: () => const ManageFlashSalesScreen()),
+    GetPage(name: sellerOrders, page: () => const SellerOrdersScreen()),
+    GetPage(name: sellerPromotions, page: () => const SellerPromotionsScreen()),
+    GetPage(name: sellerCreateBanner, page: () => const CreateBannerScreen()),
   ];
 }

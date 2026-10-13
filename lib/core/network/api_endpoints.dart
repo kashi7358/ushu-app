@@ -2,7 +2,11 @@ class ApiEndpoints {
   ApiEndpoints._();
 
   static const String domain = 'https://ecombackend.ushu.pk';
+
+
   static const String baseUrl = '$domain/api';
+
+   // Buyer Authentification
   static const String registerBuyer = '$baseUrl/buyer/register';
   static const String loginBuyer = '$baseUrl/buyer/login';
   static const String verifyEmail = '$baseUrl/buyer/verify-email';
@@ -16,7 +20,10 @@ class ApiEndpoints {
   static const String flashSale = '$baseUrl/flashSale/active';
   static const String trendingProducts = '$baseUrl/product/trending';
   static const String homeBanner = '$baseUrl/banner/homepage';
+
+  // Catagories apis
   static const String categoriesWithImages = '$baseUrl/category/categories-withImages';
+   //Chat and add to cart
   static const String chatMessage = '$baseUrl/chat/message';
   static const String addToCart = '$baseUrl/cart/add';
   static const String getCart = '$baseUrl/cart/all';
@@ -56,13 +63,42 @@ class ApiEndpoints {
   // ==========================================
   // SELLER APIS
   // ==========================================
+
+  // Authentification
   static const String createSeller = '$baseUrl/seller/create';
   static const String verifySellerEmail = '$baseUrl/seller/verify-email';
   static const String resendSellerOtp = '$baseUrl/seller/resend-otp';
   static const String loginSeller = '$baseUrl/seller/login';
   static const String sellerForgetPassword = '$baseUrl/seller/forget-password';
+
+   // Create Store
   static const String createStore = '$domain/store/create';
+  static const String myStore = '$domain/store/my-store';
+  static const String updateStore = '$domain/store/update';
+
+  // Manage Products
   static String createProduct(String storeId) => '$baseUrl/product/create/$storeId';
+  static String getAllProductsByStore(String storeId) => '$baseUrl/product/all/$storeId';
+  static String deleteProduct(String productId) => '$baseUrl/product/delete/$productId';
+  static String updateProduct(String productId) => '$baseUrl/product/update-product/$productId';
+     // Seller Dashboard
   static const String sellerDashboardStats = '$baseUrl/dashboard/stats';
+
+  // Flash Sale
+  static const String createFlashSale = '$baseUrl/flashSale/create';
+  static const String getAllFlashSales = '$baseUrl/flashSale/all';
+  static String updateFlashSale(String id) => '$baseUrl/flashSale/update/$id';
+  static String deleteFlashSale(String id) => '$baseUrl/flashSale/delete/$id';
+
+   // All Order product
+  static const String sellerOrders = '$baseUrl/order/seller-orders';
+
+  // Seller Promotions & Banners
+  static const String sellerPromotions = '$baseUrl/seller/promotion';
+  static const String createBanner = '$baseUrl/banner/create';
+  static String updateSellerBanner(String id) => '$baseUrl/banner/update-seller/$id';
+
+  // Seller Copilot AI
+  static const String copilotGenerateFromImage = '$baseUrl/seller-copilot/generate-from-image';
 
 }

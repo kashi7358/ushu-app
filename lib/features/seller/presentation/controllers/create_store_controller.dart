@@ -92,20 +92,128 @@ class CreateStoreController extends GetxController {
   final ImagePicker _picker = ImagePicker();
   late final SellerRepository _repository;
 
+  bool validateAllFields() {
+    // 1. Branding (Step 0)
+    if (logoPath.value == null || logoPath.value!.trim().isEmpty) {
+      currentStep.value = 0;
+      CustomPopup.showError('Required Field', 'Please upload your Store Logo');
+      return false;
+    }
+    if (storeBannerPath.value == null || storeBannerPath.value!.trim().isEmpty) {
+      currentStep.value = 0;
+      CustomPopup.showError('Required Field', 'Please upload your Store Banner');
+      return false;
+    }
+    if (storeNameController.text.trim().isEmpty) {
+      currentStep.value = 0;
+      CustomPopup.showError('Required Field', 'Store Name is required');
+      return false;
+    }
+    if (storeTaglineController.text.trim().isEmpty) {
+      currentStep.value = 0;
+      CustomPopup.showError('Required Field', 'Store Tagline is required');
+      return false;
+    }
+    if (descriptionController.text.trim().isEmpty) {
+      currentStep.value = 0;
+      CustomPopup.showError('Required Field', 'Store Description is required');
+      return false;
+    }
+    if (languageController.text.trim().isEmpty) {
+      languageController.text = 'Urdu';
+    }
+
+    // 2. Contact & Warehouse (Step 1)
+    if (storeContactEmailController.text.trim().isEmpty) {
+      currentStep.value = 1;
+      CustomPopup.showError('Required Field', 'Store Contact Email is required');
+      return false;
+    }
+    if (!GetUtils.isEmail(storeContactEmailController.text.trim())) {
+      currentStep.value = 1;
+      CustomPopup.showError('Invalid Field', 'Please enter a valid Store Contact Email');
+      return false;
+    }
+    if (storeWhatsappController.text.trim().isEmpty) {
+      currentStep.value = 1;
+      CustomPopup.showError('Required Field', 'Store WhatsApp Number is required');
+      return false;
+    }
+    if (primaryCityController.text.trim().isEmpty) {
+      currentStep.value = 1;
+      CustomPopup.showError('Required Field', 'Primary City is required');
+      return false;
+    }
+    if (warehouseAddressController.text.trim().isEmpty) {
+      currentStep.value = 1;
+      CustomPopup.showError('Required Field', 'Warehouse Address is required');
+      return false;
+    }
+
+    // 3. Policies & Shipping (Step 2)
+    if (shippingChargesController.text.trim().isEmpty) {
+      currentStep.value = 2;
+      CustomPopup.showError('Required Field', 'Shipping Charges are required');
+      return false;
+    }
+
+    // Ensure policies have valid defaults
+    if (returnPolicyController.text.trim().isEmpty) returnPolicyController.text = '14 days';
+    if (warrantyController.text.trim().isEmpty) warrantyController.text = '6 months';
+    if (processingTimeController.text.trim().isEmpty) processingTimeController.text = '5-6 working days';
+    if (cancellationPolicyController.text.trim().isEmpty) cancellationPolicyController.text = 'No';
+    if (shippingMethodController.text.trim().isEmpty) shippingMethodController.text = 'Ecomme  service ';
+    if (deliveryZonesController.text.trim().isEmpty) deliveryZonesController.text = 'All over Pakistan';
+
+    return true;
+  }
+
   void nextStep() {
     if (currentStep.value == 0) {
-      if (!step1FormKey.currentState!.validate()) return;
-      if (logoPath.value == null || logoPath.value!.isEmpty) {
-        CustomPopup.showError('Required', 'Please upload a Store Logo');
+      if (logoPath.value == null || logoPath.value!.trim().isEmpty) {
+        CustomPopup.showError('Required Field', 'Please upload a Store Logo');
         return;
       }
-      if (storeBannerPath.value == null || storeBannerPath.value!.isEmpty) {
-        CustomPopup.showError('Required', 'Please upload a Store Banner');
+      if (storeBannerPath.value == null || storeBannerPath.value!.trim().isEmpty) {
+        CustomPopup.showError('Required Field', 'Please upload a Store Banner');
         return;
       }
+      if (storeNameController.text.trim().isEmpty) {
+        CustomPopup.showError('Required Field', 'Store Name is required');
+        return;
+      }
+      if (storeTaglineController.text.trim().isEmpty) {
+        CustomPopup.showError('Required Field', 'Store Tagline is required');
+        return;
+      }
+      if (descriptionController.text.trim().isEmpty) {
+        CustomPopup.showError('Required Field', 'Store Description is required');
+        return;
+      }
+      if (step1FormKey.currentState != null && !step1FormKey.currentState!.validate()) return;
       currentStep.value = 1;
     } else if (currentStep.value == 1) {
-      if (!step2FormKey.currentState!.validate()) return;
+      if (storeContactEmailController.text.trim().isEmpty) {
+        CustomPopup.showError('Required Field', 'Store Contact Email is required');
+        return;
+      }
+      if (!GetUtils.isEmail(storeContactEmailController.text.trim())) {
+        CustomPopup.showError('Invalid Field', 'Please enter a valid Store Contact Email');
+        return;
+      }
+      if (storeWhatsappController.text.trim().isEmpty) {
+        CustomPopup.showError('Required Field', 'Store WhatsApp Number is required');
+        return;
+      }
+      if (primaryCityController.text.trim().isEmpty) {
+        CustomPopup.showError('Required Field', 'Primary City is required');
+        return;
+      }
+      if (warehouseAddressController.text.trim().isEmpty) {
+        CustomPopup.showError('Required Field', 'Warehouse Address is required');
+        return;
+      }
+      if (step2FormKey.currentState != null && !step2FormKey.currentState!.validate()) return;
       currentStep.value = 2;
     }
   }
@@ -164,6 +272,10 @@ class CreateStoreController extends GetxController {
         warehouseAddressController.text = signupAddress;
       }
     }
+
+    if (sellerId.isEmpty) {
+      sellerId = SessionManager.sellerId ?? '';
+    }
   }
 
   @override
@@ -217,19 +329,10 @@ class CreateStoreController extends GetxController {
   }
 
   Future<void> createStore() async {
+    // 1. Strict validation of all mandatory fields
+    if (!validateAllFields()) return;
+
     if (step3FormKey.currentState != null && !step3FormKey.currentState!.validate()) return;
-
-    if (logoPath.value == null || logoPath.value!.isEmpty) {
-      CustomPopup.showError('Required', 'Please upload a Store Logo');
-      currentStep.value = 0;
-      return;
-    }
-
-    if (storeBannerPath.value == null || storeBannerPath.value!.isEmpty) {
-      CustomPopup.showError('Required', 'Please upload a Store Banner');
-      currentStep.value = 0;
-      return;
-    }
 
     try {
       isLoading.value = true;
@@ -276,9 +379,59 @@ class CreateStoreController extends GetxController {
         }
       }
 
-      if (newStoreId != null && newStoreId.isNotEmpty) {
-        await SessionManager.saveSellerStoreId(newStoreId);
+      final effectiveStoreId = (newStoreId != null && newStoreId.isNotEmpty)
+          ? newStoreId
+          : 'store_${DateTime.now().millisecondsSinceEpoch}';
+
+      await SessionManager.saveSellerStoreId(effectiveStoreId);
+
+      final contactEmail = storeContactEmailController.text.trim().isNotEmpty
+          ? storeContactEmailController.text.trim()
+          : (SessionManager.sellerEmail ?? '');
+      if (contactEmail.isNotEmpty) {
+        await SessionManager.saveStoreIdForEmail(contactEmail, effectiveStoreId);
+        await SessionManager.saveStoreNameForEmail(contactEmail, storeNameController.text.trim());
       }
+      if (SessionManager.sellerEmail != null && SessionManager.sellerEmail!.isNotEmpty) {
+        await SessionManager.saveStoreIdForEmail(SessionManager.sellerEmail!, effectiveStoreId);
+        await SessionManager.saveStoreNameForEmail(SessionManager.sellerEmail!, storeNameController.text.trim());
+      }
+
+      await SessionManager.saveSellerStoreDetails(
+        storeName: storeNameController.text.trim(),
+        logoPath: logoPath.value,
+        fullDetails: {
+          'storeName': storeNameController.text.trim(),
+          'tagline': storeTaglineController.text.trim(),
+          'description': descriptionController.text.trim(),
+          'language': languageController.text.trim(),
+          'email': storeContactEmailController.text.trim(),
+          'whatsapp': storeWhatsappController.text.trim(),
+          'city': primaryCityController.text.trim(),
+          'warehouseAddress': warehouseAddressController.text.trim(),
+          'socialLinks': socialLinksController.text.trim(),
+          'returnPolicy': returnPolicyController.text.trim(),
+          'warranty': warrantyController.text.trim(),
+          'processingTime': processingTimeController.text.trim(),
+          'cancellationPolicy': cancellationPolicyController.text.trim(),
+          'shippingMethod': shippingMethodController.text.trim(),
+          'deliveryZones': deliveryZonesController.text.trim(),
+          'shippingCharges': shippingChargesController.text.trim(),
+          'logo': logoPath.value,
+          'banner': storeBannerPath.value,
+        },
+      );
+
+      // Strict Rule: Now that store is created, seller session is officially marked active!
+      await SessionManager.saveSellerSession(
+        sellerId: sellerId.isNotEmpty ? sellerId : (SessionManager.sellerId ?? ''),
+        token: SessionManager.sellerToken,
+        email: contactEmail,
+        name: SessionManager.sellerName,
+        status: 'Active',
+        storeId: effectiveStoreId,
+        isLoggedIn: true,
+      );
 
       final message = (response is Map && response['message'] != null)
           ? response['message'].toString()

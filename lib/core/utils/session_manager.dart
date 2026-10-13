@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../network/api_client.dart';
@@ -21,6 +22,10 @@ class SessionManager {
   static String? _sellerName;
   static String? _sellerStatus;
   static String? _sellerStoreId;
+  static String? _sellerStoreName;
+  static String? _sellerStoreLogo;
+  static String? _sellerStoreDetails;
+  static String? _lastScreen;
 
   static final Set<String> _reviewedKeys = {};
   static final Set<String> _returnedOrders = {};
@@ -43,6 +48,15 @@ class SessionManager {
     _sellerName = await _storage.read(key: 'sellerName');
     _sellerStatus = await _storage.read(key: 'sellerStatus');
     _sellerStoreId = await _storage.read(key: 'sellerStoreId');
+    _sellerStoreName = await _storage.read(key: 'sellerStoreName');
+    _sellerStoreLogo = await _storage.read(key: 'sellerStoreLogo');
+    _sellerStoreDetails = await _storage.read(key: 'sellerStoreDetails');
+    _lastScreen = await _storage.read(key: 'lastScreen');
+
+    // Strict Rule: Seller CANNOT be logged in to dashboard if store is not created yet!
+    if (_sellerStoreId == null || _sellerStoreId!.trim().isEmpty) {
+      _isSellerLoggedIn = false;
+    }
 
     await loadReviewedItems();
     await loadReturnedItems();
@@ -290,27 +304,86 @@ class SessionManager {
     String? name,
     String? status,
     String? storeId,
+    bool? isLoggedIn,
   }) async {
-    _isSellerLoggedIn = true;
+    final bool hasValidStore = (storeId != null && storeId.trim().isNotEmpty) ||
+        (_sellerStoreId != null && _sellerStoreId!.trim().isNotEmpty);
+
+    // Strict Rule: Seller is only fully logged in if store is genuinely created!
+    _isSellerLoggedIn = isLoggedIn ?? hasValidStore;
     _sellerId = sellerId;
     _sellerToken = token;
     _sellerEmail = email;
     _sellerName = name;
     _sellerStatus = status;
-    if (storeId != null) _sellerStoreId = storeId;
+    if (storeId != null && storeId.trim().isNotEmpty) _sellerStoreId = storeId.trim();
 
-    await _storage.write(key: 'isSellerLoggedIn', value: 'true');
+    await _storage.write(key: 'isSellerLoggedIn', value: _isSellerLoggedIn ? 'true' : 'false');
     await _storage.write(key: 'sellerId', value: sellerId);
     if (token != null) await _storage.write(key: 'sellerToken', value: token);
     if (email != null) await _storage.write(key: 'sellerEmail', value: email);
     if (name != null) await _storage.write(key: 'sellerName', value: name);
     if (status != null) await _storage.write(key: 'sellerStatus', value: status);
-    if (storeId != null) await _storage.write(key: 'sellerStoreId', value: storeId);
+    if (storeId != null && storeId.trim().isNotEmpty) await _storage.write(key: 'sellerStoreId', value: storeId.trim());
   }
 
   static Future<void> saveSellerStoreId(String storeId) async {
     _sellerStoreId = storeId;
     await _storage.write(key: 'sellerStoreId', value: storeId);
+  }
+
+  static String? get sellerStoreName => _sellerStoreName;
+  static String? get sellerStoreLogo => _sellerStoreLogo;
+  static String? get sellerStoreDetails => _sellerStoreDetails;
+
+  static Future<void> saveSellerStoreDetails({
+    required String storeName,
+    String? logoPath,
+    Map<String, dynamic>? fullDetails,
+  }) async {
+    _sellerStoreName = storeName;
+    await _storage.write(key: 'sellerStoreName', value: storeName);
+    if (logoPath != null && logoPath.isNotEmpty) {
+      _sellerStoreLogo = logoPath;
+      await _storage.write(key: 'sellerStoreLogo', value: logoPath);
+    }
+    if (fullDetails != null) {
+      _sellerStoreDetails = jsonEncode(fullDetails);
+      await _storage.write(key: 'sellerStoreDetails', value: _sellerStoreDetails);
+    }
+  }
+
+  static Map<String, dynamic>? getSellerStoreDetailsMap() {
+    if (_sellerStoreDetails == null || _sellerStoreDetails!.isEmpty) return null;
+    try {
+      return jsonDecode(_sellerStoreDetails!) as Map<String, dynamic>;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static Future<void> saveStoreIdForEmail(String email, String storeId) async {
+    if (email.trim().isEmpty || storeId.trim().isEmpty) return;
+    final key = 'store_id_for_${email.trim().toLowerCase()}';
+    await _storage.write(key: key, value: storeId.trim());
+  }
+
+  static Future<String?> getSavedStoreIdForEmail(String email) async {
+    if (email.trim().isEmpty) return null;
+    final key = 'store_id_for_${email.trim().toLowerCase()}';
+    return await _storage.read(key: key);
+  }
+
+  static Future<void> saveStoreNameForEmail(String email, String storeName) async {
+    if (email.trim().isEmpty || storeName.trim().isEmpty) return;
+    final key = 'store_name_for_${email.trim().toLowerCase()}';
+    await _storage.write(key: key, value: storeName.trim());
+  }
+
+  static Future<String?> getSavedStoreNameForEmail(String email) async {
+    if (email.trim().isEmpty) return null;
+    final key = 'store_name_for_${email.trim().toLowerCase()}';
+    return await _storage.read(key: key);
   }
 
   static Future<void> clearSellerSession() async {
@@ -321,6 +394,10 @@ class SessionManager {
     _sellerName = null;
     _sellerStatus = null;
     _sellerStoreId = null;
+    _sellerStoreName = null;
+    _sellerStoreLogo = null;
+    _sellerStoreDetails = null;
+    _lastScreen = null;
 
     await _storage.delete(key: 'isSellerLoggedIn');
     await _storage.delete(key: 'sellerId');
@@ -329,5 +406,20 @@ class SessionManager {
     await _storage.delete(key: 'sellerName');
     await _storage.delete(key: 'sellerStatus');
     await _storage.delete(key: 'sellerStoreId');
+    await _storage.delete(key: 'sellerStoreName');
+    await _storage.delete(key: 'sellerStoreLogo');
+    await _storage.delete(key: 'sellerStoreDetails');
+    await _storage.delete(key: 'lastScreen');
+  }
+
+  static String? get lastScreen => _lastScreen;
+
+  static Future<void> setLastScreen(String? screen) async {
+    _lastScreen = screen;
+    if (screen != null && screen.isNotEmpty) {
+      await _storage.write(key: 'lastScreen', value: screen);
+    } else {
+      await _storage.delete(key: 'lastScreen');
+    }
   }
 }

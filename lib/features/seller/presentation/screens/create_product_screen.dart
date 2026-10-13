@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:lottie/lottie.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_text_field.dart';
@@ -24,10 +25,10 @@ class CreateProductScreen extends StatelessWidget {
           icon: const Icon(Icons.arrow_back, color: AppColors.darkText),
           onPressed: controller.previousStep,
         ),
-        title: Text(
-          'Add New Product',
+        title: Obx(() => Text(
+          controller.isEditMode.value ? 'Edit Product' : 'Add New Product',
           style: AppTextStyles.bold.copyWith(color: AppColors.darkText, fontSize: 17),
-        ),
+        )),
         centerTitle: true,
       ),
       body: SafeArea(
@@ -49,7 +50,7 @@ class CreateProductScreen extends StatelessWidget {
                 child: Obx(() {
                   switch (controller.currentStep.value) {
                     case 0:
-                      return _buildStep1BasicInfo(controller);
+                      return _buildStep1BasicInfo(context, controller);
                     case 1:
                       return _buildStep2StockAndPricing(controller);
                     case 2:
@@ -125,7 +126,9 @@ class CreateProductScreen extends StatelessWidget {
                                   ),
                                 )
                               : Text(
-                                  isLastStep ? 'Publish Product' : 'Next Step',
+                                  isLastStep
+                                      ? (controller.isEditMode.value ? 'Update Product' : 'Publish Product')
+                                      : 'Next Step',
                                   style: AppTextStyles.bold.copyWith(color: Colors.white, fontSize: 14),
                                 ),
                         ),
@@ -141,13 +144,154 @@ class CreateProductScreen extends StatelessWidget {
     );
   }
 
+  // AI Seller Copilot Card
+  Widget _buildAiCopilotCard(BuildContext context, CreateProductController controller) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [
+            Color(0xFF2E0854),
+            Color(0xFF5B21B6),
+            Color(0xFF7C3AED),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF6B46C1).withValues(alpha: 0.25),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(18),
+          onTap: () => controller.promptAiCopilot(context),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            child: Row(
+              children: [
+                // Clean Copilot Lottie animation (No "Hello" text)
+                SizedBox(
+                  width: 65,
+                  height: 65,
+                  child: Lottie.asset(
+                    'assets/lotties/copilot.json',
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.15),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.auto_awesome, color: Colors.white, size: 28),
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(width: 14),
+                // Text details
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.16),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.3),
+                            width: 0.8,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.bolt, color: Color(0xFFFFD700), size: 12),
+                            const SizedBox(width: 4),
+                            Text(
+                              'AI COPILOT',
+                              style: AppTextStyles.bold.copyWith(
+                                color: Colors.white,
+                                fontSize: 9.5,
+                                letterSpacing: 0.6,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'Auto-Fill from Image',
+                        style: AppTextStyles.bold.copyWith(
+                          color: Colors.white,
+                          fontSize: 15,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        'Snap or pick a photo to auto-generate title, price, category & details.',
+                        style: AppTextStyles.regular.copyWith(
+                          color: Colors.white.withValues(alpha: 0.85),
+                          fontSize: 11,
+                          height: 1.3,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 10),
+                // Action Pill Button
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(10),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.1),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.auto_awesome, color: Color(0xFF6B46C1), size: 14),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Fill',
+                        style: AppTextStyles.bold.copyWith(
+                          color: const Color(0xFF6B46C1),
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   // STEP 1: Basic Information
-  Widget _buildStep1BasicInfo(CreateProductController controller) {
+  Widget _buildStep1BasicInfo(BuildContext context, CreateProductController controller) {
     return Form(
       key: controller.step1FormKey,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          _buildAiCopilotCard(context, controller),
+          const SizedBox(height: 18),
           _buildSectionHeader(
             title: '1. Basic Information',
             subtitle: 'Enter product name, category, brand and details',
@@ -410,6 +554,46 @@ class CreateProductScreen extends StatelessWidget {
               spacing: 10,
               runSpacing: 10,
               children: [
+                if (controller.isEditMode.value) ...[
+                  ...controller.existingImages.asMap().entries.map((entry) {
+                    final imgUrl = entry.value;
+                    return ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: Container(
+                        width: 85,
+                        height: 85,
+                        color: Colors.grey.shade100,
+                        child: Stack(
+                          children: [
+                            Positioned.fill(
+                              child: Image.network(
+                                imgUrl,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => const Center(
+                                  child: Icon(Icons.image_not_supported_outlined, size: 28, color: Colors.grey),
+                                ),
+                              ),
+                            ),
+                            Positioned(
+                              bottom: 0,
+                              left: 0,
+                              right: 0,
+                              child: Container(
+                                color: Colors.black54,
+                                padding: const EdgeInsets.symmetric(vertical: 2),
+                                child: const Text(
+                                  'Current',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }),
+                ],
                 ...controller.imagePaths.asMap().entries.map((entry) {
                   final index = entry.key;
                   final path = entry.value;

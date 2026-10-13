@@ -34,7 +34,7 @@ class ApiClient {
       _dio.interceptors.add(LogInterceptor(
         request: true,
         requestHeader: false,
-        requestBody: true,
+        requestBody: false,
         responseHeader: false,
         responseBody: false,
         error: true,

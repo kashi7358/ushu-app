@@ -217,7 +217,10 @@ class ProfileScreen extends StatelessWidget {
                       Icons.storefront_outlined,
                       'Become a Seller',
                       '',
-                      onTap: () => Get.toNamed(AppRoutes.sellerRegister),
+                      onTap: () {
+                        SessionManager.setLastScreen(AppRoutes.sellerLogin);
+                        Get.toNamed(AppRoutes.sellerLogin);
+                      },
                     ),
                   ],
                 ),

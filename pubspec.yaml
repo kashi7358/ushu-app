@@ -87,13 +87,11 @@ flutter:
   assets:
     - assets/images/
     - assets/images/logo.png
-
-    - assets/images/
-
+    - assets/lotties/
     - assets/lotties/done.json
     - assets/lotties/delete.json
-
     - assets/lotties/chatbot.json
+    - assets/lotties/copilot.json
     - assets/lotties/add_to_cart_new.json
 
 

@@ -28,4 +28,5 @@ abstract class SellerRepository {
   Future<dynamic> createBanner(CreateBannerRequestModel model);
   Future<dynamic> updateSellerBanner({required String id, required UpdateBannerRequestModel model});
   Future<dynamic> generateProductFromImage({required String imagePath, required String storeId});
+  Future<dynamic> getFinancialReport([String? token]);
 }

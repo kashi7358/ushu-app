@@ -8,26 +8,40 @@ import '../../../../app/routes/app_routes.dart';
 import '../../../../core/utils/session_manager.dart';
 import '../controllers/seller_dashboard_controller.dart';
 
-class SellerDashboardScreen extends StatelessWidget {
+class SellerDashboardScreen extends StatefulWidget {
   const SellerDashboardScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final controller = Get.put(SellerDashboardController());
-    final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
+  State<SellerDashboardScreen> createState() => _SellerDashboardScreenState();
+}
 
+class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
+  late final SellerDashboardController controller;
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
+  @override
+  void initState() {
+    super.initState();
+    controller = Get.put(SellerDashboardController());
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
-      key: scaffoldKey,
+      key: _scaffoldKey,
       backgroundColor: const Color(0xFFF8FAFC),
       drawer: _buildSidebarDrawer(context, controller),
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
         surfaceTintColor: Colors.transparent,
-        leading: IconButton(
-          icon: const Icon(Icons.menu_rounded, color: AppColors.darkText, size: 24),
-          onPressed: () => scaffoldKey.currentState?.openDrawer(),
-          tooltip: 'Open Menu',
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 10.0),
+          child: IconButton(
+            icon: const Icon(Icons.menu_rounded, color: AppColors.darkText, size: 26),
+            onPressed: () => _scaffoldKey.currentState?.openDrawer(),
+            tooltip: 'Open Menu',
+          ),
         ),
         title: Row(
           mainAxisSize: MainAxisSize.min,
@@ -103,32 +117,144 @@ class SellerDashboardScreen extends StatelessWidget {
                     ),
                   ),
 
-                // 1. Total Earnings Banner Card (Placed at the very TOP)
+                // Welcome Store Greeting Header Card
                 Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(20),
+                  margin: const EdgeInsets.only(bottom: 14),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF1E1B4B), Color(0xFF312E81)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(20),
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFF1E1B4B).withValues(alpha: 0.25),
-                        blurRadius: 16,
-                        offset: const Offset(0, 6),
+                        color: Colors.black.withValues(alpha: 0.02),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
                       ),
                     ],
                   ),
                   child: Row(
                     children: [
+                      Container(
+                        width: 42,
+                        height: 42,
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryPurple.withValues(alpha: 0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        clipBehavior: Clip.antiAlias,
+                        child: Obx(() {
+                          final logo = controller.storeLogo.value;
+                          final sName = controller.storeName.value;
+                          return _buildAdaptiveImage(
+                            path: logo,
+                            fit: BoxFit.cover,
+                            placeholder: Center(
+                              child: Text(
+                                sName.isNotEmpty ? sName[0].toUpperCase() : 'S',
+                                style: AppTextStyles.bold.copyWith(color: AppColors.primaryPurple, fontSize: 17),
+                              ),
+                            ),
+                          );
+                        }),
+                      ),
+                      const SizedBox(width: 10),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Row(
+                              children: [
+                                Flexible(
+                                  child: Obx(() => Text(
+                                    controller.storeName.value.isNotEmpty ? controller.storeName.value : 'My Store',
+                                    style: AppTextStyles.bold.copyWith(fontSize: 15, color: AppColors.darkText),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  )),
+                                ),
+                                const SizedBox(width: 5),
+                                const Icon(Icons.verified_rounded, color: Color(0xFF10B981), size: 15),
+                              ],
+                            ),
+                            const SizedBox(height: 2),
+                            Row(
+                              children: [
+                                Container(
+                                  width: 6,
+                                  height: 6,
+                                  decoration: const BoxDecoration(
+                                    color: Color(0xFF10B981),
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                                const SizedBox(width: 5),
+                                const Expanded(
+                                  child: Text(
+                                    'Store Live & Active',
+                                    style: TextStyle(color: Color(0xFF64748B), fontSize: 11, fontWeight: FontWeight.w500),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      InkWell(
+                        onTap: () => _showStoreProfileBottomSheet(context, controller),
+                        borderRadius: BorderRadius.circular(10),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF1F5F9),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                'Profile',
+                                style: TextStyle(color: Color(0xFF334155), fontSize: 11, fontWeight: FontWeight.w600),
+                              ),
+                              Icon(Icons.chevron_right_rounded, size: 15, color: Color(0xFF64748B)),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // 1. Executive Total Earnings Banner Card
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF1E1B4B), Color(0xFF312E81), Color(0xFF3730A3)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(22),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF312E81).withValues(alpha: 0.28),
+                        blurRadius: 16,
+                        offset: const Offset(0, 6),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Row(
                               children: [
                                 Container(
                                   width: 8,
@@ -139,46 +265,153 @@ class SellerDashboardScreen extends StatelessWidget {
                                   ),
                                 ),
                                 const SizedBox(width: 6),
-                                Text(
-                                  'TOTAL EARNINGS',
-                                  style: AppTextStyles.bold.copyWith(
-                                    color: Colors.white.withValues(alpha: 0.8),
-                                    fontSize: 11.5,
-                                    letterSpacing: 1.1,
+                                Flexible(
+                                  child: Text(
+                                    'TOTAL SETTLED REVENUE',
+                                    style: AppTextStyles.bold.copyWith(
+                                      color: Colors.white.withValues(alpha: 0.8),
+                                      fontSize: 10.5,
+                                      letterSpacing: 1.0,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 10),
-                            Obx(() => Text(
-                              'Rs. ${controller.stats.value.earningAmount.toStringAsFixed(controller.stats.value.earningAmount.truncateToDouble() == controller.stats.value.earningAmount ? 0 : 2)}',
-                              style: AppTextStyles.extraBold.copyWith(
-                                fontSize: 26,
-                                color: Colors.white,
-                                letterSpacing: -0.5,
+                          ),
+                          const SizedBox(width: 8),
+                          InkWell(
+                            onTap: () => Get.toNamed(AppRoutes.sellerFinancialReport),
+                            borderRadius: BorderRadius.circular(20),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.16),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
                               ),
-                            )),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Settled revenue for your store',
-                              style: TextStyle(color: Colors.white.withValues(alpha: 0.65), fontSize: 11.5),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    'Report',
+                                    style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700),
+                                  ),
+                                  SizedBox(width: 4),
+                                  Icon(Icons.arrow_forward_ios_rounded, size: 10, color: Colors.white),
+                                ],
+                              ),
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
-                      Container(
-                        padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
-                        ),
-                        child: const Icon(Icons.account_balance_wallet_rounded, color: Colors.amberAccent, size: 32),
+                      const SizedBox(height: 12),
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Obx(() => Text(
+                          'Rs. ${controller.stats.value.earningAmount.toStringAsFixed(controller.stats.value.earningAmount.truncateToDouble() == controller.stats.value.earningAmount ? 0 : 2)}',
+                          style: AppTextStyles.extraBold.copyWith(
+                            fontSize: 27,
+                            color: Colors.white,
+                            letterSpacing: -0.5,
+                          ),
+                        )),
+                      ),
+                      const SizedBox(height: 14),
+                      const Divider(height: 1, color: Colors.white24),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Row(
+                              children: [
+                                const Icon(Icons.verified_rounded, size: 15, color: Colors.greenAccent),
+                                const SizedBox(width: 5),
+                                Expanded(
+                                  child: Obx(() => Text(
+                                    'Settled: Rs. ${controller.paidAmount.value.toStringAsFixed(0)}',
+                                    style: const TextStyle(color: Colors.white, fontSize: 11.5, fontWeight: FontWeight.w600),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  )),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Container(width: 1, height: 16, color: Colors.white24),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Row(
+                              children: [
+                                const Icon(Icons.hourglass_top_rounded, size: 15, color: Colors.amberAccent),
+                                const SizedBox(width: 5),
+                                Expanded(
+                                  child: Obx(() => Text(
+                                    'Pending: Rs. ${controller.unpaidAmount.value.toStringAsFixed(0)}',
+                                    style: const TextStyle(color: Colors.white, fontSize: 11.5, fontWeight: FontWeight.w600),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  )),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 20),
+
+                // 2. Quick Action Shortcuts Row
+                Container(
+                  margin: const EdgeInsets.only(top: 14, bottom: 18),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: _buildQuickActionItem(
+                          icon: Icons.add_box_rounded,
+                          label: 'Add Product',
+                          color: const Color(0xFF2563EB),
+                          bgColor: const Color(0xFFEFF6FF),
+                          onTap: controller.navigateToAddProduct,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _buildQuickActionItem(
+                          icon: Icons.local_shipping_rounded,
+                          label: 'Orders',
+                          color: const Color(0xFFF59E0B),
+                          bgColor: const Color(0xFFFFFBEB),
+                          onTap: () => Get.toNamed(AppRoutes.sellerOrders),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _buildQuickActionItem(
+                          icon: Icons.bolt_rounded,
+                          label: 'Flash Sale',
+                          color: const Color(0xFF7C3AED),
+                          bgColor: const Color(0xFFF5F3FF),
+                          onTap: () => Get.toNamed(AppRoutes.sellerCreateFlashSale),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _buildQuickActionItem(
+                          icon: Icons.assessment_rounded,
+                          label: 'Financials',
+                          color: const Color(0xFF10B981),
+                          bgColor: const Color(0xFFECFDF5),
+                          onTap: () => Get.toNamed(AppRoutes.sellerFinancialReport),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 6),
 
                 // 3. Stats Section Header
                 Text(
@@ -322,6 +555,59 @@ class SellerDashboardScreen extends StatelessWidget {
     );
   }
 
+  Widget _buildQuickActionItem({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required Color bgColor,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.02),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: bgColor,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, size: 20, color: color),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 10.5,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF334155),
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   // Modern Stat Card with custom accent color
   Widget _buildModernStatCard({
     required String title,
@@ -394,10 +680,11 @@ class SellerDashboardScreen extends StatelessWidget {
     return Drawer(
       backgroundColor: Colors.white,
       surfaceTintColor: Colors.transparent,
+      elevation: 16,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.only(
-          topRight: Radius.circular(20),
-          bottomRight: Radius.circular(20),
+          topRight: Radius.circular(22),
+          bottomRight: Radius.circular(22),
         ),
       ),
       child: Column(
@@ -620,7 +907,10 @@ class SellerDashboardScreen extends StatelessWidget {
                   icon: Icons.bar_chart_rounded,
                   title: 'Financial Report',
                   isSelected: false,
-                  onTap: () => Navigator.of(context).pop(),
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    Get.toNamed(AppRoutes.sellerFinancialReport);
+                  },
                 ),
                 _buildDrawerItem(
                   icon: Icons.campaign_outlined,

@@ -52,7 +52,7 @@ class CreateProductScreen extends StatelessWidget {
             // Step Body
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 130),
                 child: Obx(() {
                   switch (controller.currentStep.value) {
                     case 0:

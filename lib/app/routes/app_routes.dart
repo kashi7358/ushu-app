@@ -29,6 +29,7 @@ import '../../features/seller/presentation/screens/manage_flash_sales_screen.dar
 import '../../features/seller/presentation/screens/seller_orders_screen.dart';
 import '../../features/seller/presentation/screens/seller_promotions_screen.dart';
 import '../../features/seller/presentation/screens/create_banner_screen.dart';
+import '../../features/seller/presentation/screens/financial_report_screen.dart';
 import '../../core/utils/session_manager.dart';
 
 class AppRoutes {
@@ -88,6 +89,7 @@ class AppRoutes {
   static const String sellerOrders = '/seller/orders';
   static const String sellerPromotions = '/seller/promotions';
   static const String sellerCreateBanner = '/seller/create-banner';
+  static const String sellerFinancialReport = '/seller/financial-report';
 
   static final routes = [
     GetPage(name: login, page: () => const LoginScreen()),
@@ -120,5 +122,6 @@ class AppRoutes {
     GetPage(name: sellerOrders, page: () => const SellerOrdersScreen()),
     GetPage(name: sellerPromotions, page: () => const SellerPromotionsScreen()),
     GetPage(name: sellerCreateBanner, page: () => const CreateBannerScreen()),
+    GetPage(name: sellerFinancialReport, page: () => const FinancialReportScreen()),
   ];
 }

@@ -101,4 +101,6 @@ class ApiEndpoints {
   // Seller Copilot AI
   static const String copilotGenerateFromImage = '$baseUrl/seller-copilot/generate-from-image';
 
+  // Seller Financial Report
+  static const String sellerFinancialReport = 'https://seller.ushu.pk/financial-report';
 }

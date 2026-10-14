@@ -30,6 +30,7 @@ abstract class SellerRemoteDataSource {
   Future<dynamic> createBanner(CreateBannerRequestModel model);
   Future<dynamic> updateSellerBanner({required String id, required UpdateBannerRequestModel model});
   Future<dynamic> generateProductFromImage({required String imagePath, required String storeId});
+  Future<dynamic> getFinancialReport([String? token]);
 }
 
 class SellerRemoteDataSourceImpl implements SellerRemoteDataSource {
@@ -287,6 +288,20 @@ class SellerRemoteDataSourceImpl implements SellerRemoteDataSource {
       options: Options(
         headers: {
           'Content-Type': 'multipart/form-data',
+        },
+      ),
+    );
+    return response.data;
+  }
+
+  @override
+  Future<dynamic> getFinancialReport([String? token]) async {
+    final response = await apiClient.dio.get(
+      ApiEndpoints.sellerFinancialReport,
+      options: Options(
+        headers: {
+          if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
         },
       ),
     );

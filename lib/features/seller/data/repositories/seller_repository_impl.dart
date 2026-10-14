@@ -117,4 +117,9 @@ class SellerRepositoryImpl implements SellerRepository {
   Future<dynamic> generateProductFromImage({required String imagePath, required String storeId}) {
     return remoteDataSource.generateProductFromImage(imagePath: imagePath, storeId: storeId);
   }
+
+  @override
+  Future<dynamic> getFinancialReport([String? token]) {
+    return remoteDataSource.getFinancialReport(token);
+  }
 }

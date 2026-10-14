@@ -33,12 +33,19 @@ class ChatbotScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(width: AppDimensions.sm),
-            const Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Ushu AI Assistant', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
-                Text('Online', style: TextStyle(color: Colors.greenAccent, fontSize: 12)),
-              ],
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Ushu AI Assistant',
+                    style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Text('Online', style: TextStyle(color: Colors.greenAccent, fontSize: 12)),
+                ],
+              ),
             ),
           ],
         ),

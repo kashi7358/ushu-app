@@ -16,21 +16,27 @@ class CreateProductScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final controller = Get.put(CreateProductController());
 
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
+    return PopScope(
+      canPop: controller.currentStep.value == 0,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        controller.previousStep();
+      },
+      child: Scaffold(
         backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.darkText),
-          onPressed: controller.previousStep,
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.darkText, size: 20),
+            onPressed: controller.previousStep,
+          ),
+          title: Obx(() => Text(
+            controller.isEditMode.value ? 'Edit Product' : 'Add New Product',
+            style: AppTextStyles.bold.copyWith(color: AppColors.darkText, fontSize: 17),
+          )),
+          centerTitle: true,
         ),
-        title: Obx(() => Text(
-          controller.isEditMode.value ? 'Edit Product' : 'Add New Product',
-          style: AppTextStyles.bold.copyWith(color: AppColors.darkText, fontSize: 17),
-        )),
-        centerTitle: true,
-      ),
       body: SafeArea(
         child: Column(
           children: [
@@ -141,26 +147,33 @@ class CreateProductScreen extends StatelessWidget {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => controller.openCopilotChat(context),
-        backgroundColor: const Color(0xFF6B46C1),
-        elevation: 6,
-        shape: const CircleBorder(),
-        child: SizedBox(
-          width: 44,
-          height: 44,
-          child: Lottie.asset(
-            'assets/lotties/chatbot.json',
-            fit: BoxFit.contain,
-            errorBuilder: (context, error, stackTrace) => const Icon(
-              Icons.smart_toy_outlined,
-              color: Colors.white,
-              size: 28,
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 18.0, right: 1.0),
+        child: GestureDetector(
+          onTap: () => controller.startCopilotFlow(context),
+          child: SizedBox(
+            width: 100,
+            height: 100,
+            child: Lottie.asset(
+              'assets/lotties/chatbot.json',
+              fit: BoxFit.contain,
+              errorBuilder: (context, error, stackTrace) => Container(
+                padding: const EdgeInsets.all(16),
+                decoration: const BoxDecoration(
+                  color: Color(0xFF6B46C1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.smart_toy_outlined,
+                  color: Colors.white,
+                  size: 42,
+                ),
+              ),
             ),
           ),
         ),
       ),
-    );
+    ));
   }
 
   // STEP 1: Basic Information

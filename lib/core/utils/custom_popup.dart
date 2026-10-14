@@ -104,7 +104,6 @@ class CustomPopup {
       message: message,
       icon: Icons.check_rounded,
       accentColor: const Color(0xFF10B981),
-      lottieAsset: 'assets/lotties/done.json',
       buttonText: buttonText,
       onConfirm: onConfirm,
     );
@@ -167,7 +166,6 @@ class CustomPopup {
     required String message,
     required IconData icon,
     required Color accentColor,
-    String? lottieAsset,
     VoidCallback? onConfirm,
     String buttonText = 'Okay',
   }) {
@@ -234,7 +232,6 @@ class CustomPopup {
                     const SizedBox(height: 24),
                     SizedBox(
                       width: double.infinity,
-                      height: 48,
                       child: ElevatedButton(
                         onPressed: () {
                           Get.back();
@@ -244,17 +241,21 @@ class CustomPopup {
                           backgroundColor: accentColor,
                           foregroundColor: Colors.white,
                           elevation: 0,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
+                            borderRadius: BorderRadius.circular(16),
                           ),
                           shadowColor: accentColor.withValues(alpha: 0.35),
                         ),
                         child: Text(
                           buttonText,
+                          textAlign: TextAlign.center,
                           style: const TextStyle(
-                            fontSize: 15,
+                            fontSize: 16,
                             fontWeight: FontWeight.w700,
-                            letterSpacing: -0.2,
+                            color: Colors.white,
+                            letterSpacing: 0.2,
+                            height: 1.15,
                           ),
                         ),
                       ),
@@ -263,45 +264,45 @@ class CustomPopup {
                 ),
               ),
 
-              // Signature Floating Avatar Badge
+              // Signature Floating Avatar Badge with Spring Bounce Animation
               Positioned(
                 top: 0,
-                child: Container(
-                  width: 78,
-                  height: 78,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.white,
-                    boxShadow: [
-                      BoxShadow(
-                        color: accentColor.withValues(alpha: 0.35),
-                        blurRadius: 22,
-                        offset: const Offset(0, 8),
-                      ),
-                    ],
-                  ),
-                  padding: const EdgeInsets.all(4.5),
+                child: TweenAnimationBuilder<double>(
+                  duration: const Duration(milliseconds: 500),
+                  curve: Curves.elasticOut,
+                  tween: Tween<double>(begin: 0.0, end: 1.0),
+                  builder: (context, scale, child) {
+                    return Transform.scale(scale: scale, child: child);
+                  },
                   child: Container(
+                    width: 78,
+                    height: 78,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      gradient: LinearGradient(
-                        colors: [
-                          accentColor,
-                          accentColor.withValues(alpha: 0.85),
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
+                      color: Colors.white,
+                      boxShadow: [
+                        BoxShadow(
+                          color: accentColor.withValues(alpha: 0.35),
+                          blurRadius: 22,
+                          offset: const Offset(0, 8),
+                        ),
+                      ],
                     ),
-                    child: lottieAsset != null
-                        ? ClipOval(
-                            child: Lottie.asset(
-                              lottieAsset,
-                              repeat: false,
-                              errorBuilder: (_, __, ___) => Icon(icon, color: Colors.white, size: 38),
-                            ),
-                          )
-                        : Icon(icon, color: Colors.white, size: 38),
+                    padding: const EdgeInsets.all(4.5),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(
+                          colors: [
+                            accentColor,
+                            accentColor.withValues(alpha: 0.85),
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                      ),
+                      child: Icon(icon, color: Colors.white, size: 38),
+                    ),
                   ),
                 ),
               ),

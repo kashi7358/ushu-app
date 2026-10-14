@@ -267,41 +267,178 @@ class CreateProductController extends GetxController {
     videoPath.value = null;
   }
 
-  // AI Seller Copilot Chatbot System
-  final RxList<Map<String, dynamic>> copilotChatMessages = <Map<String, dynamic>>[].obs;
-  final RxBool isCopilotChatLoading = false.obs;
-  final ScrollController copilotScrollController = ScrollController();
+  // ==========================================
+  // AI SELLER COPILOT (FAB Flow)
+  // ==========================================
+  final RxBool isCopilotAnalyzing = false.obs;
 
-  void openCopilotChat(BuildContext context) {
-    if (copilotChatMessages.isEmpty) {
-      copilotChatMessages.add({
-        'sender': 'bot',
-        'type': 'text',
-        'text': 'Assalam-o-Alaikum! 👋 Main aapka AI Product Copilot hoon.\n\nApne product ki image send karein, main automatically title, category, description aur pricing attributes suggest karunga. Agar pasand aaye to aap one-tap me apne form me apply kar sakte hain!',
-      });
-    }
-
-    Get.bottomSheet(
-      _buildCopilotChatBottomSheet(context),
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      elevation: 0,
+  void startCopilotFlow([BuildContext? context]) {
+    Get.dialog(
+      Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        elevation: 8,
+        backgroundColor: Colors.white,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+        child: Padding(
+          padding: const EdgeInsets.all(22),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Header with close button
+              Row(
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF6B46C1).withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Lottie.asset(
+                      'assets/lotties/chatbot.json',
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) => const Icon(
+                        Icons.smart_toy_outlined,
+                        color: Color(0xFF6B46C1),
+                        size: 24,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'AI Seller Copilot',
+                          style: TextStyle(
+                            fontSize: 16.5,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF1A202C),
+                          ),
+                        ),
+                        SizedBox(height: 2),
+                        Text(
+                          'Select photo source to analyze',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Get.back(),
+                    icon: const Icon(Icons.close_rounded, color: Colors.grey, size: 20),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              // Camera Option
+              InkWell(
+                onTap: () {
+                  Get.back();
+                  processImageWithCopilot(source: ImageSource.camera);
+                },
+                borderRadius: BorderRadius.circular(16),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF6B46C1).withValues(alpha: 0.12),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.camera_alt_rounded, color: Color(0xFF6B46C1), size: 22),
+                      ),
+                      const SizedBox(width: 14),
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Take Photo',
+                              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14.5, color: Color(0xFF1A202C)),
+                            ),
+                            SizedBox(height: 2),
+                            Text(
+                              'Capture item using camera',
+                              style: TextStyle(color: Colors.grey, fontSize: 12),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Colors.grey),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              // Gallery Option
+              InkWell(
+                onTap: () {
+                  Get.back();
+                  processImageWithCopilot(source: ImageSource.gallery);
+                },
+                borderRadius: BorderRadius.circular(16),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF97316).withValues(alpha: 0.12),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.photo_library_rounded, color: Color(0xFFF97316), size: 22),
+                      ),
+                      const SizedBox(width: 14),
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Choose from Gallery',
+                              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14.5, color: Color(0xFF1A202C)),
+                            ),
+                            SizedBox(height: 2),
+                            Text(
+                              'Pick photo from your device',
+                              style: TextStyle(color: Colors.grey, fontSize: 12),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Colors.grey),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
-  void _scrollToBottom() {
-    Future.delayed(const Duration(milliseconds: 150), () {
-      if (copilotScrollController.hasClients) {
-        copilotScrollController.animateTo(
-          copilotScrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
-        );
-      }
-    });
-  }
-
-  Future<void> sendImageToCopilot({required ImageSource source}) async {
+  Future<void> processImageWithCopilot({required ImageSource source}) async {
     try {
       final XFile? file = await _picker.pickImage(
         source: source,
@@ -322,26 +459,145 @@ class CreateProductController extends GetxController {
         return;
       }
 
-      // Add user's message with image thumbnail
-      copilotChatMessages.add({
-        'sender': 'user',
-        'type': 'image',
-        'imagePath': file.path,
-        'text': 'Please analyze this product photo.',
-      });
-      _scrollToBottom();
+      isCopilotAnalyzing.value = true;
 
-      isCopilotChatLoading.value = true;
+      // Show sleek high-tech AI processing dialog with copilot.json (no hello text)
+      Get.dialog(
+        PopScope(
+          canPop: false,
+          child: Dialog(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            insetPadding: const EdgeInsets.symmetric(horizontal: 28),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(28),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF6B46C1).withValues(alpha: 0.2),
+                    blurRadius: 40,
+                    offset: const Offset(0, 16),
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Animated futuristic Copilot with glowing background
+                  Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Container(
+                        width: 120,
+                        height: 120,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: RadialGradient(
+                            colors: [
+                              const Color(0xFF6B46C1).withValues(alpha: 0.16),
+                              const Color(0xFF6B46C1).withValues(alpha: 0.0),
+                            ],
+                          ),
+                        ),
+                      ),
+                      SizedBox(
+                        height: 110,
+                        width: 110,
+                        child: Lottie.asset(
+                          'assets/lotties/copilot.json',
+                          fit: BoxFit.contain,
+                          errorBuilder: (context, error, stackTrace) => Container(
+                            width: 70,
+                            height: 70,
+                            decoration: const BoxDecoration(
+                              color: Color(0xFF6B46C1),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.auto_awesome_rounded, color: Colors.white, size: 36),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  // AI Badge
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF6B46C1).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.auto_awesome, color: Color(0xFF6B46C1), size: 14),
+                        SizedBox(width: 5),
+                        Text(
+                          'AI Vision Engine',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF6B46C1),
+                            letterSpacing: 0.3,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'Analyzing Product Photo...',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF0F172A),
+                      letterSpacing: -0.3,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Extracting title, category, pricing & key features automatically',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey.shade600,
+                      height: 1.45,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  // Sleek Linear Progress Bar
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: SizedBox(
+                      height: 6,
+                      child: LinearProgressIndicator(
+                        backgroundColor: const Color(0xFF6B46C1).withValues(alpha: 0.12),
+                        valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF6B46C1)),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        barrierDismissible: false,
+      );
 
-      // Call API directly
       final dynamic rawResponse = await _repository.generateProductFromImage(
         imagePath: file.path,
         storeId: storeId,
       );
 
-      isCopilotChatLoading.value = false;
+      if (Get.isDialogOpen == true) {
+        Get.back();
+      }
+      isCopilotAnalyzing.value = false;
 
-      // Directly extract raw map from API response (No custom model class)
+      // Extract raw map directly from API response
       Map<String, dynamic> apiData = {};
       if (rawResponse is Map) {
         if (rawResponse['data'] is Map) {
@@ -355,15 +611,14 @@ class CreateProductController extends GetxController {
         }
       }
 
-      copilotChatMessages.add({
-        'sender': 'bot',
-        'type': 'suggestion',
-        'imagePath': file.path,
-        'data': apiData,
-      });
-      _scrollToBottom();
+      // Show Review Bottom Sheet with Accept ("Ok") and Reject buttons
+      showCopilotReviewSheet(apiData, file.path);
     } catch (e) {
-      isCopilotChatLoading.value = false;
+      if (Get.isDialogOpen == true) {
+        Get.back();
+      }
+      isCopilotAnalyzing.value = false;
+
       String cleanError = ExceptionHandler.handle(e).message;
       if (e is dio.DioException) {
         final resData = e.response?.data;
@@ -375,31 +630,371 @@ class CreateProductController extends GetxController {
           }
         }
       }
-      copilotChatMessages.add({
-        'sender': 'bot',
-        'type': 'error',
-        'text': cleanError,
-      });
-      _scrollToBottom();
+
+      CustomPopup.showError(
+        'AI Copilot Failed',
+        cleanError.contains('qwen') || cleanError.contains('model')
+            ? '$cleanError\n\n(Backend server par AI model configure nahi hai. Backend developer ko model update karna hoga.)'
+            : cleanError,
+      );
     }
   }
 
-  void applyCopilotSuggestion(Map<String, dynamic> data, String? imagePath) {
-    final title = (data['title'] ?? data['name'] ?? data['productName'] ?? '').toString();
-    final desc = (data['description'] ?? data['desc'] ?? data['details'] ?? '').toString();
+  void showCopilotReviewSheet(Map<String, dynamic> data, String imagePath) {
+    final title = (data['name'] ?? data['title'] ?? data['productName'] ?? 'Detected Product').toString();
+    final rawDesc = (data['description'] ?? data['desc'] ?? data['details'] ?? '').toString();
+    final features = data['features'];
+    String desc = rawDesc;
+    if (features is List && features.isNotEmpty) {
+      final featList = features.map((f) => '• ${f.toString().trim()}').join('\n');
+      if (desc.isNotEmpty) {
+        desc += '\n\nKey Features:\n$featList';
+      } else {
+        desc = 'Key Features:\n$featList';
+      }
+    }
     final cat = (data['category'] ?? data['categoryName'] ?? '').toString();
-    final subCat = (data['subCategory'] ?? data['sub_category'] ?? '').toString();
+    final subCat = (data['SubCategory'] ?? data['subCategory'] ?? data['sub_category'] ?? '').toString();
+    final brand = (data['brand'] ?? data['brandName'] ?? '').toString();
+    final condition = (data['condition'] ?? 'new').toString();
+    final price = (data['suggestedPrice'] ?? data['price'] ?? data['targetPrice'] ?? '').toString();
+    final tags = data['keywords'] ?? data['tags'] ?? [];
+    final reasoning = (data['reasoning'] ?? '').toString();
+    final cloudImageUrl = (data['imageUrl'] ?? '').toString();
+
+    Get.dialog(
+      Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        elevation: 10,
+        backgroundColor: Colors.white,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+        child: Container(
+          constraints: BoxConstraints(
+            maxHeight: Get.height * 0.82,
+          ),
+          padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Header
+              Row(
+                children: [
+                  Container(
+                    width: 42,
+                    height: 42,
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF6B46C1).withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Lottie.asset(
+                      'assets/lotties/chatbot.json',
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) => const Icon(
+                        Icons.smart_toy_outlined,
+                        color: Color(0xFF6B46C1),
+                        size: 22,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'AI Copilot Result',
+                          style: TextStyle(
+                            fontSize: 16.5,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF1A202C),
+                          ),
+                        ),
+                        SizedBox(height: 1),
+                        Text(
+                          'Review detected details below',
+                          style: TextStyle(fontSize: 11.5, color: Colors.grey),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded, color: Colors.grey, size: 22),
+                    onPressed: () => Get.back(),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+                ],
+              ),
+              const Divider(height: 18),
+              // Scrollable Details
+              Flexible(
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Image preview
+                      Center(
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(14),
+                          child: File(imagePath).existsSync()
+                              ? Image.file(
+                                  File(imagePath),
+                                  height: 130,
+                                  width: double.infinity,
+                                  fit: BoxFit.cover,
+                                )
+                              : (cloudImageUrl.isNotEmpty
+                                  ? Image.network(
+                                      cloudImageUrl,
+                                      height: 130,
+                                      width: double.infinity,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, __, ___) => const Icon(Icons.image, size: 50),
+                                    )
+                                  : const SizedBox.shrink()),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      // Title & Price Row
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              title,
+                              style: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF1A202C),
+                              ),
+                            ),
+                          ),
+                          if (price.isNotEmpty && price != '0') ...[
+                            const SizedBox(width: 10),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFDEF7EC),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Text(
+                                'Rs. $price',
+                                style: const TextStyle(
+                                  color: Color(0xFF03543F),
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                      if (reasoning.isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF0FDF4),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: const Color(0xFFBBF7D0)),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.lightbulb_outline, size: 14, color: Color(0xFF16A34A)),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  reasoning,
+                                  style: const TextStyle(fontSize: 11, color: Color(0xFF15803D)),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 10),
+                      // Chips for category, subCat, brand, condition
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 6,
+                        children: [
+                          if (cat.isNotEmpty) _buildReviewChip(Icons.category_outlined, cat),
+                          if (subCat.isNotEmpty) _buildReviewChip(Icons.account_tree_outlined, subCat),
+                          if (brand.isNotEmpty && brand != 'null') _buildReviewChip(Icons.verified_outlined, brand),
+                          if (condition.isNotEmpty) _buildReviewChip(Icons.check_circle_outline, condition),
+                        ],
+                      ),
+                      if (desc.isNotEmpty) ...[
+                        const SizedBox(height: 12),
+                        const Text(
+                          'Description & Features',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF4A5568),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          desc,
+                          style: TextStyle(
+                            fontSize: 11.5,
+                            color: Colors.grey.shade700,
+                            height: 1.4,
+                          ),
+                        ),
+                      ],
+                      if (tags is List && tags.isNotEmpty) ...[
+                        const SizedBox(height: 10),
+                        Text(
+                          'Tags: ${tags.join(', ')}',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey.shade600,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 12),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              // Decision Buttons
+              Row(
+                children: [
+                  // Reject Button
+                  Expanded(
+                    flex: 2,
+                    child: OutlinedButton(
+                      onPressed: () {
+                        Get.back();
+                        CustomPopup.showError(
+                          'Rejected',
+                          'AI suggestions rejected. Form remains unchanged.',
+                          buttonText: 'Close',
+                        );
+                      },
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Colors.red, width: 1.2),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.close_rounded, color: Colors.red, size: 18),
+                          SizedBox(width: 4),
+                          Flexible(
+                            child: Text(
+                              'Reject',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(color: Colors.red, fontWeight: FontWeight.w600, fontSize: 13),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  // OK / Accept Button
+                  Expanded(
+                    flex: 3,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        applyCopilotSuggestion(data, imagePath);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF6B46C1),
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.check_circle_outline, color: Colors.white, size: 18),
+                          SizedBox(width: 6),
+                          Flexible(
+                            child: Text(
+                              'OK (Apply to Form)',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildReviewChip(IconData icon, String label) {
+    return Container(
+      constraints: BoxConstraints(maxWidth: Get.width * 0.42),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF7FAFC),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: const Color(0xFF6B46C1)),
+          const SizedBox(width: 5),
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 11, color: Color(0xFF2D3748), fontWeight: FontWeight.w500),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void applyCopilotSuggestion(Map<String, dynamic> data, String? imagePath) {
+    final title = (data['name'] ?? data['title'] ?? data['productName'] ?? '').toString();
+    final rawDesc = (data['description'] ?? data['desc'] ?? data['details'] ?? '').toString();
+    final features = data['features'];
+    String desc = rawDesc;
+    if (features is List && features.isNotEmpty) {
+      final featList = features.map((f) => '• ${f.toString().trim()}').join('\n');
+      if (desc.isNotEmpty) {
+        desc += '\n\nKey Features:\n$featList';
+      } else {
+        desc = 'Key Features:\n$featList';
+      }
+    }
+    final cat = (data['category'] ?? data['categoryName'] ?? '').toString();
+    final subCat = (data['SubCategory'] ?? data['subCategory'] ?? data['sub_category'] ?? '').toString();
     final brand = (data['brand'] ?? data['brandName'] ?? '').toString();
     final condition = (data['condition'] ?? 'new').toString().toLowerCase();
-    final priceRaw = data['price'] ?? data['suggestedPrice'] ?? data['targetPrice'];
+    final priceRaw = data['suggestedPrice'] ?? data['price'] ?? data['targetPrice'];
     final stockRaw = data['stock'] ?? data['quantity'] ?? data['suggestedStock'];
     final sku = (data['sku'] ?? data['SKU'] ?? '').toString();
-    final rawTags = data['tags'] ?? data['keywords'] ?? [];
+    final rawTags = data['keywords'] ?? data['tags'] ?? [];
+    final weightRaw = data['weight'];
 
     if (title.isNotEmpty) nameController.text = title;
     if (desc.isNotEmpty) descriptionController.text = desc;
     if (subCat.isNotEmpty) subCategoryController.text = subCat;
-    if (brand.isNotEmpty) brandController.text = brand;
+    if (brand.isNotEmpty && brand != 'null') brandController.text = brand;
     if (conditions.contains(condition)) setCondition(condition);
 
     if (cat.isNotEmpty) {
@@ -425,9 +1020,22 @@ class CreateProductController extends GetxController {
     if (stockRaw != null) {
       final s = int.tryParse(stockRaw.toString()) ?? 10;
       if (s > 0) stockController.text = s.toString();
+    } else if (stockController.text.trim().isEmpty) {
+      stockController.text = '10';
     }
 
-    if (sku.isNotEmpty) skuController.text = sku;
+    if (sku.isNotEmpty) {
+      skuController.text = sku;
+    } else if (skuController.text.trim().isEmpty) {
+      final prefix = title.isNotEmpty
+          ? title.split(' ').first.replaceAll(RegExp(r'[^a-zA-Z0-9]'), '').toUpperCase()
+          : 'PRD';
+      skuController.text = '${prefix}_${DateTime.now().millisecondsSinceEpoch.toString().substring(8)}';
+    }
+
+    if (weightRaw != null && weightRaw.toString().isNotEmpty && weightRaw.toString() != 'null') {
+      weightController.text = weightRaw.toString();
+    }
 
     if (rawTags is List && rawTags.isNotEmpty) {
       tagsController.text = rawTags.map((e) => e.toString().trim()).join(', ');
@@ -440,554 +1048,7 @@ class CreateProductController extends GetxController {
     }
 
     Get.back();
-    CustomPopup.showSuccess('Applied! ✨', 'Copilot details applied to your product form.');
-  }
-
-  Widget _buildCopilotChatBottomSheet(BuildContext context) {
-    final mediaQuery = MediaQuery.of(context);
-    return Container(
-      height: mediaQuery.size.height * 0.88,
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      child: Column(
-        children: [
-          // Drag handle
-          Container(
-            margin: const EdgeInsets.only(top: 10, bottom: 6),
-            width: 44,
-            height: 4,
-            decoration: BoxDecoration(
-              color: Colors.grey.shade300,
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          // Chat Header
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-            decoration: BoxDecoration(
-              border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 46,
-                  height: 46,
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF6B46C1).withValues(alpha: 0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Lottie.asset(
-                    'assets/lotties/chatbot.json',
-                    fit: BoxFit.contain,
-                    errorBuilder: (context, error, stackTrace) => const Icon(
-                      Icons.smart_toy_outlined,
-                      color: Color(0xFF6B46C1),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'AI Seller Copilot',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF1A202C),
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Row(
-                        children: [
-                          Container(
-                            width: 7,
-                            height: 7,
-                            decoration: const BoxDecoration(
-                              color: Color(0xFF38A169),
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            'Online • Product Assistant',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey.shade600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close, color: Colors.grey),
-                  onPressed: () => Get.back(),
-                ),
-              ],
-            ),
-          ),
-          // Messages thread
-          Expanded(
-            child: Obx(
-              () => ListView.builder(
-                controller: copilotScrollController,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                itemCount: copilotChatMessages.length + (isCopilotChatLoading.value ? 1 : 0),
-                itemBuilder: (context, index) {
-                  if (index == copilotChatMessages.length && isCopilotChatLoading.value) {
-                    return _buildBotLoadingBubble();
-                  }
-                  final msg = copilotChatMessages[index];
-                  final isBot = msg['sender'] == 'bot';
-                  if (isBot) {
-                    return _buildBotMessageBubble(context, msg);
-                  } else {
-                    return _buildUserMessageBubble(context, msg);
-                  }
-                },
-              ),
-            ),
-          ),
-          // Bottom Action Bar
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
-                  blurRadius: 8,
-                  offset: const Offset(0, -2),
-                ),
-              ],
-            ),
-            child: SafeArea(
-              child: Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: isCopilotChatLoading.value
-                          ? null
-                          : () => sendImageToCopilot(source: ImageSource.camera),
-                      icon: const Icon(Icons.camera_alt_outlined, color: Color(0xFF6B46C1), size: 20),
-                      label: const Text(
-                        'Take Photo',
-                        style: TextStyle(color: Color(0xFF6B46C1), fontWeight: FontWeight.w600),
-                      ),
-                      style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: Color(0xFF6B46C1), width: 1.2),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: isCopilotChatLoading.value
-                          ? null
-                          : () => sendImageToCopilot(source: ImageSource.gallery),
-                      icon: const Icon(Icons.photo_library_outlined, color: Colors.white, size: 20),
-                      label: const Text(
-                        'Upload Image',
-                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF6B46C1),
-                        elevation: 0,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildUserMessageBubble(BuildContext context, Map<String, dynamic> msg) {
-    final imagePath = msg['imagePath'] as String?;
-    final text = msg['text'] as String? ?? '';
-    final screenWidth = MediaQuery.of(context).size.width;
-
-    return Align(
-      alignment: Alignment.centerRight,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12, left: 44, right: 2),
-        constraints: BoxConstraints(maxWidth: screenWidth * 0.75),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFF6B46C1), Color(0xFF7C3AED)],
-          ),
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(16),
-            topRight: Radius.circular(4),
-            bottomLeft: Radius.circular(16),
-            bottomRight: Radius.circular(16),
-          ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (imagePath != null && imagePath.isNotEmpty) ...[
-              ClipRRect(
-                borderRadius: BorderRadius.circular(10),
-                child: Image.file(
-                  File(imagePath),
-                  height: 110,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                ),
-              ),
-              const SizedBox(height: 8),
-            ],
-            Text(
-              text,
-              textAlign: TextAlign.end,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBotMessageBubble(BuildContext context, Map<String, dynamic> msg) {
-    final type = msg['type'] as String? ?? 'text';
-    final text = msg['text'] as String? ?? '';
-    final data = msg['data'] as Map<String, dynamic>? ?? {};
-    final imagePath = msg['imagePath'] as String?;
-    final screenWidth = MediaQuery.of(context).size.width;
-
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 14, right: 8),
-        constraints: BoxConstraints(maxWidth: screenWidth * 0.88),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: 32,
-              height: 32,
-              padding: const EdgeInsets.all(2),
-              decoration: BoxDecoration(
-                color: const Color(0xFF6B46C1).withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Lottie.asset(
-                'assets/lotties/chatbot.json',
-                fit: BoxFit.contain,
-                errorBuilder: (context, error, stackTrace) => const Icon(
-                  Icons.smart_toy_outlined,
-                  size: 18,
-                  color: Color(0xFF6B46C1),
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: type == 'error' ? const Color(0xFFFEF2F2) : const Color(0xFFF7FAFC),
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(4),
-                    topRight: Radius.circular(16),
-                    bottomLeft: Radius.circular(16),
-                    bottomRight: Radius.circular(16),
-                  ),
-                  border: Border.all(
-                    color: type == 'error' ? const Color(0xFFFECACA) : const Color(0xFFE2E8F0),
-                  ),
-                ),
-                child: type == 'suggestion'
-                    ? _buildSuggestionCard(data, imagePath)
-                    : type == 'error'
-                        ? _buildErrorBubbleContent(text)
-                        : Text(
-                            text,
-                            style: const TextStyle(
-                              fontSize: 13,
-                              height: 1.45,
-                              color: Color(0xFF2D3748),
-                            ),
-                          ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildErrorBubbleContent(String errorText) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Row(
-          children: [
-            Icon(Icons.warning_amber_rounded, color: Color(0xFFDC2626), size: 18),
-            SizedBox(width: 6),
-            Text(
-              'Backend AI Error',
-              style: TextStyle(
-                color: Color(0xFFDC2626),
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 6),
-        Text(
-          errorText,
-          style: const TextStyle(
-            fontSize: 12,
-            height: 1.4,
-            color: Color(0xFF991B1B),
-          ),
-        ),
-        const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: const Color(0xFFFCA5A5)),
-          ),
-          child: const Text(
-            '💡 Server Issue: Backend developer ko server par configured AI model name update karna hoga.',
-            style: TextStyle(
-              fontSize: 11,
-              color: Color(0xFF7F1D1D),
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSuggestionCard(Map<String, dynamic> data, String? imagePath) {
-    final title = (data['title'] ?? data['name'] ?? data['productName'] ?? 'Detected Product').toString();
-    final desc = (data['description'] ?? data['desc'] ?? data['details'] ?? '').toString();
-    final cat = (data['category'] ?? data['categoryName'] ?? '').toString();
-    final subCat = (data['subCategory'] ?? data['sub_category'] ?? '').toString();
-    final brand = (data['brand'] ?? data['brandName'] ?? '').toString();
-    final price = (data['price'] ?? data['suggestedPrice'] ?? data['targetPrice'] ?? '').toString();
-    final tags = data['tags'] ?? data['keywords'] ?? [];
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: const Color(0xFF6B46C1).withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.auto_awesome, color: Color(0xFF6B46C1), size: 12),
-                  SizedBox(width: 4),
-                  Text(
-                    'AI Suggestion',
-                    style: TextStyle(
-                      color: Color(0xFF6B46C1),
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const Spacer(),
-            if (price.isNotEmpty && price != '0')
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFDEF7EC),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  'Rs. $price',
-                  style: const TextStyle(
-                    color: Color(0xFF03543F),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-          ],
-        ),
-        const SizedBox(height: 10),
-        Text(
-          title,
-          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Color(0xFF1A202C)),
-        ),
-        if (cat.isNotEmpty || subCat.isNotEmpty) ...[
-          const SizedBox(height: 6),
-          Wrap(
-            spacing: 6,
-            runSpacing: 4,
-            children: [
-              if (cat.isNotEmpty)
-                _buildChip(Icons.category_outlined, cat),
-              if (subCat.isNotEmpty)
-                _buildChip(Icons.account_tree_outlined, subCat),
-              if (brand.isNotEmpty)
-                _buildChip(Icons.verified_outlined, brand),
-            ],
-          ),
-        ],
-        if (desc.isNotEmpty) ...[
-          const SizedBox(height: 8),
-          Text(
-            desc,
-            maxLines: 3,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(fontSize: 12, color: Colors.grey.shade700, height: 1.3),
-          ),
-        ],
-        if (tags is List && tags.isNotEmpty) ...[
-          const SizedBox(height: 8),
-          Text(
-            'Tags: ${tags.take(4).join(', ')}',
-            style: TextStyle(fontSize: 11, color: Colors.grey.shade600, fontStyle: FontStyle.italic),
-          ),
-        ],
-        const SizedBox(height: 14),
-        // Action Buttons: Apply or Dismiss
-        Row(
-          children: [
-            Expanded(
-              child: ElevatedButton.icon(
-                onPressed: () => applyCopilotSuggestion(data, imagePath),
-                icon: const Icon(Icons.check_circle_outline, color: Colors.white, size: 16),
-                label: const Text(
-                  'Apply to Product Form',
-                  style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF6B46C1),
-                  elevation: 0,
-                  padding: const EdgeInsets.symmetric(vertical: 10),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 4),
-        Center(
-          child: Text(
-            'If you don\'t like it, you can take another photo or close this chat.',
-            style: TextStyle(fontSize: 10, color: Colors.grey.shade500),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildChip(IconData icon, String label) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: Colors.grey.shade300),
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 11, color: Colors.grey.shade700),
-          const SizedBox(width: 4),
-          Text(
-            label,
-            style: TextStyle(fontSize: 10.5, color: Colors.grey.shade800, fontWeight: FontWeight.w500),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBotLoadingBubble() {
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 14, right: 40),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Container(
-              width: 34,
-              height: 34,
-              padding: const EdgeInsets.all(2),
-              decoration: BoxDecoration(
-                color: const Color(0xFF6B46C1).withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Lottie.asset(
-                'assets/lotties/chatbot.json',
-                fit: BoxFit.contain,
-                errorBuilder: (context, error, stackTrace) => const Icon(
-                  Icons.smart_toy_outlined,
-                  size: 20,
-                  color: Color(0xFF6B46C1),
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF7FAFC),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const SizedBox(
-                    width: 14,
-                    height: 14,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Color(0xFF6B46C1),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Analyzing product image with AI...',
-                    style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+    CustomPopup.showSuccess('Applied! ✨', 'Product details auto-filled by AI Copilot.');
   }
 
   // Final Submit

@@ -99,6 +99,16 @@ class SellerRepositoryImpl implements SellerRepository {
   }
 
   @override
+  Future<dynamic> getSellerDeliveredOrders([String? token]) {
+    return remoteDataSource.getSellerDeliveredOrders(token);
+  }
+
+  @override
+  Future<dynamic> getSellerRefundedOrders([String? token]) {
+    return remoteDataSource.getSellerRefundedOrders(token);
+  }
+
+  @override
   Future<dynamic> getSellerPromotions() {
     return remoteDataSource.getSellerPromotions();
   }
@@ -106,6 +116,11 @@ class SellerRepositoryImpl implements SellerRepository {
   @override
   Future<dynamic> createBanner(CreateBannerRequestModel model) {
     return remoteDataSource.createBanner(model);
+  }
+
+  @override
+  Future<dynamic> getAllBanners([String? token]) {
+    return remoteDataSource.getAllBanners(token);
   }
 
   @override

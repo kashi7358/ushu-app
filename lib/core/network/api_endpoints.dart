@@ -92,10 +92,13 @@ class ApiEndpoints {
 
    // All Order product
   static const String sellerOrders = '$baseUrl/order/seller-orders';
+  static const String sellerDeliveredOrders = '$baseUrl/order/delivered-orders';
+  static const String sellerRefundedOrders = '$baseUrl/return/seller-refunded-orders';
 
   // Seller Promotions & Banners
   static const String sellerPromotions = '$baseUrl/seller/promotion';
   static const String createBanner = '$baseUrl/banner/create';
+  static const String getAllBanners = '$baseUrl/banner/all';
   static String updateSellerBanner(String id) => '$baseUrl/banner/update-seller/$id';
 
   // Seller Copilot AI

@@ -5,7 +5,11 @@ import '../network/api_client.dart';
 import '../network/api_endpoints.dart';
 
 class SessionManager {
-  static const _storage = FlutterSecureStorage();
+  static const _storage = FlutterSecureStorage(
+    aOptions: AndroidOptions(
+      resetOnError: true,
+    ),
+  );
 
   // In-memory cache for synchronous access (Buyer)
   static bool _isLoggedIn = false;
@@ -33,39 +37,45 @@ class SessionManager {
   static String get _addrPrefix => (_userId != null && _userId!.isNotEmpty) ? '${_userId}_' : '';
 
   static Future<void> init() async {
-    final loggedInStr = await _storage.read(key: 'isLoggedIn');
-    _isLoggedIn = loggedInStr == 'true';
-    _userId = await _storage.read(key: 'userId');
-    _email = await _storage.read(key: 'email');
-    _fullName = await _storage.read(key: 'fullName');
-    _token = await _storage.read(key: 'token');
+    try {
+      final loggedInStr = await _storage.read(key: 'isLoggedIn');
+      _isLoggedIn = loggedInStr == 'true';
+      _userId = await _storage.read(key: 'userId');
+      _email = await _storage.read(key: 'email');
+      _fullName = await _storage.read(key: 'fullName');
+      _token = await _storage.read(key: 'token');
 
-    final sellerLoggedInStr = await _storage.read(key: 'isSellerLoggedIn');
-    _isSellerLoggedIn = sellerLoggedInStr == 'true';
-    _sellerId = await _storage.read(key: 'sellerId');
-    _sellerToken = await _storage.read(key: 'sellerToken');
-    _sellerEmail = await _storage.read(key: 'sellerEmail');
-    _sellerName = await _storage.read(key: 'sellerName');
-    _sellerStatus = await _storage.read(key: 'sellerStatus');
-    _sellerStoreId = await _storage.read(key: 'sellerStoreId');
-    _sellerStoreName = await _storage.read(key: 'sellerStoreName');
-    _sellerStoreLogo = await _storage.read(key: 'sellerStoreLogo');
-    _sellerStoreDetails = await _storage.read(key: 'sellerStoreDetails');
-    _lastScreen = await _storage.read(key: 'lastScreen');
+      final sellerLoggedInStr = await _storage.read(key: 'isSellerLoggedIn');
+      _isSellerLoggedIn = sellerLoggedInStr == 'true';
+      _sellerId = await _storage.read(key: 'sellerId');
+      _sellerToken = await _storage.read(key: 'sellerToken');
+      _sellerEmail = await _storage.read(key: 'sellerEmail');
+      _sellerName = await _storage.read(key: 'sellerName');
+      _sellerStatus = await _storage.read(key: 'sellerStatus');
+      _sellerStoreId = await _storage.read(key: 'sellerStoreId');
+      _sellerStoreName = await _storage.read(key: 'sellerStoreName');
+      _sellerStoreLogo = await _storage.read(key: 'sellerStoreLogo');
+      _sellerStoreDetails = await _storage.read(key: 'sellerStoreDetails');
+      _lastScreen = await _storage.read(key: 'lastScreen');
 
-    // Strict Rule: Seller CANNOT be logged in to dashboard if store is not created yet!
-    if (_sellerStoreId == null || _sellerStoreId!.trim().isEmpty) {
+      // Strict Rule: Seller CANNOT be logged in to dashboard if store is not created yet!
+      if (_sellerStoreId == null || _sellerStoreId!.trim().isEmpty) {
+        _isSellerLoggedIn = false;
+      }
+
+      await loadReviewedItems();
+      await loadReturnedItems();
+
+      // Load saved address from local storage on app startup
+      await getSavedAddress();
+
+      if (_isLoggedIn) {
+        fetchUserAddressFromBackend();
+      }
+    } catch (e) {
+      // In case of any device keystore corruption, ensure app startup continues smoothly
+      _isLoggedIn = false;
       _isSellerLoggedIn = false;
-    }
-
-    await loadReviewedItems();
-    await loadReturnedItems();
-
-    // Load saved address from local storage on app startup
-    await getSavedAddress();
-
-    if (_isLoggedIn) {
-      fetchUserAddressFromBackend();
     }
   }
 

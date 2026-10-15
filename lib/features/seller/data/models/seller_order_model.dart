@@ -60,10 +60,9 @@ class SellerOrderModel {
       normalizedStatus == 'delivered' || normalizedStatus == 'completed';
 
   bool get isCancelled =>
-      normalizedStatus == 'cancelled' ||
-      normalizedStatus == 'canceled' ||
-      normalizedStatus == 'returned' ||
-      normalizedStatus == 'refunded';
+      normalizedStatus.contains('cancel') ||
+      normalizedStatus.contains('return') ||
+      normalizedStatus.contains('refund');
 
   String get displayOrderId {
     final raw = orderGroupId.isNotEmpty ? orderGroupId : id;

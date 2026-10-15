@@ -52,7 +52,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
                 color: AppColors.primaryPurple,
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Icon(Icons.storefront_rounded, color: Colors.white, size: 18),
+
             ),
             const SizedBox(width: 8),
             Text(

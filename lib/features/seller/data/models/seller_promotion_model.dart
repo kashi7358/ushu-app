@@ -15,6 +15,8 @@ class SellerPromotionModel {
   final int productsCount;
   final List<String> productNames;
 
+  final num price;
+
   const SellerPromotionModel({
     required this.id,
     required this.title,
@@ -31,25 +33,33 @@ class SellerPromotionModel {
     this.endTime,
     this.productsCount = 0,
     this.productNames = const [],
+    this.price = 0,
   });
 
+  bool get isPending {
+    final s = status.toLowerCase().trim();
+    return s == 'pending' || s == 'under_review';
+  }
+
   bool get isUpcoming {
+    if (isPending) return false;
     if (startTime == null) return false;
     return DateTime.now().isBefore(startTime!);
   }
 
   bool get isExpired {
-    final s = status.toLowerCase();
-    if (s == 'expired' || s == 'ended' || s == 'inactive' || s == 'cancelled') {
+    final s = status.toLowerCase().trim();
+    if (s == 'expired' || s == 'ended' || s == 'inactive' || s == 'cancelled' || s == 'rejected') {
       return true;
     }
     if (endTime == null) return false;
     return DateTime.now().isAfter(endTime!);
   }
 
-  bool get isActive => !isUpcoming && !isExpired;
+  bool get isActive => !isPending && !isUpcoming && !isExpired;
 
   String get badgeLabel {
+    if (isPending) return 'PENDING';
     if (discountValue > 0) {
       if (type.toLowerCase().contains('percent')) {
         return '${discountValue.toInt()}% OFF';
@@ -128,13 +138,21 @@ class SellerPromotionModel {
     return SellerPromotionModel(
       id: (json['_id'] ?? json['id'] ?? json['promotionId'] ?? '').toString(),
       title: (json['title'] ??
+              json['Title'] ??
               json['name'] ??
+              json['Name'] ??
+              json['type'] ??
+              json['Type'] ??
+              json['promotionType'] ??
+              json['PromotionType'] ??
               json['promotionName'] ??
+              json['PromotionName'] ??
+              json['category'] ??
               json['campaignName'] ??
               json['code'] ??
-              'Store Promotion')
+              'banner')
           .toString(),
-      description: (json['description'] ?? json['details'] ?? json['subtitle'] ?? '').toString(),
+      description: (json['description'] ?? json['Description'] ?? json['details'] ?? json['subtitle'] ?? '').toString(),
       code: (json['code'] ?? json['promoCode'] ?? json['couponCode'] ?? json['voucherCode'] ?? '').toString(),
       type: discType,
       discountValue: discVal,
@@ -147,12 +165,21 @@ class SellerPromotionModel {
       usedCount: parseInt(
         json['usedCount'] ?? json['uses'] ?? json['redeemedCount'] ?? 0,
       ),
-      bannerImage: (json['banner'] ?? json['bannerImage'] ?? json['image'] ?? json['imageUrl'] ?? '').toString(),
+      bannerImage: (json['Bannerimage'] ??
+              json['BannerImage'] ??
+              json['bannerImage'] ??
+              json['bannerimage'] ??
+              json['banner'] ??
+              json['image'] ??
+              json['imageUrl'] ??
+              '')
+          .toString(),
       status: rawStatus,
       startTime: parseDate(json['startTime'] ?? json['startDate'] ?? json['validFrom'] ?? json['createdAt']),
       endTime: parseDate(json['endTime'] ?? json['endDate'] ?? json['validUntil'] ?? json['expiryDate']),
       productsCount: pCount,
       productNames: pNames,
+      price: parseNum(json['price'] ?? json['Price'] ?? 0),
     );
   }
 }

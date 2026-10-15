@@ -24,8 +24,11 @@ abstract class SellerRepository {
   Future<dynamic> updateFlashSale({required String id, required CreateFlashSaleRequestModel model});
   Future<dynamic> deleteFlashSale(String id);
   Future<dynamic> getSellerOrders();
+  Future<dynamic> getSellerDeliveredOrders([String? token]);
+  Future<dynamic> getSellerRefundedOrders([String? token]);
   Future<dynamic> getSellerPromotions();
   Future<dynamic> createBanner(CreateBannerRequestModel model);
+  Future<dynamic> getAllBanners([String? token]);
   Future<dynamic> updateSellerBanner({required String id, required UpdateBannerRequestModel model});
   Future<dynamic> generateProductFromImage({required String imagePath, required String storeId});
   Future<dynamic> getFinancialReport([String? token]);

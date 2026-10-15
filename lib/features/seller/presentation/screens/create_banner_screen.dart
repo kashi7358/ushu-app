@@ -161,7 +161,7 @@ class CreateBannerScreen extends StatelessWidget {
                     child: Stack(
                       children: [
                         AspectRatio(
-                          aspectRatio: 16 / 9,
+                          aspectRatio: 1920 / 800,
                           child: file != null
                               ? Image.file(
                                   file,
@@ -212,7 +212,7 @@ class CreateBannerScreen extends StatelessWidget {
               borderRadius: BorderRadius.circular(12.r),
               child: Container(
                 width: double.infinity,
-                height: 165.h,
+                height: 155.h,
                 decoration: BoxDecoration(
                   color: const Color(0xFFF8FAFC),
                   borderRadius: BorderRadius.circular(12.r),
@@ -246,11 +246,16 @@ class CreateBannerScreen extends StatelessWidget {
                       ),
                     ),
                     SizedBox(height: 4.h),
-                    Text(
-                      'Supports JPG, PNG or WEBP (16:9 recommended)',
-                      style: TextStyle(
-                        fontSize: 11.5.sp,
-                        color: const Color(0xFF64748B),
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 16.w),
+                      child: Text(
+                        'Image must be exactly 1920×800px and under 1MB · JPG, PNG, or WebP',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 11.sp,
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFF475569),
+                        ),
                       ),
                     ),
                   ],

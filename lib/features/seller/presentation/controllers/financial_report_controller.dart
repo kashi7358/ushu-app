@@ -47,11 +47,15 @@ class FinancialReportController extends GetxController {
         _repository.getFinancialReport().catchError((_) => null),
         _repository.getDashboardStats().catchError((_) => null),
         _repository.getSellerOrders().catchError((_) => null),
+        _repository.getSellerDeliveredOrders().catchError((_) => null),
+        _repository.getSellerRefundedOrders().catchError((_) => null),
       ]);
 
       final financialRes = results[0];
       final statsRes = results[1];
       final ordersRes = results[2];
+      final deliveredOrdersRes = results[3];
+      final refundedOrdersRes = results[4];
 
       double grossRevenue = 0.0;
       double settled = 0.0;
@@ -77,7 +81,65 @@ class FinancialReportController extends GetxController {
         if (pending == 0.0) pending = stats.unpaidAmount;
       }
 
-      // 3. Parse orders for complete itemized breakdown
+      // 3. Parse Dedicated Delivered Orders
+      final List<SellerOrderModel> directDelivered = [];
+      if (deliveredOrdersRes is Map) {
+        final rawDelivered = deliveredOrdersRes['orders'] ??
+            deliveredOrdersRes['deliveredOrders'] ??
+            deliveredOrdersRes['data'] ??
+            deliveredOrdersRes['items'];
+        if (rawDelivered is List) {
+          for (final o in rawDelivered) {
+            if (o is Map<String, dynamic>) {
+              directDelivered.add(SellerOrderModel.fromJson(o));
+            } else if (o is Map) {
+              directDelivered.add(SellerOrderModel.fromJson(Map<String, dynamic>.from(o)));
+            }
+          }
+        }
+      } else if (deliveredOrdersRes is List) {
+        for (final o in deliveredOrdersRes) {
+          if (o is Map<String, dynamic>) {
+            directDelivered.add(SellerOrderModel.fromJson(o));
+          } else if (o is Map) {
+            directDelivered.add(SellerOrderModel.fromJson(Map<String, dynamic>.from(o)));
+          }
+        }
+      }
+
+      // 4. Parse Dedicated Refunded Orders
+      final List<SellerOrderModel> directRefunded = [];
+      if (refundedOrdersRes is Map) {
+        final rawRefunded = refundedOrdersRes['orders'] ??
+            refundedOrdersRes['refundedOrders'] ??
+            refundedOrdersRes['returns'] ??
+            refundedOrdersRes['refunds'] ??
+            refundedOrdersRes['data'] ??
+            refundedOrdersRes['items'];
+        if (rawRefunded is List) {
+          for (final o in rawRefunded) {
+            if (o is Map) {
+              final map = Map<String, dynamic>.from(o);
+              if (map['status'] == null || map['status'].toString().isEmpty) {
+                map['status'] = 'Refunded';
+              }
+              directRefunded.add(SellerOrderModel.fromJson(map));
+            }
+          }
+        }
+      } else if (refundedOrdersRes is List) {
+        for (final o in refundedOrdersRes) {
+          if (o is Map) {
+            final map = Map<String, dynamic>.from(o);
+            if (map['status'] == null || map['status'].toString().isEmpty) {
+              map['status'] = 'Refunded';
+            }
+            directRefunded.add(SellerOrderModel.fromJson(map));
+          }
+        }
+      }
+
+      // 5. Parse orders for complete itemized breakdown
       final List<SellerOrderModel> parsedOrders = [];
       if (ordersRes is Map<String, dynamic>) {
         final rawOrders = ordersRes['orders'] ?? ordersRes['data'] ?? ordersRes['sellerOrders'] ?? [];
@@ -92,12 +154,31 @@ class FinancialReportController extends GetxController {
         }
       }
 
+      // Combine orders ensuring delivered & refunded orders are represented
+      final existingIds = parsedOrders.map((o) => o.id).toSet();
+      for (final d in directDelivered) {
+        if (!existingIds.contains(d.id)) {
+          parsedOrders.add(d);
+          existingIds.add(d.id);
+        }
+      }
+      for (final r in directRefunded) {
+        if (!existingIds.contains(r.id)) {
+          parsedOrders.add(r);
+          existingIds.add(r.id);
+        }
+      }
+
       allFinancialOrders.assignAll(parsedOrders);
 
-      // Calculate order totals if needed
-      final deliveredList = parsedOrders.where((o) => o.isCompleted).toList();
+      // Calculate order totals
+      final deliveredList = directDelivered.isNotEmpty
+          ? directDelivered
+          : parsedOrders.where((o) => o.isCompleted).toList();
       final pendingList = parsedOrders.where((o) => o.isPending || o.isProcessing).toList();
-      final cancelledList = parsedOrders.where((o) => o.isCancelled).toList();
+      final cancelledList = directRefunded.isNotEmpty
+          ? directRefunded
+          : parsedOrders.where((o) => o.isCancelled).toList();
 
       totalDeliveredCount.value = deliveredList.length;
       totalPendingCount.value = pendingList.length;

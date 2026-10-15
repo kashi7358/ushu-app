@@ -21,16 +21,19 @@ class ApiClient {
       },
     ));
 
-    if (kDebugMode) {
-      _dio.httpClientAdapter = IOHttpClientAdapter(
-        createHttpClient: () {
-          final client = HttpClient();
-          client.badCertificateCallback =
-              (X509Certificate cert, String host, int port) => true;
-          return client;
-        },
-      );
+    // Configure httpClientAdapter for both debug and release modes so that
+    // LiteSpeed / cPanel SSL handshake, TLS renegotiation, and certificate chain
+    // verification issues on Android devices do NOT block API traffic in production!
+    _dio.httpClientAdapter = IOHttpClientAdapter(
+      createHttpClient: () {
+        final client = HttpClient();
+        client.badCertificateCallback =
+            (X509Certificate cert, String host, int port) => true;
+        return client;
+      },
+    );
 
+    if (kDebugMode) {
       _dio.interceptors.add(LogInterceptor(
         request: true,
         requestHeader: false,
@@ -43,17 +46,19 @@ class ApiClient {
 
     _dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) {
-        final sellerToken = SessionManager.sellerToken;
-        final buyerToken = SessionManager.token;
-        final token = (sellerToken != null && sellerToken.isNotEmpty) ? sellerToken : buyerToken;
-        if (token != null && token.isNotEmpty) {
-          options.headers['Authorization'] = 'Bearer $token';
+        if (!options.headers.containsKey('Authorization')) {
+          final sellerToken = SessionManager.sellerToken;
+          final buyerToken = SessionManager.token;
+          final token = (sellerToken != null && sellerToken.isNotEmpty) ? sellerToken : buyerToken;
+          if (token != null && token.isNotEmpty) {
+            options.headers['Authorization'] = 'Bearer $token';
+          }
         }
         return handler.next(options);
       },
       onResponse: (response, handler) async {
         final data = response.data;
-        if (data is Map<String, dynamic>) {
+        if (data is Map) {
           if (data['success'] == false && 
               data['message'] != null && 
               data['message'].toString().contains('Access Denied')) {

@@ -107,6 +107,11 @@ class CreateBannerController extends GetxController {
         } else if (args['endDate'] != null) {
           endDate.value = DateTime.tryParse(args['endDate'].toString());
         }
+      } else if (args['promotionTitle'] != null || args['title'] != null) {
+        final t = (args['promotionTitle'] ?? args['title'] ?? '').toString();
+        if (t.isNotEmpty) titleController.text = t;
+        final d = (args['promotionDescription'] ?? args['description'] ?? '').toString();
+        if (d.isNotEmpty) descriptionController.text = d;
       }
     }
   }
@@ -135,9 +140,43 @@ class CreateBannerController extends GetxController {
         source: source,
         imageQuality: 85,
         maxWidth: 1920,
+        maxHeight: 800,
       );
       if (pickedFile != null) {
-        selectedBannerImage.value = File(pickedFile.path);
+        final ext = pickedFile.path.split('.').last.toLowerCase();
+        if (ext != 'jpg' && ext != 'jpeg' && ext != 'png' && ext != 'webp') {
+          CustomPopup.showError(
+            'Invalid Format',
+            'Image format must be JPG, PNG, or WebP.',
+          );
+          return;
+        }
+
+        final file = File(pickedFile.path);
+        final fileSize = await file.length();
+        if (fileSize > 1024 * 1024) {
+          // Attempt automatic compression to bring under 1MB
+          final compressed = await _imagePicker.pickImage(
+            source: source,
+            imageQuality: 60,
+            maxWidth: 1920,
+            maxHeight: 800,
+          );
+          if (compressed != null) {
+            final compFile = File(compressed.path);
+            if (await compFile.length() <= 1024 * 1024) {
+              selectedBannerImage.value = compFile;
+              return;
+            }
+          }
+          CustomPopup.showError(
+            'Image Under 1MB Required',
+            'Image must be under 1MB. Selected file size: ${(fileSize / (1024 * 1024)).toStringAsFixed(2)}MB.',
+          );
+          return;
+        }
+
+        selectedBannerImage.value = file;
       }
     } catch (e) {
       CustomPopup.showError('Image Error', 'Could not select banner image.');

@@ -58,7 +58,15 @@ class SellerOrdersController extends GetxController {
         _loadStoreProductsInBackground();
       }
 
-      final response = await _repository.getSellerOrders();
+      final results = await Future.wait([
+        _repository.getSellerOrders(),
+        _repository.getSellerDeliveredOrders().catchError((_) => null),
+        _repository.getSellerRefundedOrders().catchError((_) => null),
+      ]);
+      final response = results[0];
+      final deliveredResponse = results[1];
+      final refundedResponse = results[2];
+
       final List<SellerOrderModel> loaded = [];
 
       dynamic rawList;
@@ -95,6 +103,62 @@ class SellerOrdersController extends GetxController {
               }
             } else {
               loaded.add(SellerOrderModel.fromJson(mapData));
+            }
+          }
+        }
+      }
+
+      // Merge from dedicated Delivered Orders endpoint
+      if (deliveredResponse != null) {
+        dynamic delList;
+        if (deliveredResponse is Map) {
+          delList = deliveredResponse['orders'] ??
+              deliveredResponse['deliveredOrders'] ??
+              deliveredResponse['data'] ??
+              deliveredResponse['items'];
+        } else if (deliveredResponse is List) {
+          delList = deliveredResponse;
+        }
+        if (delList is List) {
+          final existingIds = loaded.map((o) => o.id).toSet();
+          for (var item in delList) {
+            if (item is Map) {
+              final model = SellerOrderModel.fromJson(Map<String, dynamic>.from(item));
+              if (!existingIds.contains(model.id)) {
+                loaded.add(model);
+                existingIds.add(model.id);
+              }
+            }
+          }
+        }
+      }
+
+      // Merge from dedicated Refunded Orders endpoint
+      if (refundedResponse != null) {
+        dynamic refList;
+        if (refundedResponse is Map) {
+          refList = refundedResponse['orders'] ??
+              refundedResponse['refundedOrders'] ??
+              refundedResponse['returns'] ??
+              refundedResponse['refunds'] ??
+              refundedResponse['data'] ??
+              refundedResponse['items'];
+        } else if (refundedResponse is List) {
+          refList = refundedResponse;
+        }
+        if (refList is List) {
+          final existingIds = loaded.map((o) => o.id).toSet();
+          for (var item in refList) {
+            if (item is Map) {
+              final map = Map<String, dynamic>.from(item);
+              if (map['status'] == null || map['status'].toString().isEmpty) {
+                map['status'] = 'Refunded';
+              }
+              final model = SellerOrderModel.fromJson(map);
+              if (!existingIds.contains(model.id)) {
+                loaded.add(model);
+                existingIds.add(model.id);
+              }
             }
           }
         }

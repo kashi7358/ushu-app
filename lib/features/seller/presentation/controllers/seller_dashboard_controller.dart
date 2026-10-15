@@ -59,14 +59,18 @@ class SellerDashboardController extends GetxController {
       // Trigger store hydration in parallel without blocking dashboard stats display
       _hydrateStoreDetails();
 
-      // Parallelize fetching stats and recent orders
+      // Parallelize fetching stats, recent orders, delivered orders, and dedicated refunded orders
       final results = await Future.wait([
         _repository.getDashboardStats(),
         _repository.getSellerOrders().catchError((_) => null),
+        _repository.getSellerDeliveredOrders().catchError((_) => null),
+        _repository.getSellerRefundedOrders().catchError((_) => null),
       ]);
 
       final response = results[0];
       final ordersResponse = results[1];
+      final deliveredOrdersResponse = results[2];
+      final refundedOrdersResponse = results[3];
 
       if (response is Map<String, dynamic>) {
         final parsed = SellerDashboardStatsModel.fromJson(response);
@@ -90,7 +94,65 @@ class SellerDashboardController extends GetxController {
         unpaidAmount.value = parsed.unpaidAmount;
       }
 
-      // Parse Seller Orders for delivered & refunded lists
+      // 1. Parse Dedicated Delivered Orders API
+      final List<SellerOrderModel> directDelivered = [];
+      if (deliveredOrdersResponse is Map) {
+        final rawDelivered = deliveredOrdersResponse['orders'] ??
+            deliveredOrdersResponse['deliveredOrders'] ??
+            deliveredOrdersResponse['data'] ??
+            deliveredOrdersResponse['items'];
+        if (rawDelivered is List) {
+          for (final o in rawDelivered) {
+            if (o is Map<String, dynamic>) {
+              directDelivered.add(SellerOrderModel.fromJson(o));
+            } else if (o is Map) {
+              directDelivered.add(SellerOrderModel.fromJson(Map<String, dynamic>.from(o)));
+            }
+          }
+        }
+      } else if (deliveredOrdersResponse is List) {
+        for (final o in deliveredOrdersResponse) {
+          if (o is Map<String, dynamic>) {
+            directDelivered.add(SellerOrderModel.fromJson(o));
+          } else if (o is Map) {
+            directDelivered.add(SellerOrderModel.fromJson(Map<String, dynamic>.from(o)));
+          }
+        }
+      }
+
+      // 2. Parse Dedicated Refunded Orders API
+      final List<SellerOrderModel> directRefunded = [];
+      if (refundedOrdersResponse is Map) {
+        final rawRefunded = refundedOrdersResponse['orders'] ??
+            refundedOrdersResponse['refundedOrders'] ??
+            refundedOrdersResponse['returns'] ??
+            refundedOrdersResponse['refunds'] ??
+            refundedOrdersResponse['data'] ??
+            refundedOrdersResponse['items'];
+        if (rawRefunded is List) {
+          for (final o in rawRefunded) {
+            if (o is Map) {
+              final map = Map<String, dynamic>.from(o);
+              if (map['status'] == null || map['status'].toString().isEmpty) {
+                map['status'] = 'Refunded';
+              }
+              directRefunded.add(SellerOrderModel.fromJson(map));
+            }
+          }
+        }
+      } else if (refundedOrdersResponse is List) {
+        for (final o in refundedOrdersResponse) {
+          if (o is Map) {
+            final map = Map<String, dynamic>.from(o);
+            if (map['status'] == null || map['status'].toString().isEmpty) {
+              map['status'] = 'Refunded';
+            }
+            directRefunded.add(SellerOrderModel.fromJson(map));
+          }
+        }
+      }
+
+      // 3. Parse Seller Orders for general active lists and fallback
       if (ordersResponse is Map<String, dynamic>) {
         final rawOrders = ordersResponse['orders'] ??
             ordersResponse['data'] ??
@@ -106,8 +168,12 @@ class SellerDashboardController extends GetxController {
             }
           }
 
-          final delivered = parsedOrders.where((o) => o.isCompleted).toList();
-          final refunded = parsedOrders.where((o) => o.isCancelled).toList();
+          final delivered = directDelivered.isNotEmpty
+              ? directDelivered
+              : parsedOrders.where((o) => o.isCompleted).toList();
+          final refunded = directRefunded.isNotEmpty
+              ? directRefunded
+              : parsedOrders.where((o) => o.isCancelled).toList();
 
           deliveredOrders.assignAll(delivered);
           refundedOrders.assignAll(refunded);
@@ -122,6 +188,13 @@ class SellerDashboardController extends GetxController {
             paidAmount.value = deliveredSum;
             unpaidAmount.value = activeSum;
           }
+        }
+      } else {
+        if (directDelivered.isNotEmpty) {
+          deliveredOrders.assignAll(directDelivered);
+        }
+        if (directRefunded.isNotEmpty) {
+          refundedOrders.assignAll(directRefunded);
         }
       }
     } catch (e) {

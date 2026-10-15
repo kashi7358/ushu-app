@@ -26,8 +26,11 @@ abstract class SellerRemoteDataSource {
   Future<dynamic> updateFlashSale({required String id, required CreateFlashSaleRequestModel model});
   Future<dynamic> deleteFlashSale(String id);
   Future<dynamic> getSellerOrders();
+  Future<dynamic> getSellerDeliveredOrders([String? token]);
+  Future<dynamic> getSellerRefundedOrders([String? token]);
   Future<dynamic> getSellerPromotions();
   Future<dynamic> createBanner(CreateBannerRequestModel model);
+  Future<dynamic> getAllBanners([String? token]);
   Future<dynamic> updateSellerBanner({required String id, required UpdateBannerRequestModel model});
   Future<dynamic> generateProductFromImage({required String imagePath, required String storeId});
   Future<dynamic> getFinancialReport([String? token]);
@@ -234,6 +237,28 @@ class SellerRemoteDataSourceImpl implements SellerRemoteDataSource {
   }
 
   @override
+  Future<dynamic> getSellerDeliveredOrders([String? token]) async {
+    final response = await apiClient.dio.get(
+      ApiEndpoints.sellerDeliveredOrders,
+      options: token != null && token.isNotEmpty
+          ? Options(headers: {'Authorization': 'Bearer $token'})
+          : null,
+    );
+    return response.data;
+  }
+
+  @override
+  Future<dynamic> getSellerRefundedOrders([String? token]) async {
+    final response = await apiClient.dio.get(
+      ApiEndpoints.sellerRefundedOrders,
+      options: token != null && token.isNotEmpty
+          ? Options(headers: {'Authorization': 'Bearer $token'})
+          : null,
+    );
+    return response.data;
+  }
+
+  @override
   Future<dynamic> getSellerPromotions() async {
     final response = await apiClient.dio.get(
       ApiEndpoints.sellerPromotions,
@@ -252,6 +277,17 @@ class SellerRemoteDataSourceImpl implements SellerRemoteDataSource {
           'Content-Type': 'multipart/form-data',
         },
       ),
+    );
+    return response.data;
+  }
+
+  @override
+  Future<dynamic> getAllBanners([String? token]) async {
+    final response = await apiClient.dio.get(
+      ApiEndpoints.getAllBanners,
+      options: token != null && token.isNotEmpty
+          ? Options(headers: {'Authorization': 'Bearer $token'})
+          : null,
     );
     return response.data;
   }

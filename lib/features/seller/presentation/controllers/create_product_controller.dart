@@ -1106,10 +1106,16 @@ class CreateProductController extends GetxController {
           ? response['message'].toString()
           : 'Product published successfully!';
 
-      CustomPopup.showSuccess('Product Created!', message);
-
-      // Navigate to seller approval / main screen
-      Get.offAllNamed(AppRoutes.sellerPendingApproval);
+      CustomPopup.showSuccess(
+        'Product Created!',
+        message,
+        buttonText: 'Okay',
+        barrierDismissible: false,
+        onConfirm: () {
+          // Navigate directly to Seller Dashboard
+          Get.offAllNamed(AppRoutes.sellerDashboard);
+        },
+      );
     } catch (e) {
       CustomPopup.hideLoading();
       final error = ExceptionHandler.handle(e);
@@ -1196,10 +1202,16 @@ class CreateProductController extends GetxController {
           ? response['message'].toString()
           : 'Product updated successfully!';
 
-      CustomPopup.showSuccess('Product Updated!', message);
-
-      // Return to manage products with refresh signal
-      Get.back(result: true);
+      CustomPopup.showSuccess(
+        'Product Updated!',
+        message,
+        buttonText: 'Okay',
+        barrierDismissible: false,
+        onConfirm: () {
+          // Return to manage products with refresh signal
+          Get.back(result: true);
+        },
+      );
     } catch (e) {
       CustomPopup.hideLoading();
       final error = ExceptionHandler.handle(e);

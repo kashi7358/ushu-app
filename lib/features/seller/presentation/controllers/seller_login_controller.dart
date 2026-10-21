@@ -280,8 +280,6 @@ class SellerLoginController extends GetxController {
         await SessionManager.saveStoreIdForEmail(userEmail, storeId);
       }
 
-      await SessionManager.setLastScreen(null);
-
       // Navigate based on whether store exists
       if (!hasStore) {
         // Save session with isLoggedIn: false so user CANNOT bypass to dashboard on restart
@@ -294,6 +292,7 @@ class SellerLoginController extends GetxController {
           storeId: null,
           isLoggedIn: false,
         );
+        await SessionManager.setLastScreen(AppRoutes.sellerCreateStore);
 
         Get.offAllNamed(
           AppRoutes.sellerCreateStore,
@@ -314,6 +313,7 @@ class SellerLoginController extends GetxController {
           storeId: storeId,
           isLoggedIn: true,
         );
+        await SessionManager.setLastScreen(AppRoutes.sellerDashboard);
 
         Get.offAllNamed(AppRoutes.sellerDashboard);
       }

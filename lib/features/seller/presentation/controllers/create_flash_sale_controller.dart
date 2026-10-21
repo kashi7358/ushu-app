@@ -18,12 +18,14 @@ class CreateFlashSaleController extends GetxController {
   final discountValueController = TextEditingController(text: '20');
   final stockLimitController = TextEditingController(text: '50');
   final maxPerUserController = TextEditingController(text: '2');
+  final searchController = TextEditingController();
 
   final Rx<DateTime?> startTime = Rx<DateTime?>(null);
   final Rx<DateTime?> endTime = Rx<DateTime?>(null);
 
   final RxString discountType = 'percentage'.obs; // 'percentage' or 'fixed'
   final RxBool isFreeShipping = false.obs;
+  final RxString searchQuery = ''.obs;
 
   final RxList<SellerProductModel> storeProducts = <SellerProductModel>[].obs;
   final RxSet<String> selectedProductIds = <String>{}.obs;
@@ -96,7 +98,51 @@ class CreateFlashSaleController extends GetxController {
     discountValueController.dispose();
     stockLimitController.dispose();
     maxPerUserController.dispose();
+    searchController.dispose();
     super.onClose();
+  }
+
+  List<SellerProductModel> get filteredProducts {
+    final q = searchQuery.value.trim().toLowerCase();
+    if (q.isEmpty) return storeProducts;
+    return storeProducts.where((p) {
+      return p.name.toLowerCase().contains(q) ||
+          p.sku.toLowerCase().contains(q) ||
+          p.category.toLowerCase().contains(q);
+    }).toList();
+  }
+
+  void selectAllProducts() {
+    selectedProductIds.addAll(storeProducts.map((p) => p.id));
+  }
+
+  void deselectAllProducts() {
+    selectedProductIds.clear();
+  }
+
+  double calculateDiscountedPrice(double originalPrice) {
+    final val = double.tryParse(discountValueController.text.trim()) ?? 0.0;
+    if (val <= 0) return originalPrice;
+    if (discountType.value == 'percentage') {
+      final discount = (originalPrice * val) / 100.0;
+      final finalPrice = originalPrice - discount;
+      return finalPrice < 0 ? 0.0 : finalPrice;
+    } else {
+      final finalPrice = originalPrice - val;
+      return finalPrice < 0 ? 0.0 : finalPrice;
+    }
+  }
+
+  String getCampaignDuration() {
+    if (startTime.value == null || endTime.value == null) return '';
+    final diff = endTime.value!.difference(startTime.value!);
+    if (diff.isNegative) return 'Invalid';
+    final days = diff.inDays;
+    final hours = diff.inHours % 24;
+    if (days > 0) {
+      return hours > 0 ? '$days days $hours hrs' : '$days days';
+    }
+    return '$hours hrs';
   }
 
   Future<void> loadStoreProducts() async {
@@ -290,8 +336,10 @@ class CreateFlashSaleController extends GetxController {
       CustomPopup.showSuccess(
         isEditMode.value ? 'Flash Sale Updated!' : 'Flash Sale Live!',
         msg,
+        buttonText: 'Okay',
+        barrierDismissible: false,
+        onConfirm: () => Get.back(result: true),
       );
-      Get.back(result: true);
     } catch (e) {
       CustomPopup.hideLoading();
       final error = ExceptionHandler.handle(e);

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:get/get.dart';
 import '../network/api_client.dart';
 import '../network/api_endpoints.dart';
 
@@ -13,6 +14,7 @@ class SessionManager {
 
   // In-memory cache for synchronous access (Buyer)
   static bool _isLoggedIn = false;
+  static final RxBool isUserLoggedInRx = false.obs;
   static String? _userId;
   static String? _email;
   static String? _fullName;
@@ -40,6 +42,7 @@ class SessionManager {
     try {
       final loggedInStr = await _storage.read(key: 'isLoggedIn');
       _isLoggedIn = loggedInStr == 'true';
+      isUserLoggedInRx.value = _isLoggedIn;
       _userId = await _storage.read(key: 'userId');
       _email = await _storage.read(key: 'email');
       _fullName = await _storage.read(key: 'fullName');
@@ -75,6 +78,7 @@ class SessionManager {
     } catch (e) {
       // In case of any device keystore corruption, ensure app startup continues smoothly
       _isLoggedIn = false;
+      isUserLoggedInRx.value = false;
       _isSellerLoggedIn = false;
     }
   }
@@ -126,6 +130,7 @@ class SessionManager {
 
   static Future<void> saveSession(String userId, String email, String fullName, {String? token}) async {
     _isLoggedIn = true;
+    isUserLoggedInRx.value = true;
     _userId = userId;
     _email = email;
     _fullName = fullName;
@@ -152,6 +157,7 @@ class SessionManager {
 
   static Future<void> clearSession() async {
     _isLoggedIn = false;
+    isUserLoggedInRx.value = false;
     _userId = null;
     _email = null;
     _fullName = null;
@@ -292,7 +298,7 @@ class SessionManager {
     return _savedAddress;
   }
 
-  static bool get isLoggedIn => _isLoggedIn;
+  static bool get isLoggedIn => isUserLoggedInRx.value;
   static String? get userId => _userId;
   static String? get email => _email;
   static String? get fullName => _fullName;

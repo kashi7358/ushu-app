@@ -49,30 +49,92 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
             Container(
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
-                color: AppColors.primaryPurple,
+                gradient: const LinearGradient(
+                  colors: [AppColors.primaryPurple, AppColors.secondaryViolet],
+                ),
                 borderRadius: BorderRadius.circular(8),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primaryPurple.withValues(alpha: 0.25),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
-
+              child: const Icon(Icons.storefront_rounded, color: Colors.white, size: 16),
             ),
             const SizedBox(width: 8),
             Text(
               'Seller Center',
-              style: AppTextStyles.bold.copyWith(color: AppColors.darkText, fontSize: 17.5),
+              style: AppTextStyles.bold.copyWith(color: AppColors.darkText, fontSize: 17),
             ),
           ],
         ),
         centerTitle: true,
         actions: [
-          IconButton(
-            icon: CircleAvatar(
-              radius: 17,
-              backgroundColor: AppColors.primaryPurple.withValues(alpha: 0.1),
-              child: const Icon(Icons.person, color: AppColors.primaryPurple, size: 20),
+          Padding(
+            padding: const EdgeInsets.only(right: 14.0),
+            child: InkWell(
+              onTap: () => _showStoreProfileBottomSheet(context, controller),
+              borderRadius: BorderRadius.circular(20),
+              child: Stack(
+                clipBehavior: Clip.none,
+                alignment: Alignment.center,
+                children: [
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white,
+                      border: Border.all(
+                        color: AppColors.primaryPurple.withValues(alpha: 0.25),
+                        width: 1.8,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.primaryPurple.withValues(alpha: 0.12),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: Obx(() {
+                      final logo = controller.storeLogo.value;
+                      final sName = controller.storeName.value;
+                      return _buildAdaptiveImage(
+                        path: logo,
+                        fit: BoxFit.cover,
+                        placeholder: Center(
+                          child: Text(
+                            sName.isNotEmpty ? sName[0].toUpperCase() : 'S',
+                            style: AppTextStyles.bold.copyWith(
+                              color: AppColors.primaryPurple,
+                              fontSize: 15,
+                            ),
+                          ),
+                        ),
+                      );
+                    }),
+                  ),
+                  Positioned(
+                    right: 0,
+                    bottom: 0,
+                    child: Container(
+                      width: 10,
+                      height: 10,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF10B981),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 2),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-            onPressed: () => _showStoreProfileBottomSheet(context, controller),
-            tooltip: 'Store & Profile Details',
           ),
-          const SizedBox(width: 8),
         ],
       ),
       body: Obx(() {
@@ -120,45 +182,91 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
                 // Welcome Store Greeting Header Card
                 Container(
                   margin: const EdgeInsets.only(bottom: 14),
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(20),
                     border: Border.all(color: const Color(0xFFE2E8F0)),
                     boxShadow: [
                       BoxShadow(
+                        color: AppColors.primaryPurple.withValues(alpha: 0.04),
+                        blurRadius: 14,
+                        offset: const Offset(0, 4),
+                      ),
+                      BoxShadow(
                         color: Colors.black.withValues(alpha: 0.02),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
+                        blurRadius: 4,
+                        offset: const Offset(0, 1),
                       ),
                     ],
                   ),
                   child: Row(
                     children: [
-                      Container(
-                        width: 42,
-                        height: 42,
-                        decoration: BoxDecoration(
-                          color: AppColors.primaryPurple.withValues(alpha: 0.1),
-                          shape: BoxShape.circle,
-                        ),
-                        clipBehavior: Clip.antiAlias,
-                        child: Obx(() {
-                          final logo = controller.storeLogo.value;
-                          final sName = controller.storeName.value;
-                          return _buildAdaptiveImage(
-                            path: logo,
-                            fit: BoxFit.cover,
-                            placeholder: Center(
-                              child: Text(
-                                sName.isNotEmpty ? sName[0].toUpperCase() : 'S',
-                                style: AppTextStyles.bold.copyWith(color: AppColors.primaryPurple, fontSize: 17),
+                      // Store Avatar with verified active ring
+                      Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          Container(
+                            width: 48,
+                            height: 48,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: const LinearGradient(
+                                colors: [AppColors.primaryPurple, AppColors.secondaryViolet],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.primaryPurple.withValues(alpha: 0.22),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            padding: const EdgeInsets.all(2), // border width
+                            child: Container(
+                              decoration: const BoxDecoration(
+                                color: Colors.white,
+                                shape: BoxShape.circle,
+                              ),
+                              clipBehavior: Clip.antiAlias,
+                              child: Obx(() {
+                                final logo = controller.storeLogo.value;
+                                final sName = controller.storeName.value;
+                                return _buildAdaptiveImage(
+                                  path: logo,
+                                  fit: BoxFit.cover,
+                                  placeholder: Center(
+                                    child: Text(
+                                      sName.isNotEmpty ? sName[0].toUpperCase() : 'S',
+                                      style: AppTextStyles.extraBold.copyWith(
+                                        color: AppColors.primaryPurple,
+                                        fontSize: 18,
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              }),
+                            ),
+                          ),
+                          Positioned(
+                            right: 0,
+                            bottom: 0,
+                            child: Container(
+                              width: 13,
+                              height: 13,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF10B981),
+                                shape: BoxShape.circle,
+                                border: Border.all(color: Colors.white, width: 2),
                               ),
                             ),
-                          );
-                        }),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 10),
+                      const SizedBox(width: 12),
+                      // Store Info
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -168,60 +276,54 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
                                 Flexible(
                                   child: Obx(() => Text(
                                     controller.storeName.value.isNotEmpty ? controller.storeName.value : 'My Store',
-                                    style: AppTextStyles.bold.copyWith(fontSize: 15, color: AppColors.darkText),
+                                    style: AppTextStyles.bold.copyWith(fontSize: 15.5, color: AppColors.darkText),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                   )),
                                 ),
-                                const SizedBox(width: 5),
-                                const Icon(Icons.verified_rounded, color: Color(0xFF10B981), size: 15),
+                                const SizedBox(width: 4),
+                                const Icon(Icons.verified_rounded, color: Color(0xFF10B981), size: 16),
                               ],
                             ),
-                            const SizedBox(height: 2),
+                            const SizedBox(height: 3),
                             Row(
                               children: [
                                 Container(
-                                  width: 6,
-                                  height: 6,
-                                  decoration: const BoxDecoration(
-                                    color: Color(0xFF10B981),
-                                    shape: BoxShape.circle,
+                                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFECFDF5),
+                                    borderRadius: BorderRadius.circular(6),
+                                    border: Border.all(color: const Color(0xFFA7F3D0)),
+                                  ),
+                                  child: const Text(
+                                    '● Live & Active',
+                                    style: TextStyle(
+                                      color: Color(0xFF059669),
+                                      fontSize: 10.5,
+                                      fontWeight: FontWeight.w700,
+                                    ),
                                   ),
                                 ),
-                                const SizedBox(width: 5),
-                                const Expanded(
-                                  child: Text(
-                                    'Store Live & Active',
-                                    style: TextStyle(color: Color(0xFF64748B), fontSize: 11, fontWeight: FontWeight.w500),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
+                                const SizedBox(width: 6),
+                                Obx(() {
+                                  final sellerName = controller.sellerName.value;
+                                  if (sellerName.isEmpty) return const SizedBox.shrink();
+                                  return Flexible(
+                                    child: Text(
+                                      sellerName,
+                                      style: const TextStyle(
+                                        color: Color(0xFF64748B),
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  );
+                                }),
                               ],
                             ),
                           ],
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      InkWell(
-                        onTap: () => _showStoreProfileBottomSheet(context, controller),
-                        borderRadius: BorderRadius.circular(10),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF1F5F9),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                'Profile',
-                                style: TextStyle(color: Color(0xFF334155), fontSize: 11, fontWeight: FontWeight.w600),
-                              ),
-                              Icon(Icons.chevron_right_rounded, size: 15, color: Color(0xFF64748B)),
-                            ],
-                          ),
                         ),
                       ),
                     ],
@@ -675,34 +777,46 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
   );
 }
 
-  // Balanced & Professional Navigation Sidebar Drawer
+  void _navigateFromDrawer(Future<dynamic>? Function() navigate) {
+    if (_scaffoldKey.currentState?.isDrawerOpen ?? false) {
+      Navigator.of(context).pop();
+    }
+    navigate()?.then((_) {
+      if (mounted) {
+        controller.fetchDashboardStats();
+      }
+    });
+  }
+
+  // Executive Navigation Sidebar Drawer
   Widget _buildSidebarDrawer(BuildContext context, SellerDashboardController controller) {
     return Drawer(
       backgroundColor: Colors.white,
       surfaceTintColor: Colors.transparent,
-      elevation: 16,
+      elevation: 20,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.only(
-          topRight: Radius.circular(22),
-          bottomRight: Radius.circular(22),
+          topRight: Radius.circular(24),
+          bottomRight: Radius.circular(24),
         ),
       ),
       child: Column(
         children: [
-          // 1. Professional Header with Store Logo, Badge & Seller Info
+          // 1. Executive Modern Header with Store Branding & Quick Details Action
           Container(
             width: double.infinity,
             padding: EdgeInsets.fromLTRB(
-              20,
-              MediaQuery.of(context).padding.top + 22,
-              20,
+              18,
+              MediaQuery.of(context).padding.top + 16,
+              16,
               18,
             ),
             decoration: const BoxDecoration(
               gradient: LinearGradient(
                 colors: [
+                  Color(0xFF1E1B4B),
+                  Color(0xFF312E81),
                   AppColors.primaryPurple,
-                  AppColors.secondaryViolet,
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
@@ -711,45 +825,108 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Top row with USHU Partner badge & close icon
                 Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Container(
-                      width: 56,
-                      height: 56,
+                      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3.5),
                       decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.white,
-                        border: Border.all(color: Colors.white, width: 2.2),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.15),
-                            blurRadius: 8,
-                            offset: const Offset(0, 3),
+                        color: Colors.white.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: const [
+                          Icon(Icons.verified_rounded, size: 12, color: Color(0xFF4ADE80)),
+                          SizedBox(width: 4),
+                          Text(
+                            'USHU Partner Store',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.2,
+                            ),
                           ),
                         ],
                       ),
-                      clipBehavior: Clip.antiAlias,
-                      child: Obx(() {
-                        final logo = controller.storeLogo.value;
-                        final storeName = controller.storeName.value;
-                        return _buildAdaptiveImage(
-                          path: logo,
-                          width: 56,
-                          height: 56,
-                          fit: BoxFit.cover,
-                          placeholder: Center(
-                            child: Text(
-                              storeName.isNotEmpty ? storeName[0].toUpperCase() : 'S',
-                              style: AppTextStyles.extraBold.copyWith(
-                                fontSize: 22,
-                                color: AppColors.primaryPurple,
+                    ),
+                    InkWell(
+                      onTap: () => Navigator.of(context).pop(),
+                      borderRadius: BorderRadius.circular(20),
+                      child: Container(
+                        padding: const EdgeInsets.all(5),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.12),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.close_rounded, size: 17, color: Colors.white),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                // Store Logo & Name
+                Row(
+                  children: [
+                    Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        Container(
+                          width: 54,
+                          height: 54,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white,
+                            border: Border.all(color: Colors.white, width: 2.2),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.2),
+                                blurRadius: 10,
+                                offset: const Offset(0, 3),
                               ),
+                            ],
+                          ),
+                          clipBehavior: Clip.antiAlias,
+                          child: Obx(() {
+                            final logo = controller.storeLogo.value;
+                            final storeName = controller.storeName.value;
+                            return _buildAdaptiveImage(
+                              path: logo,
+                              width: 54,
+                              height: 54,
+                              fit: BoxFit.cover,
+                              placeholder: Center(
+                                child: Text(
+                                  storeName.isNotEmpty ? storeName[0].toUpperCase() : 'S',
+                                  style: AppTextStyles.extraBold.copyWith(
+                                    fontSize: 22,
+                                    color: AppColors.primaryPurple,
+                                  ),
+                                ),
+                              ),
+                            );
+                          }),
+                        ),
+                        Positioned(
+                          right: 0,
+                          bottom: 0,
+                          child: Container(
+                            width: 13,
+                            height: 13,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF10B981),
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white, width: 2),
                             ),
                           ),
-                        );
-                      }),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 14),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -758,34 +935,44 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
                             controller.storeName.value.isNotEmpty
                                 ? controller.storeName.value
                                 : 'My Store',
-                            style: AppTextStyles.extraBold.copyWith(
+                            style: AppTextStyles.bold.copyWith(
                               color: Colors.white,
                               fontSize: 16.5,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           )),
-                          const SizedBox(height: 4),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.18),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: const [
-                                Icon(Icons.verified_rounded, size: 12, color: Color(0xFF4ADE80)),
-                                SizedBox(width: 4),
-                                Text(
-                                  'Verified Seller',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 10.5,
-                                    fontWeight: FontWeight.w600,
+                          const SizedBox(height: 5),
+                          InkWell(
+                            onTap: () {
+                              Navigator.of(context).pop();
+                              _showStoreProfileBottomSheet(context, controller);
+                            },
+                            borderRadius: BorderRadius.circular(16),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.18),
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(color: Colors.white.withValues(alpha: 0.22)),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: const [
+                                  Icon(Icons.storefront_rounded, size: 12, color: Colors.white),
+                                  SizedBox(width: 4),
+                                  Text(
+                                    'Store Details',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 10.5,
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                   ),
-                                ),
-                              ],
+                                  SizedBox(width: 2),
+                                  Icon(Icons.arrow_forward_ios_rounded, size: 8, color: Colors.white70),
+                                ],
+                              ),
                             ),
                           ),
                         ],
@@ -794,16 +981,16 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
                   ],
                 ),
                 const SizedBox(height: 14),
-                Divider(height: 1, color: Colors.white.withValues(alpha: 0.18)),
-                const SizedBox(height: 10),
+                Divider(height: 1, color: Colors.white.withValues(alpha: 0.16)),
+                const SizedBox(height: 9),
                 Row(
                   children: [
                     Icon(
                       Icons.mail_outline_rounded,
-                      size: 14,
-                      color: Colors.white.withValues(alpha: 0.85),
+                      size: 13.5,
+                      color: Colors.white.withValues(alpha: 0.8),
                     ),
-                    const SizedBox(width: 7),
+                    const SizedBox(width: 6),
                     Expanded(
                       child: Obx(() => Text(
                         controller.sellerEmail.value.isNotEmpty
@@ -812,8 +999,8 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
                                 ? controller.sellerName.value
                                 : 'Seller Account'),
                         style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.9),
-                          fontSize: 12,
+                          color: Colors.white.withValues(alpha: 0.85),
+                          fontSize: 11.5,
                           fontWeight: FontWeight.w500,
                         ),
                         maxLines: 1,
@@ -826,17 +1013,25 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
             ),
           ),
 
-          // 2. Clean Professional Navigation List (No Boxy Cards)
+          // 2. Executive Navigation List
           Expanded(
             child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
               children: [
+                _buildDrawerSectionHeader('MAIN MENU'),
                 _buildDrawerItem(
                   icon: Icons.grid_view_rounded,
                   title: 'Dashboard',
                   isSelected: true,
-                  onTap: () => Navigator.of(context).pop(),
+                  onTap: () {
+                    if (_scaffoldKey.currentState?.isDrawerOpen ?? false) {
+                      Navigator.of(context).pop();
+                    }
+                  },
                 ),
+                const SizedBox(height: 10),
+
+                _buildDrawerSectionHeader('INVENTORY & SALES'),
                 _buildDrawerDropdownItem(
                   icon: Icons.inventory_2_outlined,
                   title: 'Products',
@@ -844,91 +1039,62 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
                     _buildDrawerSubItem(
                       icon: Icons.view_list_rounded,
                       title: 'Manage Products',
-                      onTap: () {
-                        Navigator.of(context).pop();
-                        Get.toNamed(
-                          AppRoutes.sellerManageProducts,
-                          arguments: {'storeId': SessionManager.sellerStoreId ?? ''},
-                        )?.then((_) => controller.fetchDashboardStats());
-                      },
+                      onTap: () => _navigateFromDrawer(() => Get.toNamed(
+                        AppRoutes.sellerManageProducts,
+                        arguments: {'storeId': SessionManager.sellerStoreId ?? ''},
+                      )),
                     ),
                     _buildDrawerSubItem(
                       icon: Icons.add_circle_outline_rounded,
                       title: 'Add Product',
                       onTap: () {
-                        Navigator.of(context).pop();
+                        if (_scaffoldKey.currentState?.isDrawerOpen ?? false) {
+                          Navigator.of(context).pop();
+                        }
                         controller.navigateToAddProduct();
                       },
                     ),
                     _buildDrawerSubItem(
                       icon: Icons.bolt_rounded,
                       title: 'Create Flash Sale',
-                      onTap: () {
-                        Navigator.of(context).pop();
-                        Get.toNamed(AppRoutes.sellerCreateFlashSale);
-                      },
+                      onTap: () => _navigateFromDrawer(() => Get.toNamed(AppRoutes.sellerCreateFlashSale)),
                     ),
                     _buildDrawerSubItem(
                       icon: Icons.local_offer_outlined,
                       title: 'Manage Sales Products',
-                      onTap: () {
-                        Navigator.of(context).pop();
-                        Get.toNamed(AppRoutes.sellerManageFlashSales);
-                      },
+                      onTap: () => _navigateFromDrawer(() => Get.toNamed(AppRoutes.sellerManageFlashSales)),
                     ),
                   ],
-                ),
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                  child: Divider(height: 1, color: Color(0xFFF1F5F9)),
                 ),
                 _buildDrawerItem(
                   icon: Icons.shopping_bag_outlined,
                   title: 'Order Management',
                   isSelected: false,
-                  onTap: () {
-                    Navigator.of(context).pop();
-                    Get.toNamed(AppRoutes.sellerOrders);
-                  },
+                  onTap: () => _navigateFromDrawer(() => Get.toNamed(AppRoutes.sellerOrders)),
                 ),
                 _buildDrawerItem(
                   icon: Icons.assignment_return_outlined,
                   title: 'Returned Orders',
                   isSelected: false,
-                  onTap: () {
-                    Navigator.of(context).pop();
-                    Get.toNamed(
-                      AppRoutes.sellerOrders,
-                      arguments: {'tab': 'Cancelled'},
-                    );
-                  },
+                  onTap: () => _navigateFromDrawer(() => Get.toNamed(
+                    AppRoutes.sellerOrders,
+                    arguments: {'tab': 'Cancelled'},
+                  )),
                 ),
+                const SizedBox(height: 10),
+
+                _buildDrawerSectionHeader('GROWTH & MARKETING'),
                 _buildDrawerItem(
                   icon: Icons.bar_chart_rounded,
                   title: 'Financial Report',
                   isSelected: false,
-                  onTap: () {
-                    Navigator.of(context).pop();
-                    Get.toNamed(AppRoutes.sellerFinancialReport);
-                  },
+                  onTap: () => _navigateFromDrawer(() => Get.toNamed(AppRoutes.sellerFinancialReport)),
                 ),
                 _buildDrawerItem(
                   icon: Icons.campaign_outlined,
                   title: 'Promotion Campaign',
                   isSelected: false,
-                  onTap: () {
-                    Navigator.of(context).pop();
-                    Get.toNamed(AppRoutes.sellerPromotions);
-                  },
-                ),
-                _buildDrawerItem(
-                  icon: Icons.panorama_outlined,
-                  title: 'Create Banner',
-                  isSelected: false,
-                  onTap: () {
-                    Navigator.of(context).pop();
-                    Get.toNamed(AppRoutes.sellerCreateBanner);
-                  },
+                  onTap: () => _navigateFromDrawer(() => Get.toNamed(AppRoutes.sellerPromotions)),
                 ),
               ],
             ),
@@ -936,57 +1102,138 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
 
           const Divider(height: 1, color: Color(0xFFF1F5F9)),
 
-          // 3. Clean Professional Logout Button
+          // 3. Clean Professional Logout & App Info
           SafeArea(
             top: false,
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
-              child: InkWell(
-                onTap: () {
-                  Navigator.of(context).pop();
-                  controller.logout();
-                },
-                borderRadius: BorderRadius.circular(12),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFEF2F2),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 32,
-                        height: 32,
-                        decoration: BoxDecoration(
-                          color: Colors.red.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(9),
-                        ),
-                        child: const Icon(Icons.logout_rounded, color: Colors.red, size: 17),
+              padding: const EdgeInsets.fromLTRB(14, 8, 14, 12),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Switch to Buyer Mode Tile
+                  InkWell(
+                    onTap: () {
+                      if (_scaffoldKey.currentState?.isDrawerOpen ?? false) {
+                        Navigator.of(context).pop();
+                      }
+                      SessionManager.setLastScreen(AppRoutes.mainLayout);
+                      Get.offAllNamed(AppRoutes.mainLayout);
+                    },
+                    borderRadius: BorderRadius.circular(14),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      margin: const EdgeInsets.only(bottom: 8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF1F5F9),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
                       ),
-                      const SizedBox(width: 12),
-                      const Expanded(
-                        child: Text(
-                          'Logout',
-                          style: TextStyle(
-                            color: Colors.red,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 34,
+                            height: 34,
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryPurple.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Icon(Icons.shopping_bag_outlined, color: AppColors.primaryPurple, size: 18),
                           ),
-                        ),
+                          const SizedBox(width: 12),
+                          const Expanded(
+                            child: Text(
+                              'Switch to Buyer App',
+                              style: TextStyle(
+                                color: Color(0xFF334155),
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                          const Icon(
+                            Icons.chevron_right_rounded,
+                            color: Color(0xFF94A3B8),
+                            size: 18,
+                          ),
+                        ],
                       ),
-                      const Icon(
-                        Icons.chevron_right_rounded,
-                        color: Colors.redAccent,
-                        size: 18,
-                      ),
-                    ],
+                    ),
                   ),
-                ),
+                  InkWell(
+                    onTap: () {
+                      if (_scaffoldKey.currentState?.isDrawerOpen ?? false) {
+                        Navigator.of(context).pop();
+                      }
+                      controller.logout();
+                    },
+                    borderRadius: BorderRadius.circular(14),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFEF2F2),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: const Color(0xFFFEE2E2)),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 34,
+                            height: 34,
+                            decoration: BoxDecoration(
+                              color: Colors.red.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Icon(Icons.logout_rounded, color: Colors.red, size: 18),
+                          ),
+                          const SizedBox(width: 12),
+                          const Expanded(
+                            child: Text(
+                              'Logout Account',
+                              style: TextStyle(
+                                color: Color(0xFFDC2626),
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                          const Icon(
+                            Icons.chevron_right_rounded,
+                            color: Color(0xFFF87171),
+                            size: 18,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'USHU Seller Center • v1.0.0',
+                    style: TextStyle(
+                      fontSize: 10.5,
+                      color: Colors.grey.shade400,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildDrawerSectionHeader(String title) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(10, 8, 10, 6),
+      child: Text(
+        title,
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w800,
+          color: Colors.grey.shade400,
+          letterSpacing: 0.8,
+        ),
       ),
     );
   }
@@ -998,32 +1245,38 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
     required VoidCallback onTap,
   }) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
+      padding: const EdgeInsets.symmetric(vertical: 2.5),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(13),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
           decoration: BoxDecoration(
             color: isSelected
-                ? AppColors.primaryPurple.withValues(alpha: 0.09)
+                ? AppColors.primaryPurple.withValues(alpha: 0.08)
                 : Colors.transparent,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(13),
+            border: isSelected
+                ? Border.all(color: AppColors.primaryPurple.withValues(alpha: 0.2))
+                : Border.all(color: Colors.transparent),
           ),
           child: Row(
             children: [
               Container(
-                width: 34,
-                height: 34,
+                width: 35,
+                height: 35,
                 decoration: BoxDecoration(
                   color: isSelected
                       ? AppColors.primaryPurple
-                      : const Color(0xFFF1F5F9),
-                  borderRadius: BorderRadius.circular(9),
+                      : const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(10),
+                  border: isSelected
+                      ? null
+                      : Border.all(color: const Color(0xFFE2E8F0)),
                 ),
                 child: Icon(
                   icon,
-                  color: isSelected ? Colors.white : const Color(0xFF475569),
+                  color: isSelected ? Colors.white : AppColors.primaryPurple,
                   size: 18,
                 ),
               ),
@@ -1032,7 +1285,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
                 child: Text(
                   title,
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: 13.5,
                     fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
                     color: isSelected ? AppColors.primaryPurple : const Color(0xFF1E293B),
                   ),
@@ -1040,7 +1293,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
               ),
               Icon(
                 Icons.chevron_right_rounded,
-                size: 18,
+                size: 17,
                 color: isSelected ? AppColors.primaryPurple : const Color(0xFFCBD5E1),
               ),
             ],
@@ -1056,30 +1309,31 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
     required List<Widget> subItems,
   }) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
+      padding: const EdgeInsets.symmetric(vertical: 2.5),
       child: Theme(
         data: ThemeData(
           dividerColor: Colors.transparent,
           splashColor: AppColors.primaryPurple.withValues(alpha: 0.05),
         ),
         child: ExpansionTile(
-          tilePadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
-          childrenPadding: const EdgeInsets.only(left: 28, right: 8, bottom: 6),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          collapsedShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          tilePadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+          childrenPadding: const EdgeInsets.only(left: 26, right: 8, bottom: 6),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(13)),
+          collapsedShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(13)),
           leading: Container(
-            width: 34,
-            height: 34,
+            width: 35,
+            height: 35,
             decoration: BoxDecoration(
-              color: const Color(0xFFF1F5F9),
-              borderRadius: BorderRadius.circular(9),
+              color: const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
             ),
-            child: Icon(icon, color: const Color(0xFF475569), size: 18),
+            child: Icon(icon, color: AppColors.primaryPurple, size: 18),
           ),
           title: Text(
             title,
             style: const TextStyle(
-              fontSize: 14,
+              fontSize: 13.5,
               fontWeight: FontWeight.w600,
               color: Color(0xFF1E293B),
             ),
@@ -1088,10 +1342,10 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
           collapsedIconColor: const Color(0xFF94A3B8),
           children: [
             Container(
-              padding: const EdgeInsets.only(left: 12),
-              decoration: const BoxDecoration(
+              padding: const EdgeInsets.only(left: 10),
+              decoration: BoxDecoration(
                 border: Border(
-                  left: BorderSide(color: Color(0xFFE2E8F0), width: 1.5),
+                  left: BorderSide(color: AppColors.primaryPurple.withValues(alpha: 0.3), width: 1.5),
                 ),
               ),
               child: Column(
@@ -1111,12 +1365,19 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
   }) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(10),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
         child: Row(
           children: [
-            Icon(icon, size: 16, color: AppColors.primaryPurple),
+            Container(
+              padding: const EdgeInsets.all(5),
+              decoration: BoxDecoration(
+                color: AppColors.primaryPurple.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Icon(icon, size: 14, color: AppColors.primaryPurple),
+            ),
             const SizedBox(width: 10),
             Expanded(
               child: Text(
@@ -1218,11 +1479,11 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Store Profile',
-                                  style: AppTextStyles.bold.copyWith(fontSize: 17, color: AppColors.darkText),
+                                  'Store Details',
+                                  style: AppTextStyles.bold.copyWith(fontSize: 17.5, color: AppColors.darkText),
                                 ),
                                 Text(
-                                  'Verified Business Details',
+                                  'Verified Business & Operations',
                                   style: TextStyle(fontSize: 11.5, color: Colors.grey.shade600),
                                 ),
                               ],
@@ -1375,13 +1636,21 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  storeName,
-                                  style: AppTextStyles.extraBold.copyWith(
-                                    fontSize: 19,
-                                    color: AppColors.darkText,
-                                    letterSpacing: -0.3,
-                                  ),
+                                Row(
+                                  children: [
+                                    Flexible(
+                                      child: Text(
+                                        storeName,
+                                        style: AppTextStyles.extraBold.copyWith(
+                                          fontSize: 20,
+                                          color: AppColors.darkText,
+                                          letterSpacing: -0.3,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    const Icon(Icons.verified_rounded, color: Color(0xFF10B981), size: 19),
+                                  ],
                                 ),
                                 if (tagline.isNotEmpty) ...[
                                   const SizedBox(height: 3),
@@ -1394,6 +1663,61 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
                                     ),
                                   ),
                                 ],
+                                const SizedBox(height: 10),
+                                SingleChildScrollView(
+                                  scrollDirection: Axis.horizontal,
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFECFDF5),
+                                          borderRadius: BorderRadius.circular(20),
+                                          border: Border.all(color: const Color(0xFFA7F3D0)),
+                                        ),
+                                        child: const Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(Icons.check_circle_rounded, size: 13, color: Color(0xFF10B981)),
+                                            SizedBox(width: 4),
+                                            Text(
+                                              'Verified Merchant',
+                                              style: TextStyle(
+                                                color: Color(0xFF059669),
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.w700,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                        decoration: BoxDecoration(
+                                          color: AppColors.primaryPurple.withValues(alpha: 0.08),
+                                          borderRadius: BorderRadius.circular(20),
+                                          border: Border.all(color: AppColors.primaryPurple.withValues(alpha: 0.2)),
+                                        ),
+                                        child: const Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(Icons.local_shipping_rounded, size: 13, color: AppColors.primaryPurple),
+                                            SizedBox(width: 4),
+                                            Text(
+                                              'Pakistan-wide Delivery',
+                                              style: TextStyle(
+                                                color: AppColors.primaryPurple,
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.w700,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
                                 if (description.isNotEmpty) ...[
                                   const SizedBox(height: 10),
                                   Container(
@@ -1575,10 +1899,18 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
             itemBuilder: (context, index) {
               final item = items[index];
               return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 10),
+                padding: const EdgeInsets.symmetric(vertical: 7),
                 child: Row(
                   children: [
-                    Icon(item.icon, size: 18, color: const Color(0xFF64748B)),
+                    Container(
+                      padding: const EdgeInsets.all(7),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                      ),
+                      child: Icon(item.icon, size: 16, color: AppColors.primaryPurple),
+                    ),
                     const SizedBox(width: 10),
                     Text(
                       item.label,

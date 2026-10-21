@@ -39,17 +39,26 @@ class AppRoutes {
     final bool hasStore = SessionManager.sellerStoreId != null &&
         SessionManager.sellerStoreId!.trim().isNotEmpty;
 
-    if (SessionManager.isSellerLoggedIn && hasStore) {
-      return sellerDashboard;
+    // 1. If the app was closed while on the Seller Dashboard or any seller sub-screen:
+    if (SessionManager.lastScreen == sellerDashboard ||
+        (SessionManager.lastScreen != null && SessionManager.lastScreen!.startsWith('/seller/'))) {
+      if (SessionManager.isSellerLoggedIn && hasStore) {
+        return sellerDashboard;
+      }
+      if (!hasStore && SessionManager.sellerId != null && SessionManager.sellerId!.isNotEmpty) {
+        return sellerCreateStore;
+      }
+      return sellerLogin;
     }
 
+    // 2. If a specific screen was recorded before app termination:
     if (SessionManager.lastScreen != null && SessionManager.lastScreen!.isNotEmpty) {
-      if (SessionManager.lastScreen == sellerDashboard || SessionManager.lastScreen == sellerCreateStore) {
-        if (!hasStore) {
-          return sellerLogin;
-        }
-      }
       return SessionManager.lastScreen!;
+    }
+
+    // 3. Fallback: If seller is logged in with valid store, restore to dashboard:
+    if (SessionManager.isSellerLoggedIn && hasStore) {
+      return sellerDashboard;
     }
 
     return mainLayout;

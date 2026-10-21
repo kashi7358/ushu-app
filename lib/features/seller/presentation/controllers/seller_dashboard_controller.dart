@@ -34,6 +34,9 @@ class SellerDashboardController extends GetxController {
     final remoteDataSource = SellerRemoteDataSourceImpl(apiClient);
     _repository = SellerRepositoryImpl(remoteDataSource);
 
+    // Record active seller dashboard screen for app restart persistence
+    SessionManager.setLastScreen(AppRoutes.sellerDashboard);
+
     // Initial load from session
     sellerName.value = SessionManager.sellerName ?? 'Seller Account';
     sellerEmail.value = SessionManager.sellerEmail ?? '';
@@ -61,7 +64,7 @@ class SellerDashboardController extends GetxController {
 
       // Parallelize fetching stats, recent orders, delivered orders, and dedicated refunded orders
       final results = await Future.wait([
-        _repository.getDashboardStats(),
+        _repository.getDashboardStats().catchError((_) => null),
         _repository.getSellerOrders().catchError((_) => null),
         _repository.getSellerDeliveredOrders().catchError((_) => null),
         _repository.getSellerRefundedOrders().catchError((_) => null),
@@ -196,6 +199,16 @@ class SellerDashboardController extends GetxController {
         if (directRefunded.isNotEmpty) {
           refundedOrders.assignAll(directRefunded);
         }
+      }
+
+      final bool allFailed = response == null &&
+          ordersResponse == null &&
+          deliveredOrdersResponse == null &&
+          refundedOrdersResponse == null;
+      if (allFailed) {
+        errorMessage.value = 'Unable to connect to server. Please check your internet connection.';
+      } else {
+        errorMessage.value = '';
       }
     } catch (e) {
       final error = ExceptionHandler.handle(e);

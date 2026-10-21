@@ -1,6 +1,4 @@
-import 'dart:io';
 import 'package:dio/dio.dart';
-import 'package:dio/io.dart';
 import 'package:flutter/foundation.dart';
 import '../utils/session_manager.dart';
 
@@ -21,17 +19,6 @@ class ApiClient {
       },
     ));
 
-    // Configure httpClientAdapter for both debug and release modes so that
-    // LiteSpeed / cPanel SSL handshake, TLS renegotiation, and certificate chain
-    // verification issues on Android devices do NOT block API traffic in production!
-    _dio.httpClientAdapter = IOHttpClientAdapter(
-      createHttpClient: () {
-        final client = HttpClient();
-        client.badCertificateCallback =
-            (X509Certificate cert, String host, int port) => true;
-        return client;
-      },
-    );
 
     if (kDebugMode) {
       _dio.interceptors.add(LogInterceptor(
@@ -47,9 +34,30 @@ class ApiClient {
     _dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) {
         if (!options.headers.containsKey('Authorization')) {
-          final sellerToken = SessionManager.sellerToken;
-          final buyerToken = SessionManager.token;
-          final token = (sellerToken != null && sellerToken.isNotEmpty) ? sellerToken : buyerToken;
+          final path = options.path.toLowerCase();
+          final bool isSellerEndpoint = path.contains('/seller') ||
+              path.contains('/store') ||
+              path.contains('/dashboard') ||
+              path.contains('/seller-copilot') ||
+              path.contains('/product/create/') ||
+              path.contains('/product/all/') ||
+              path.contains('/product/delete/') ||
+              path.contains('/product/update-product/') ||
+              path.contains('/flashsale/create') ||
+              path.contains('/flashsale/all') ||
+              path.contains('/flashsale/update/') ||
+              path.contains('/flashsale/delete/') ||
+              path.contains('/order/seller-orders') ||
+              path.contains('/order/delivered-orders') ||
+              path.contains('/return/seller-refunded-orders') ||
+              path.contains('/banner/create') ||
+              path.contains('/banner/all') ||
+              path.contains('/banner/update-seller/');
+
+          final String? token = isSellerEndpoint
+              ? SessionManager.sellerToken
+              : SessionManager.token;
+
           if (token != null && token.isNotEmpty) {
             options.headers['Authorization'] = 'Bearer $token';
           }
@@ -62,15 +70,24 @@ class ApiClient {
           if (data['success'] == false && 
               data['message'] != null && 
               data['message'].toString().contains('Access Denied')) {
-            // Only clear session in background, do NOT kick user out to login screen
-            await SessionManager.clearSession();
+            final path = response.requestOptions.path.toLowerCase();
+            if (path.contains('/seller') || path.contains('/store')) {
+              await SessionManager.clearSellerSession();
+            } else {
+              await SessionManager.clearSession();
+            }
           }
         }
         return handler.next(response);
       },
       onError: (DioException err, handler) async {
         if (err.response?.statusCode == 401) {
-          await SessionManager.clearSession();
+          final path = err.requestOptions.path.toLowerCase();
+          if (path.contains('/seller') || path.contains('/store') || path.contains('/dashboard')) {
+            await SessionManager.clearSellerSession();
+          } else {
+            await SessionManager.clearSession();
+          }
         }
 
         final isTimeout = err.type == DioExceptionType.connectionTimeout ||

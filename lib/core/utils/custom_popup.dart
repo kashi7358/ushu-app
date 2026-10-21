@@ -98,6 +98,7 @@ class CustomPopup {
     String message, {
     VoidCallback? onConfirm,
     String buttonText = 'Continue',
+    bool barrierDismissible = true,
   }) {
     _showProDialog(
       title: title,
@@ -106,6 +107,7 @@ class CustomPopup {
       accentColor: const Color(0xFF10B981),
       buttonText: buttonText,
       onConfirm: onConfirm,
+      barrierDismissible: barrierDismissible,
     );
   }
 
@@ -168,6 +170,7 @@ class CustomPopup {
     required Color accentColor,
     VoidCallback? onConfirm,
     String buttonText = 'Okay',
+    bool barrierDismissible = true,
   }) {
     if (Get.isDialogOpen ?? false) {
       Get.back();
@@ -310,7 +313,7 @@ class CustomPopup {
           ),
         ),
       ),
-      barrierDismissible: true,
+      barrierDismissible: barrierDismissible,
       barrierColor: Colors.black.withValues(alpha: 0.45),
     );
   }
@@ -379,7 +382,7 @@ class CustomPopup {
                       style: const TextStyle(
                         fontSize: 13.5,
                         color: Color(0xFF64748B),
-                        height: 1.45,
+                        height: 1.5,
                         fontWeight: FontWeight.w500,
                       ),
                       textAlign: TextAlign.center,
@@ -389,21 +392,25 @@ class CustomPopup {
                       children: [
                         Expanded(
                           child: SizedBox(
-                            height: 48,
+                            height: 50,
                             child: OutlinedButton(
                               onPressed: () => Get.back(result: false),
                               style: OutlinedButton.styleFrom(
                                 foregroundColor: const Color(0xFF475569),
                                 side: const BorderSide(color: Color(0xFFE2E8F0)),
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(14),
                                 ),
                               ),
-                              child: Text(
-                                cancelText,
-                                style: const TextStyle(
-                                  fontSize: 14.5,
-                                  fontWeight: FontWeight.w700,
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  cancelText,
+                                  style: const TextStyle(
+                                    fontSize: 14.5,
+                                    fontWeight: FontWeight.w700,
+                                  ),
                                 ),
                               ),
                             ),
@@ -412,22 +419,27 @@ class CustomPopup {
                         const SizedBox(width: 12),
                         Expanded(
                           child: SizedBox(
-                            height: 48,
+                            height: 50,
                             child: ElevatedButton(
                               onPressed: () => Get.back(result: true),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: isDanger ? const Color(0xFFEF4444) : accentColor,
                                 foregroundColor: Colors.white,
                                 elevation: 0,
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(14),
                                 ),
                               ),
-                              child: Text(
-                                confirmText,
-                                style: const TextStyle(
-                                  fontSize: 14.5,
-                                  fontWeight: FontWeight.w700,
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  confirmText,
+                                  style: const TextStyle(
+                                    fontSize: 14.5,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.white,
+                                  ),
                                 ),
                               ),
                             ),

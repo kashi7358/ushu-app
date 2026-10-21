@@ -440,6 +440,7 @@ class CreateStoreController extends GetxController {
       CustomPopup.showSuccess('Store Created!', message);
 
       // Navigate directly to Seller Dashboard
+      await SessionManager.setLastScreen(AppRoutes.sellerDashboard);
       Get.offAllNamed(AppRoutes.sellerDashboard);
     } catch (e) {
       CustomPopup.hideLoading();

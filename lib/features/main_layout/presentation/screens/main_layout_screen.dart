@@ -14,6 +14,7 @@ import '../../../categories/presentation/screens/categories_screen.dart';
 import 'package:flutter/services.dart';
 import 'package:add_to_cart_animation/add_to_cart_animation.dart';
 import '../../../../core/utils/custom_popup.dart';
+import '../../../../core/utils/session_manager.dart';
 
 class MainLayoutScreen extends StatelessWidget {
   const MainLayoutScreen({super.key});
@@ -118,7 +119,7 @@ class MainLayoutScreen extends StatelessWidget {
           ),
         ),
       floatingActionButton: Obx(() {
-        if (controller.currentIndex.value != 0) {
+        if (controller.currentIndex.value != 0 || !SessionManager.isLoggedIn) {
           return const SizedBox.shrink();
         }
         

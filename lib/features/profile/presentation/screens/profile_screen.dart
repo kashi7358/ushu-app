@@ -215,11 +215,22 @@ class ProfileScreen extends StatelessWidget {
                     _buildDivider(),
                     _buildMenuTile(
                       Icons.storefront_outlined,
-                      'Become a Seller',
+                      (SessionManager.isSellerLoggedIn &&
+                              SessionManager.sellerStoreId != null &&
+                              SessionManager.sellerStoreId!.isNotEmpty)
+                          ? 'Seller Dashboard'
+                          : 'Become a Seller',
                       '',
                       onTap: () {
-                        SessionManager.setLastScreen(AppRoutes.sellerLogin);
-                        Get.toNamed(AppRoutes.sellerLogin);
+                        if (SessionManager.isSellerLoggedIn &&
+                            SessionManager.sellerStoreId != null &&
+                            SessionManager.sellerStoreId!.isNotEmpty) {
+                          SessionManager.setLastScreen(AppRoutes.sellerDashboard);
+                          Get.toNamed(AppRoutes.sellerDashboard);
+                        } else {
+                          SessionManager.setLastScreen(AppRoutes.sellerLogin);
+                          Get.toNamed(AppRoutes.sellerLogin);
+                        }
                       },
                     ),
                   ],

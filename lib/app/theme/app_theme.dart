@@ -28,7 +28,7 @@ class AppTheme {
           backgroundColor: AppColors.primaryPurple,
           foregroundColor: AppColors.white,
           textStyle: AppTextStyles.semiBold.copyWith(color: AppColors.white),
-          padding: const EdgeInsets.symmetric(vertical: AppDimensions.md),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
           ),

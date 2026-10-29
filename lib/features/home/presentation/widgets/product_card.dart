@@ -4,6 +4,7 @@ import '../../domain/entities/product_entity.dart';
 import '../../../wishlist/presentation/controllers/wishlist_controller.dart';
 import '../../../cart/presentation/controllers/cart_controller.dart';
 import 'package:get/get.dart';
+import '../../../../core/utils/custom_popup.dart';
 import '../../../../app/routes/app_routes.dart';
 
 class ProductCard extends StatelessWidget {
@@ -194,6 +195,10 @@ class ProductCard extends StatelessWidget {
                     // Add to Cart Button
                     GestureDetector(
                       onTap: () {
+                        if (product.stock <= 0) {
+                          CustomPopup.showToast('Out of Stock', 'This product is currently out of stock', isError: true);
+                          return;
+                        }
                         if (onAddToCart != null) {
                           onAddToCart!(imageKey);
                         } else {
@@ -204,17 +209,17 @@ class ProductCard extends StatelessWidget {
                         width: double.infinity,
                         padding: const EdgeInsets.symmetric(vertical: 6),
                         decoration: BoxDecoration(
-                          color: AppColors.primaryPurple,
+                          color: product.stock > 0 ? AppColors.primaryPurple : Colors.grey.shade400,
                           borderRadius: BorderRadius.circular(6),
                         ),
-                        child: const Row(
+                        child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.add_shopping_cart, color: Colors.white, size: 14),
-                            SizedBox(width: 4),
+                            Icon(product.stock > 0 ? Icons.add_shopping_cart : Icons.remove_shopping_cart, color: Colors.white, size: 14),
+                            const SizedBox(width: 4),
                             Text(
-                              'Add to Cart',
-                              style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                              product.stock > 0 ? 'Add to Cart' : 'Out of Stock',
+                              style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
                             ),
                           ],
                         ),

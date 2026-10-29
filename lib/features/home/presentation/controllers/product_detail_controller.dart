@@ -18,6 +18,7 @@ class ProductDetailController extends GetxController {
   final Rx<ProductEntity?> product = Rx<ProductEntity?>(null);
   final RxBool isLoading = true.obs;
   final RxInt selectedImageIndex = 0.obs;
+  final RxInt selectedQuantity = 1.obs;
   final reviews = <dynamic>[].obs;
 
   late final GetProductByIdUseCase _getProductByIdUseCase;
@@ -48,6 +49,11 @@ class ProductDetailController extends GetxController {
       final result = await _getProductByIdUseCase.execute(productId);
       product.value = result;
       selectedImageIndex.value = 0;
+      if (result.stock > 0) {
+        selectedQuantity.value = 1;
+      } else {
+        selectedQuantity.value = 0;
+      }
       
       // Save to browsing history
       if (result is ProductModel) {
@@ -58,6 +64,25 @@ class ProductDetailController extends GetxController {
       Get.snackbar('Error', error.message, snackPosition: SnackPosition.BOTTOM);
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  void incrementQuantity() {
+    final currentStock = product.value?.stock ?? 0;
+    if (currentStock <= 0) {
+      CustomPopup.showToast('Out of Stock', 'This item is currently out of stock', isError: true);
+      return;
+    }
+    if (selectedQuantity.value < currentStock) {
+      selectedQuantity.value++;
+    } else {
+      CustomPopup.showToast('Stock Limit', 'Only $currentStock items available in stock', isError: true);
+    }
+  }
+
+  void decrementQuantity() {
+    if (selectedQuantity.value > 1) {
+      selectedQuantity.value--;
     }
   }
 

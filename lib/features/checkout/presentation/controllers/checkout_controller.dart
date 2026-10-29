@@ -202,6 +202,13 @@ class CheckoutController extends GetxController {
       return;
     }
 
+    for (var item in selectedItems) {
+      if (item.stock > 0 && item.quantity > item.stock) {
+        CustomPopup.showToast('Stock Exceeded', '${item.name} has only ${item.stock} items in stock. Please adjust quantity.', isError: true);
+        return;
+      }
+    }
+
     // Ensure defaults if optional fields are empty
     if (countryController.text.trim().isEmpty) countryController.text = 'Pakistan';
     if (provinceController.text.trim().isEmpty) provinceController.text = 'Punjab';

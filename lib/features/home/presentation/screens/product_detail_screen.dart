@@ -220,55 +220,87 @@ class ProductDetailScreen extends StatelessWidget {
               ),
               Expanded(
                 flex: 2,
-                child: GestureDetector(
-                  onTap: () {
-                    if (controller.product.value != null) {
+                child: Obx(() {
+                  final prod = controller.product.value;
+                  final isAvailable = prod != null && prod.stock > 0;
+                  return GestureDetector(
+                    onTap: () {
+                      if (prod == null) return;
+                      if (!isAvailable) {
+                        CustomPopup.showToast('Out of Stock', 'This product is currently out of stock', isError: true);
+                        return;
+                      }
                       if (!SessionManager.isLoggedIn) {
                         CustomPopup.showLoginRequired();
                         return;
                       }
                       final cartCtrl = Get.put(CartController());
-                      cartCtrl.addToCart(controller.product.value!.id, 1, controller.product.value!.name);
-                    }
-                  },
-                  child: Container(
-                    margin: const EdgeInsets.only(top: 8, bottom: 8, left: 8, right: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.orange.shade500,
-                      borderRadius: BorderRadius.circular(8),
+                      final existingItem = cartCtrl.cartItems.firstWhereOrNull((item) => item.productId == prod.id || item.id == prod.id);
+                      final existingQty = existingItem?.quantity ?? 0;
+                      final selectedQty = controller.selectedQuantity.value;
+                      if (existingQty + selectedQty > prod.stock) {
+                        CustomPopup.showToast('Stock Limit', 'Cannot add more. You have ' + existingQty.toString() + ' in cart and total stock is ' + prod.stock.toString(), isError: true);
+                        return;
+                      }
+                      cartCtrl.addToCart(prod.id, selectedQty, prod.name);
+                    },
+                    child: Container(
+                      margin: const EdgeInsets.only(top: 8, bottom: 8, left: 8, right: 4),
+                      decoration: BoxDecoration(
+                        color: isAvailable ? Colors.orange.shade500 : Colors.grey.shade400,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        isAvailable ? 'Add to Cart' : 'Out of Stock',
+                        style: AppTextStyles.bold.copyWith(color: AppColors.white, fontSize: 13),
+                      ),
                     ),
-                    alignment: Alignment.center,
-                    child: Text('Add to Cart', style: AppTextStyles.bold.copyWith(color: AppColors.white, fontSize: 13)),
-                  ),
-                ),
+                  );
+                }),
               ),
               Expanded(
                 flex: 2,
-                child: GestureDetector(
-                  onTap: () async {
-                    if (controller.product.value != null) {
+                child: Obx(() {
+                  final prod = controller.product.value;
+                  final isAvailable = prod != null && prod.stock > 0;
+                  return GestureDetector(
+                    onTap: () async {
+                      if (prod == null) return;
+                      if (!isAvailable) {
+                        CustomPopup.showToast('Out of Stock', 'This product is currently out of stock', isError: true);
+                        return;
+                      }
                       if (!SessionManager.isLoggedIn) {
                         CustomPopup.showLoginRequired();
                         return;
                       }
+                      final selectedQty = controller.selectedQuantity.value;
+                      if (selectedQty > prod.stock) {
+                        CustomPopup.showToast('Stock Limit', 'Only ' + prod.stock.toString() + ' items available in stock', isError: true);
+                        return;
+                      }
                       final cartCtrl = Get.put(CartController());
-                      final success = await cartCtrl.buyNow(controller.product.value!.id, 1, controller.product.value!.name);
+                      final success = await cartCtrl.buyNow(prod.id, selectedQty, prod.name);
                       if (success) {
                         await Future.delayed(const Duration(milliseconds: 300));
                         Get.toNamed('/checkout');
                       }
-                    }
-                  },
-                  child: Container(
-                    margin: const EdgeInsets.only(top: 8, bottom: 8, left: 4, right: 12),
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryPurple,
-                      borderRadius: BorderRadius.circular(8),
+                    },
+                    child: Container(
+                      margin: const EdgeInsets.only(top: 8, bottom: 8, left: 4, right: 12),
+                      decoration: BoxDecoration(
+                        color: isAvailable ? AppColors.primaryPurple : Colors.grey.shade400,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        isAvailable ? 'Buy Now' : 'Out of Stock',
+                        style: AppTextStyles.bold.copyWith(color: AppColors.white, fontSize: 13),
+                      ),
                     ),
-                    alignment: Alignment.center,
-                    child: Text('Buy Now', style: AppTextStyles.bold.copyWith(color: AppColors.white, fontSize: 13)),
-                  ),
-                ),
+                  );
+                }),
               ),
             ],
           ),
@@ -434,6 +466,60 @@ class ProductDetailScreen extends StatelessWidget {
                         ),
                       ],
                     ),
+                    if (product.stock > 0) ...[
+                      const SizedBox(height: 16),
+                      const Divider(height: 1, color: Color(0xFFEEEEEE)),
+                      const SizedBox(height: 14),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Quantity',
+                            style: AppTextStyles.bold.copyWith(fontSize: 14, color: AppColors.darkText),
+                          ),
+                          Container(
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.grey.shade300),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Obx(() {
+                                  final canDec = controller.selectedQuantity.value > 1;
+                                  return InkWell(
+                                    onTap: canDec ? controller.decrementQuantity : null,
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                      color: canDec ? Colors.grey.shade100 : Colors.grey.shade50,
+                                      child: Icon(Icons.remove, size: 16, color: canDec ? Colors.black87 : Colors.grey.shade400),
+                                    ),
+                                  );
+                                }),
+                                Obx(() => Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                                  child: Text(
+                                    '',
+                                    style: AppTextStyles.bold.copyWith(fontSize: 14, color: AppColors.darkText),
+                                  ),
+                                )),
+                                Obx(() {
+                                  final canInc = controller.selectedQuantity.value < product.stock;
+                                  return InkWell(
+                                    onTap: canInc ? controller.incrementQuantity : null,
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                      color: canInc ? Colors.grey.shade100 : Colors.grey.shade50,
+                                      child: Icon(Icons.add, size: 16, color: canInc ? Colors.black87 : Colors.grey.shade400),
+                                    ),
+                                  );
+                                }),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ],
                 ),
               ),

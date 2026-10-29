@@ -209,8 +209,8 @@ class CartScreen extends StatelessWidget {
                               },
                               child: Container(
                                 padding: const EdgeInsets.all(4),
-                                color: Colors.grey.shade100,
-                                child: const Icon(Icons.remove, size: 16, color: Colors.black54),
+                                color: item.quantity > 1 ? Colors.grey.shade100 : Colors.grey.shade50,
+                                child: Icon(Icons.remove, size: 16, color: item.quantity > 1 ? Colors.black54 : Colors.grey.shade300),
                               ),
                             ),
                             Container(
@@ -222,12 +222,16 @@ class CartScreen extends StatelessWidget {
                             ),
                             InkWell(
                               onTap: () {
+                                if (item.stock > 0 && item.quantity >= item.stock) {
+                                  CustomPopup.showToast('Limit Reached', 'Only ${item.stock} items available in stock', isError: true);
+                                  return;
+                                }
                                 controller.updateQuantity(item.id, item.quantity + 1);
                               },
                               child: Container(
                                 padding: const EdgeInsets.all(4),
-                                color: Colors.grey.shade100,
-                                child: const Icon(Icons.add, size: 16, color: Colors.black54),
+                                color: (item.stock > 0 && item.quantity >= item.stock) ? Colors.grey.shade50 : Colors.grey.shade100,
+                                child: Icon(Icons.add, size: 16, color: (item.stock > 0 && item.quantity >= item.stock) ? Colors.grey.shade300 : Colors.black54),
                               ),
                             ),
                           ],
@@ -327,9 +331,16 @@ class CartScreen extends StatelessWidget {
                     ),
                   ),
                   onPressed: () {
-                    if (controller.cartItems.where((item) => item.isSelected).isEmpty) {
+                    final selected = controller.cartItems.where((item) => item.isSelected).toList();
+                    if (selected.isEmpty) {
                       CustomPopup.showToast('Error', 'Please select at least one item to checkout', isError: true);
                       return;
+                    }
+                    for (var it in selected) {
+                      if (it.stock > 0 && it.quantity > it.stock) {
+                        CustomPopup.showToast('Stock Exceeded', '${it.name} has only ${it.stock} items in stock. Please adjust quantity.', isError: true);
+                        return;
+                      }
                     }
                     Get.toNamed('/checkout');
                   },

@@ -34,6 +34,16 @@ class CartController extends GetxController {
   Future<void> addToCart(String productId, int quantity, String productName) async {
     if (isAddingToCart.value) return;
     
+    // Check if product is already in cart and adding more will exceed stock
+    final existingIndex = cartItems.indexWhere((item) => item.productId == productId || item.id == productId);
+    if (existingIndex != -1) {
+      final existingItem = cartItems[existingIndex];
+      if (existingItem.stock > 0 && existingItem.quantity + quantity > existingItem.stock) {
+        CustomPopup.showToast('Stock Limit', 'Cannot add more. You have ${existingItem.quantity} in cart and available stock is ${existingItem.stock}', isError: true);
+        return;
+      }
+    }
+
     // Optimistic UI: Show animation immediately for best UX
     CustomPopup.showFastLottie('assets/lotties/add_to_cart_new.json');
     
@@ -162,6 +172,10 @@ class CartController extends GetxController {
     final index = cartItems.indexWhere((item) => item.id == itemId);
     if (index != -1) {
       final oldItem = cartItems[index];
+      if (oldItem.stock > 0 && quantity > oldItem.stock) {
+        CustomPopup.showToast('Limit Reached', 'Only ${oldItem.stock} items available in stock', isError: true);
+        return;
+      }
       cartItems[index] = oldItem.copyWith(quantity: quantity);
       cartItems.refresh();
     }

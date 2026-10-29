@@ -20,14 +20,58 @@ class CartItemModel {
   });
 
   factory CartItemModel.fromJson(Map<String, dynamic> json) {
+    int parsedStock = 10;
+    if (json['stock'] != null) {
+      parsedStock = int.tryParse(json['stock'].toString()) ?? 10;
+    } else if (json['productId'] is Map && json['productId']['stock'] != null) {
+      parsedStock = int.tryParse(json['productId']['stock'].toString()) ?? 10;
+    } else if (json['product'] is Map && json['product']['stock'] != null) {
+      parsedStock = int.tryParse(json['product']['stock'].toString()) ?? 10;
+    } else if (json['countInStock'] != null) {
+      parsedStock = int.tryParse(json['countInStock'].toString()) ?? 10;
+    } else if (json['stockQuantity'] != null) {
+      parsedStock = int.tryParse(json['stockQuantity'].toString()) ?? 10;
+    }
+
+    String parsedProductId = '';
+    if (json['productId'] is Map) {
+      parsedProductId = json['productId']['_id']?.toString() ?? '';
+    } else {
+      parsedProductId = json['productId']?.toString() ?? '';
+    }
+
+    String parsedName = json['name']?.toString() ?? '';
+    if (parsedName.isEmpty && json['productId'] is Map) {
+      parsedName = json['productId']['name']?.toString() ?? '';
+    }
+
+    String parsedImage = json['image']?.toString() ?? '';
+    if (parsedImage.isEmpty && json['productId'] is Map) {
+      final pMap = json['productId'] as Map;
+      parsedImage = pMap['image']?.toString() ?? '';
+      if (parsedImage.isEmpty && pMap['images'] is List && (pMap['images'] as List).isNotEmpty) {
+        final firstImg = (pMap['images'] as List).first;
+        if (firstImg is Map) {
+          parsedImage = firstImg['photo']?.toString() ?? '';
+        } else {
+          parsedImage = firstImg.toString();
+        }
+      }
+    }
+
+    num parsedPrice = json['price'] ?? 0;
+    if (parsedPrice == 0 && json['productId'] is Map) {
+      parsedPrice = json['productId']['price'] ?? 0;
+    }
+
     return CartItemModel(
-      id: json['_id'] ?? '',
-      productId: json['productId'] ?? '',
-      name: json['name'] ?? '',
-      image: json['image'] ?? '',
-      price: json['price'] ?? 0,
-      quantity: json['quantity'] ?? 1,
-      stock: json['stock'] ?? 10, // Try to parse stock if provided by backend, else default 10
+      id: json['_id']?.toString() ?? '',
+      productId: parsedProductId,
+      name: parsedName,
+      image: parsedImage,
+      price: parsedPrice,
+      quantity: json['quantity'] != null ? (int.tryParse(json['quantity'].toString()) ?? 1) : 1,
+      stock: parsedStock,
       isSelected: json['isSelected'] ?? false,
     );
   }

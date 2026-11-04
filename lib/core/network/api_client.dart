@@ -59,7 +59,13 @@ class ApiClient {
               : SessionManager.token;
 
           if (token != null && token.isNotEmpty) {
-            options.headers['Authorization'] = 'Bearer $token';
+            String clean = token.trim();
+            if (clean.toLowerCase().startsWith('bearer ')) {
+              clean = clean.substring(7).trim();
+            }
+            options.headers['Authorization'] = 'Bearer $clean';
+            options.headers['auth-token'] = clean;
+            options.headers['token'] = clean;
           }
         }
         return handler.next(options);

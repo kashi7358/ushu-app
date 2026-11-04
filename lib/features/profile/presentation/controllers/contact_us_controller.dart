@@ -48,8 +48,13 @@ class ContactUsController extends GetxController {
       return;
     }
 
-    final String? token = SessionManager.token ?? SessionManager.sellerToken;
-    if (token == null || token.isEmpty) {
+    final String? rawToken = SessionManager.token ?? SessionManager.sellerToken;
+    String cleanToken = (rawToken ?? '').trim();
+    if (cleanToken.toLowerCase().startsWith('bearer ')) {
+      cleanToken = cleanToken.substring(7).trim();
+    }
+
+    if (cleanToken.isEmpty) {
       CustomPopup.showWarning(
         'Login Required',
         'Please sign in to your account so our support team can assist you and track your ticket.',
@@ -59,23 +64,33 @@ class ContactUsController extends GetxController {
       return;
     }
 
+    final userName = SessionManager.fullName ?? SessionManager.sellerName ?? 'Customer';
+    final userId = SessionManager.userId ?? SessionManager.sellerId ?? '';
+
     try {
       isLoading.value = true;
       final response = await _apiClient.dio.post(
         ApiEndpoints.contactUs,
         data: {
+          'name': userName,
+          'fullName': userName,
+          'FullName': userName,
           'email': email,
-          'subject': subject,
-          'message': message,
           'Email': email,
+          'subject': subject,
           'Subject': subject,
+          'message': message,
           'Message': message,
+          if (userId.isNotEmpty) 'userId': userId,
+          if (userId.isNotEmpty) 'buyerId': userId,
         },
         options: Options(
           validateStatus: (status) => true,
           headers: {
-            'Authorization': 'Bearer $token',
-            'auth-token': token,
+            'Authorization': 'Bearer $cleanToken',
+            'auth-token': cleanToken,
+            'token': cleanToken,
+            'x-auth-token': cleanToken,
           },
         ),
       );
@@ -90,11 +105,12 @@ class ContactUsController extends GetxController {
         );
       } else if (response.statusCode == 401 ||
           (data != null && data['message'] != null && data['message'].toString().toLowerCase().contains('unauthorized'))) {
+        await SessionManager.clearSession();
         CustomPopup.showError(
           'Session Expired',
-          'Your session has expired or requires authentication. Please sign in again.',
+          'Your login session has expired on the server. Please sign in again to submit your support message.',
           buttonText: 'Sign In',
-          onConfirm: () => Get.to(() => const LoginScreen()),
+          onConfirm: () => Get.off(() => const LoginScreen()),
         );
       } else {
         final errorMsg = data != null && data['message'] != null ? data['message'].toString() : 'Failed to send message';

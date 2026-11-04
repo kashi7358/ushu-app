@@ -6,7 +6,7 @@
         </trust-anchors>
     </base-config>
 
-    <domain-config cleartextTrafficPermitted="true">
+    <domain-config cleartextTrafficPermitted="false">
         <domain includeSubdomains="true">ecombackend.ushu.pk</domain>
         <domain includeSubdomains="true">ushu.pk</domain>
         <domain includeSubdomains="true">seller.ushu.pk</domain>

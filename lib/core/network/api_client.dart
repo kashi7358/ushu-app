@@ -36,7 +36,7 @@ class ApiClient {
         if (!options.headers.containsKey('Authorization')) {
           final path = options.path.toLowerCase();
           final bool isSellerEndpoint = path.contains('/seller') ||
-              path.contains('/store') ||
+              (path.contains('/store') && !path.contains('/store/get/')) ||
               path.contains('/dashboard') ||
               path.contains('/seller-copilot') ||
               path.contains('/product/create/') ||
@@ -71,7 +71,7 @@ class ApiClient {
               data['message'] != null && 
               data['message'].toString().contains('Access Denied')) {
             final path = response.requestOptions.path.toLowerCase();
-            if (path.contains('/seller') || path.contains('/store')) {
+            if (path.contains('/seller') || (path.contains('/store') && !path.contains('/store/get/'))) {
               await SessionManager.clearSellerSession();
             } else {
               await SessionManager.clearSession();
@@ -83,7 +83,7 @@ class ApiClient {
       onError: (DioException err, handler) async {
         if (err.response?.statusCode == 401) {
           final path = err.requestOptions.path.toLowerCase();
-          if (path.contains('/seller') || path.contains('/store') || path.contains('/dashboard')) {
+          if (path.contains('/seller') || (path.contains('/store') && !path.contains('/store/get/')) || path.contains('/dashboard')) {
             await SessionManager.clearSellerSession();
           } else {
             await SessionManager.clearSession();

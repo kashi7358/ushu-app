@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../app/theme/app_colors.dart';
@@ -257,10 +258,19 @@ class CreateStoreScreen extends StatelessWidget {
           _buildLabel('Store WhatsApp *'),
           AppTextField(
             controller: controller.storeWhatsappController,
-            hintText: 'Enter WhatsApp number',
+            hintText: 'Enter WhatsApp number (11 digits)',
             keyboardType: TextInputType.phone,
+            maxLength: 11,
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly,
+              LengthLimitingTextInputFormatter(11),
+            ],
             prefixIcon: const Icon(Icons.phone_outlined, color: AppColors.primaryPurple, size: 22),
-            validator: (val) => val == null || val.trim().isEmpty ? 'WhatsApp number is required' : null,
+            validator: (val) {
+              if (val == null || val.trim().isEmpty) return 'WhatsApp number is required';
+              if (val.trim().length != 11) return 'WhatsApp number must be exactly 11 digits';
+              return null;
+            },
           ),
           const SizedBox(height: 24),
 

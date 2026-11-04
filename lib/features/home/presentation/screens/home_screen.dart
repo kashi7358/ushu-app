@@ -20,6 +20,19 @@ import '../../../../core/widgets/no_internet_widget.dart';
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
+  String _getGreeting() {
+    final hour = DateTime.now().hour;
+    if (hour >= 5 && hour < 12) {
+      return 'Good Morning,';
+    } else if (hour >= 12 && hour < 17) {
+      return 'Good Afternoon,';
+    } else if (hour >= 17 && hour < 21) {
+      return 'Good Evening,';
+    } else {
+      return 'Good Night,';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final controller = Get.put(HomeController());
@@ -39,54 +52,19 @@ class HomeScreen extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(AppDimensions.md, AppDimensions.lg, AppDimensions.md, AppDimensions.sm),
                 color: AppColors.lightBackground,
                 child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 22,
-                          backgroundColor: AppColors.primaryPurple.withValues(alpha: 0.1),
-                          child: const Icon(Icons.person, color: AppColors.primaryPurple),
-                        ),
-                        const SizedBox(width: AppDimensions.sm),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Good Morning,', style: AppTextStyles.medium.copyWith(color: AppColors.hintText, fontSize: 11)),
-                            Text('Welcome to Ushu!', style: AppTextStyles.extraBold.copyWith(fontSize: 14, color: AppColors.darkText)),
-                          ],
-                        ),
-                      ],
+                    CircleAvatar(
+                      radius: 22,
+                      backgroundColor: AppColors.primaryPurple.withValues(alpha: 0.1),
+                      child: const Icon(Icons.person, color: AppColors.primaryPurple),
                     ),
-                    Container(
-                      height: 45,
-                      width: 45,
-                      decoration: BoxDecoration(
-                        color: AppColors.white,
-                        borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
-                        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4))],
-                      ),
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.notifications_none_rounded, color: AppColors.darkText),
-                            onPressed: () {},
-                          ),
-                          Positioned(
-                            top: 12,
-                            right: 12,
-                            child: Container(
-                              width: 8,
-                              height: 8,
-                              decoration: const BoxDecoration(
-                                color: AppColors.error,
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
+                    const SizedBox(width: AppDimensions.sm),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(_getGreeting(), style: AppTextStyles.medium.copyWith(color: AppColors.hintText, fontSize: 11)),
+                        Text('Welcome to Ushu!', style: AppTextStyles.extraBold.copyWith(fontSize: 14, color: AppColors.darkText)),
+                      ],
                     ),
                   ],
                 ),

@@ -27,6 +27,7 @@ abstract class SellerRemoteDataSource {
   Future<dynamic> deleteFlashSale(String id);
   Future<dynamic> getSellerOrders();
   Future<dynamic> getSellerDeliveredOrders([String? token]);
+  Future<dynamic> getSellerDeliveredStats([String? token]);
   Future<dynamic> getSellerRefundedOrders([String? token]);
   Future<dynamic> getSellerPromotions();
   Future<dynamic> createBanner(CreateBannerRequestModel model);
@@ -102,6 +103,12 @@ class SellerRemoteDataSourceImpl implements SellerRemoteDataSource {
       ApiEndpoints.sellerForgetPassword,
       data: {
         'Email': email,
+        'email': email,
+        'role': 'Seller',
+        'Role': 'Seller',
+        'portal': 'seller',
+        'portalType': 'Seller Center',
+        'source': 'seller_app',
       },
     );
 
@@ -240,6 +247,17 @@ class SellerRemoteDataSourceImpl implements SellerRemoteDataSource {
   Future<dynamic> getSellerDeliveredOrders([String? token]) async {
     final response = await apiClient.dio.get(
       ApiEndpoints.sellerDeliveredOrders,
+      options: token != null && token.isNotEmpty
+          ? Options(headers: {'Authorization': 'Bearer $token'})
+          : null,
+    );
+    return response.data;
+  }
+
+  @override
+  Future<dynamic> getSellerDeliveredStats([String? token]) async {
+    final response = await apiClient.dio.get(
+      ApiEndpoints.sellerDeliveredStats,
       options: token != null && token.isNotEmpty
           ? Options(headers: {'Authorization': 'Bearer $token'})
           : null,

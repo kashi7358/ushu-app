@@ -52,7 +52,7 @@ class FinancialReportScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Error message if any
+                // Error message banner if any
                 if (controller.errorMessage.value.isNotEmpty)
                   Container(
                     margin: const EdgeInsets.only(bottom: 16),
@@ -76,199 +76,50 @@ class FinancialReportScreen extends StatelessWidget {
                     ),
                   ),
 
-                // 1. Executive Revenue Summary Card
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF1E1B4B), Color(0xFF312E81), Color(0xFF4338CA)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(22),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF312E81).withValues(alpha: 0.3),
-                        blurRadius: 18,
-                        offset: const Offset(0, 8),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Row(
-                              children: [
-                                Container(
-                                  width: 8,
-                                  height: 8,
-                                  decoration: const BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: Colors.greenAccent,
-                                  ),
-                                ),
-                                const SizedBox(width: 6),
-                                Flexible(
-                                  child: Text(
-                                    'TOTAL REVENUE',
-                                    style: AppTextStyles.bold.copyWith(
-                                      color: Colors.white.withValues(alpha: 0.8),
-                                      fontSize: 11,
-                                      letterSpacing: 1.1,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: const Text(
-                              'PKR Currency',
-                              style: TextStyle(color: Colors.white, fontSize: 10.5, fontWeight: FontWeight.w600),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      FittedBox(
-                        fit: BoxFit.scaleDown,
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          'Rs. ${_formatAmount(controller.totalRevenue.value)}',
-                          style: AppTextStyles.extraBold.copyWith(
-                            fontSize: 28,
-                            color: Colors.white,
-                            letterSpacing: -0.5,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 14),
-                      const Divider(height: 1, color: Colors.white24),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildHeaderPill(
-                              label: 'Settled Payout',
-                              value: 'Rs. ${_formatAmount(controller.settledPayout.value)}',
-                              icon: Icons.check_circle_rounded,
-                              color: Colors.greenAccent,
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: _buildHeaderPill(
-                              label: 'Pending Escrow',
-                              value: 'Rs. ${_formatAmount(controller.pendingEscrow.value)}',
-                              icon: Icons.hourglass_top_rounded,
-                              color: Colors.amberAccent,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 20),
+                // 1. Executive Modern Revenue Card
+                _buildModernRevenueCard(controller),
+                const SizedBox(height: 18),
 
-                // 2. Metrics Grid (4 Clean Cards)
-                Text(
-                  'FINANCIAL BREAKDOWN',
-                  style: AppTextStyles.bold.copyWith(
-                    color: AppColors.hintText,
-                    fontSize: 12,
-                    letterSpacing: 1.2,
-                  ),
-                ),
-                const SizedBox(height: 12),
-
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildMetricCard(
-                        title: 'Gross Revenue',
-                        value: 'Rs. ${_formatAmount(controller.totalRevenue.value)}',
-                        subtitle: '${controller.allFinancialOrders.length} Orders total',
-                        icon: Icons.account_balance_wallet_rounded,
-                        color: const Color(0xFF2563EB),
-                        bgColor: const Color(0xFFEFF6FF),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _buildMetricCard(
-                        title: 'Estimated Profit',
-                        value: 'Rs. ${_formatAmount(controller.netProfit.value)}',
-                        subtitle: 'After platform fees',
-                        icon: Icons.trending_up_rounded,
-                        color: const Color(0xFF7C3AED),
-                        bgColor: const Color(0xFFF5F3FF),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildMetricCard(
-                        title: 'In-Transit Balance',
-                        value: 'Rs. ${_formatAmount(controller.pendingEscrow.value)}',
-                        subtitle: '${controller.totalPendingCount.value} Active orders',
-                        icon: Icons.pending_actions_rounded,
-                        color: const Color(0xFFF59E0B),
-                        bgColor: const Color(0xFFFFFBEB),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _buildMetricCard(
-                        title: 'Cancelled / Refund',
-                        value: 'Rs. ${_formatAmount(controller.refundedAmount.value)}',
-                        subtitle: '${controller.totalRefundedCount.value} Orders',
-                        icon: Icons.assignment_return_rounded,
-                        color: const Color(0xFFEF4444),
-                        bgColor: const Color(0xFFFEF2F2),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 22),
-
-                // 3. Settlement Progress Bar Card
+                // 2. Settlement Ratio Visual Card
                 _buildSettlementProgressCard(controller),
                 const SizedBox(height: 24),
 
-                // 4. Transaction Settlement History Section
+                // 3. Delivered Products & Settlement List Section
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      'ORDER SETTLEMENTS',
-                      style: AppTextStyles.bold.copyWith(
-                        color: AppColors.hintText,
-                        fontSize: 12,
-                        letterSpacing: 1.2,
+                    Row(
+                      children: [
+                        Container(
+                          width: 4,
+                          height: 16,
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryPurple,
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'DELIVERED ORDERS',
+                          style: AppTextStyles.bold.copyWith(
+                            color: const Color(0xFF0F172A),
+                            fontSize: 13,
+                            letterSpacing: 0.8,
+                          ),
+                        ),
+                      ],
+                    ),
+                    Obx(() => Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE2E8F0).withValues(alpha: 0.6),
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                    ),
-                    Text(
-                      '${controller.filteredOrders.length} Records',
-                      style: TextStyle(color: Colors.grey.shade600, fontSize: 12, fontWeight: FontWeight.w600),
-                    ),
+                      child: Text(
+                        '${controller.filteredOrders.length} Delivered',
+                        style: const TextStyle(color: Color(0xFF475569), fontSize: 11.5, fontWeight: FontWeight.w600),
+                      ),
+                    )),
                   ],
                 ),
                 const SizedBox(height: 12),
@@ -279,59 +130,82 @@ class FinancialReportScreen extends StatelessWidget {
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(color: const Color(0xFFE2E8F0)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.02),
+                        blurRadius: 6,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
                   ),
                   child: TextField(
                     onChanged: controller.onSearchChanged,
                     decoration: const InputDecoration(
-                      hintText: 'Search by Order ID, Buyer...',
-                      hintStyle: TextStyle(color: Color(0xFF94A3B8), fontSize: 13.5),
+                      hintText: 'Search by Order ID, Buyer, Product...',
+                      hintStyle: TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
                       prefixIcon: Icon(Icons.search_rounded, color: Color(0xFF94A3B8), size: 20),
                       border: InputBorder.none,
                       contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                     ),
                   ),
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 12),
 
-                // Filter Chips
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      _buildFilterChip(controller, 'All'),
-                      const SizedBox(width: 8),
-                      _buildFilterChip(controller, 'Delivered'),
-                      const SizedBox(width: 8),
-                      _buildFilterChip(controller, 'Pending'),
-                      const SizedBox(width: 8),
-                      _buildFilterChip(controller, 'Cancelled'),
-                    ],
-                  ),
+                // Interactive Filter Pills (All, Paid, Unpaid)
+                Row(
+                  children: [
+                    _buildFilterChip(
+                      controller: controller,
+                      label: 'All',
+                      count: controller.totalDeliveredCount.value,
+                    ),
+                    const SizedBox(width: 8),
+                    _buildFilterChip(
+                      controller: controller,
+                      label: 'Paid',
+                      count: controller.totalDeliveredCount.value - controller.totalPendingCount.value,
+                      activeColor: const Color(0xFF10B981),
+                    ),
+                    const SizedBox(width: 8),
+                    _buildFilterChip(
+                      controller: controller,
+                      label: 'Unpaid',
+                      count: controller.totalPendingCount.value,
+                      activeColor: const Color(0xFFF59E0B),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 14),
+                const SizedBox(height: 16),
 
                 // Orders List
                 if (controller.filteredOrders.isEmpty)
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 20),
+                    padding: const EdgeInsets.symmetric(vertical: 42, horizontal: 20),
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(18),
                       border: Border.all(color: const Color(0xFFE2E8F0)),
                     ),
                     child: Column(
                       children: [
-                        Icon(Icons.receipt_long_rounded, size: 48, color: Colors.grey.shade300),
-                        const SizedBox(height: 10),
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: const BoxDecoration(
+                            color: Color(0xFFF1F5F9),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.inventory_2_outlined, size: 36, color: Color(0xFF94A3B8)),
+                        ),
+                        const SizedBox(height: 12),
                         Text(
-                          'No Financial Records Found',
+                          'No Delivered Orders Found',
                           style: AppTextStyles.bold.copyWith(color: AppColors.darkText, fontSize: 15),
                         ),
                         const SizedBox(height: 4),
-                        Text(
-                          'Transactions will appear here when orders are placed.',
-                          style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                        const Text(
+                          'Delivered orders and their payout status will appear here.',
+                          style: TextStyle(color: Color(0xFF64748B), fontSize: 12),
                           textAlign: TextAlign.center,
                         ),
                       ],
@@ -342,7 +216,7 @@ class FinancialReportScreen extends StatelessWidget {
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
                     itemCount: controller.filteredOrders.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 10),
+                    separatorBuilder: (_, __) => const SizedBox(height: 12),
                     itemBuilder: (context, index) {
                       final order = controller.filteredOrders[index];
                       return _buildOrderFinancialTile(order);
@@ -358,6 +232,126 @@ class FinancialReportScreen extends StatelessWidget {
     );
   }
 
+  // 1. Executive Revenue Card
+  Widget _buildModernRevenueCard(FinancialReportController controller) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF2E1065), Color(0xFF3B168F), Color(0xFF4C24A6)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(22),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF3B168F).withValues(alpha: 0.35),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Stack(
+        children: [
+          Positioned(
+            right: -25,
+            top: -25,
+            child: Container(
+              width: 140,
+              height: 140,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withValues(alpha: 0.06),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(Icons.account_balance_wallet_rounded, size: 16, color: Colors.white),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'TOTAL PAYOUT REVENUE',
+                          style: AppTextStyles.bold.copyWith(
+                            color: Colors.white.withValues(alpha: 0.85),
+                            fontSize: 11,
+                            letterSpacing: 1.1,
+                          ),
+                        ),
+                      ],
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.18),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Text(
+                        'PKR',
+                        style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Rs. ${_formatAmount(controller.totalRevenue.value)}',
+                    style: AppTextStyles.extraBold.copyWith(
+                      fontSize: 30,
+                      color: Colors.white,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Divider(height: 1, color: Colors.white24),
+                const SizedBox(height: 14),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildHeaderPill(
+                        label: 'Paid (Settled)',
+                        value: 'Rs. ${_formatAmount(controller.settledPayout.value)}',
+                        icon: Icons.check_circle_rounded,
+                        color: const Color(0xFF34D399),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: _buildHeaderPill(
+                        label: 'Unpaid (Pending)',
+                        value: 'Rs. ${_formatAmount(controller.pendingEscrow.value)}',
+                        icon: Icons.hourglass_top_rounded,
+                        color: const Color(0xFFFBBF24),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildHeaderPill({
     required String label,
     required String value,
@@ -365,16 +359,16 @@ class FinancialReportScreen extends StatelessWidget {
     required Color color,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
+        color: Colors.white.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
       ),
       child: Row(
         children: [
-          Icon(icon, size: 15, color: color),
-          const SizedBox(width: 6),
+          Icon(icon, size: 18, color: color),
+          const SizedBox(width: 8),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -383,8 +377,8 @@ class FinancialReportScreen extends StatelessWidget {
                 Text(
                   label,
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.7),
-                    fontSize: 10,
+                    color: Colors.white.withValues(alpha: 0.75),
+                    fontSize: 10.5,
                     fontWeight: FontWeight.w500,
                   ),
                   maxLines: 1,
@@ -395,7 +389,7 @@ class FinancialReportScreen extends StatelessWidget {
                   value,
                   style: const TextStyle(
                     color: Colors.white,
-                    fontSize: 12,
+                    fontSize: 13,
                     fontWeight: FontWeight.w700,
                   ),
                   maxLines: 1,
@@ -409,14 +403,186 @@ class FinancialReportScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildMetricCard({
-    required String title,
-    required String value,
-    required String subtitle,
-    required IconData icon,
-    required Color color,
-    required Color bgColor,
+  // 2. Settlement Ratio Card with Visual Bar
+  Widget _buildSettlementProgressCard(FinancialReportController controller) {
+    final double total = controller.totalRevenue.value;
+    final double settled = controller.settledPayout.value;
+    final double pending = controller.pendingEscrow.value;
+
+    final double settledPct = total > 0 ? (settled / total).clamp(0.0, 1.0) : 0.0;
+    final int sFlex = (settledPct * 100).round();
+    final int pFlex = (100 - sFlex).clamp(0, 100);
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.pie_chart_outline_rounded, size: 18, color: AppColors.primaryPurple),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Payout Settlement Ratio',
+                    style: AppTextStyles.bold.copyWith(fontSize: 13.5, color: const Color(0xFF0F172A)),
+                  ),
+                ],
+              ),
+              Text(
+                '${(settledPct * 100).toStringAsFixed(0)}% Paid',
+                style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w800, color: Color(0xFF10B981)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: SizedBox(
+              height: 10,
+              child: Row(
+                children: [
+                  if (sFlex > 0)
+                    Expanded(
+                      flex: sFlex,
+                      child: Container(color: const Color(0xFF10B981)),
+                    ),
+                  if (pFlex > 0 && pending > 0)
+                    Expanded(
+                      flex: pFlex,
+                      child: Container(color: const Color(0xFFF59E0B)),
+                    ),
+                  if (total == 0)
+                    Expanded(
+                      flex: 100,
+                      child: Container(color: const Color(0xFFE2E8F0)),
+                    ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 14),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _buildProgressLegend('Paid: Rs. ${_formatAmount(settled)}', const Color(0xFF10B981)),
+              _buildProgressLegend('Unpaid: Rs. ${_formatAmount(pending)}', const Color(0xFFF59E0B)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProgressLegend(String label, Color color) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(shape: BoxShape.circle, color: color),
+        ),
+        const SizedBox(width: 6),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
+        ),
+      ],
+    );
+  }
+
+  // 3. Filter Chip Widget
+  Widget _buildFilterChip({
+    required FinancialReportController controller,
+    required String label,
+    required int count,
+    Color activeColor = AppColors.primaryPurple,
   }) {
+    return Obx(() {
+      final isSelected = controller.selectedFilter.value == label;
+      return InkWell(
+        onTap: () => controller.setFilter(label),
+        borderRadius: BorderRadius.circular(22),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          decoration: BoxDecoration(
+            color: isSelected ? activeColor : Colors.white,
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(
+              color: isSelected ? activeColor : const Color(0xFFE2E8F0),
+            ),
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: activeColor.withValues(alpha: 0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ]
+                : null,
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w700,
+                  color: isSelected ? Colors.white : const Color(0xFF475569),
+                ),
+              ),
+              const SizedBox(width: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                decoration: BoxDecoration(
+                  color: isSelected ? Colors.white.withValues(alpha: 0.25) : const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  '$count',
+                  style: TextStyle(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w700,
+                    color: isSelected ? Colors.white : const Color(0xFF64748B),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    });
+  }
+
+  // 4. Delivered Product & Order Financial Tile
+  Widget _buildOrderFinancialTile(SellerOrderModel order) {
+    final isPaid = order.paymentStatus.toLowerCase() == 'paid' || order.paymentStatus.toLowerCase() == 'settled';
+    final Color badgeBg = isPaid ? const Color(0xFFECFDF5) : const Color(0xFFFFFBEB);
+    final Color badgeColor = isPaid ? const Color(0xFF10B981) : const Color(0xFFF59E0B);
+    final String badgeText = isPaid ? 'Paid' : 'Unpaid';
+
+    final String firstProductImg = order.items.isNotEmpty ? order.items.first.image : '';
+    final String firstProductName = order.items.isNotEmpty ? order.items.first.productName : 'Delivered Product';
+    final int totalItems = order.items.fold(0, (sum, i) => sum + i.quantity);
+
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -434,261 +600,117 @@ class FinancialReportScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Order Header: ID, Date, Badge
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Expanded(
-                child: Text(
-                  title,
-                  style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                    ),
+                    child: const Icon(Icons.receipt_rounded, size: 14, color: Color(0xFF64748B)),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    order.displayOrderId,
+                    style: AppTextStyles.bold.copyWith(fontSize: 13.5, color: const Color(0xFF0F172A)),
+                  ),
+                ],
               ),
-              const SizedBox(width: 4),
               Container(
-                padding: const EdgeInsets.all(6),
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
                 decoration: BoxDecoration(
-                  color: bgColor,
+                  color: badgeBg,
                   borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: badgeColor.withValues(alpha: 0.2)),
                 ),
-                child: Icon(icon, size: 16, color: color),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: Alignment.centerLeft,
-            child: Text(
-              value,
-              style: AppTextStyles.bold.copyWith(fontSize: 17, color: AppColors.darkText),
-            ),
-          ),
-          const SizedBox(height: 3),
-          Text(
-            subtitle,
-            style: const TextStyle(fontSize: 10.5, color: Color(0xFF94A3B8)),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSettlementProgressCard(FinancialReportController controller) {
-    final double total = controller.totalRevenue.value > 0 ? controller.totalRevenue.value : 1.0;
-    final double settledPct = (controller.settledPayout.value / total).clamp(0.0, 1.0);
-    final double pendingPct = (controller.pendingEscrow.value / total).clamp(0.0, 1.0);
-    final double refundedPct = (controller.refundedAmount.value / total).clamp(0.0, 1.0);
-
-    final int sFlex = (settledPct * 100).round();
-    final int pFlex = (pendingPct * 100).round();
-    final int rFlex = (refundedPct * 100).round();
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Settlement Ratio',
-                style: AppTextStyles.bold.copyWith(fontSize: 13.5, color: AppColors.darkText),
-              ),
-              Text(
-                '${(settledPct * 100).toStringAsFixed(0)}% Settled',
-                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF10B981)),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: BoxDecoration(shape: BoxShape.circle, color: badgeColor),
+                    ),
+                    const SizedBox(width: 5),
+                    Text(
+                      badgeText,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        color: badgeColor,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
           const SizedBox(height: 12),
-          // Multi-color progress bar
-          ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: SizedBox(
-              height: 10,
-              child: Row(
+          const Divider(height: 1, color: Color(0xFFF1F5F9)),
+          const SizedBox(height: 12),
+
+          // Product Thumbnail & Information
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: Container(
+                  width: 56,
+                  height: 56,
+                  color: const Color(0xFFF8FAFC),
+                  child: firstProductImg.isNotEmpty
+                      ? Image.network(
+                          firstProductImg,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => const Icon(Icons.image_not_supported_outlined, color: Colors.grey, size: 24),
+                        )
+                      : const Icon(Icons.shopping_bag_outlined, color: Color(0xFF94A3B8), size: 24),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      firstProductName,
+                      style: AppTextStyles.bold.copyWith(fontSize: 13, color: const Color(0xFF0F172A), height: 1.2),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Buyer: ${order.buyerName.isNotEmpty ? order.buyerName : "Customer"}  •  Qty: $totalItems',
+                      style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  if (sFlex > 0)
-                    Expanded(
-                      flex: sFlex,
-                      child: Container(color: const Color(0xFF10B981)),
-                    ),
-                  if (pFlex > 0)
-                    Expanded(
-                      flex: pFlex,
-                      child: Container(color: const Color(0xFFF59E0B)),
-                    ),
-                  if (rFlex > 0)
-                    Expanded(
-                      flex: rFlex,
-                      child: Container(color: const Color(0xFFEF4444)),
-                    ),
-                  if (sFlex == 0 && pFlex == 0 && rFlex == 0)
-                    Expanded(
-                      flex: 100,
-                      child: Container(color: const Color(0xFFE2E8F0)),
-                    ),
+                  Text(
+                    'Rs. ${_formatAmount(order.totalAmount)}',
+                    style: AppTextStyles.bold.copyWith(fontSize: 14.5, color: AppColors.primaryPurple),
+                  ),
+                  const SizedBox(height: 2),
+                  const Text(
+                    'Delivered',
+                    style: TextStyle(fontSize: 10.5, color: Color(0xFF10B981), fontWeight: FontWeight.w600),
+                  ),
                 ],
               ),
-            ),
-          ),
-          const SizedBox(height: 14),
-          Wrap(
-            spacing: 12,
-            runSpacing: 8,
-            children: [
-              _buildProgressLegend('Settled', const Color(0xFF10B981)),
-              _buildProgressLegend('Pending Escrow', const Color(0xFFF59E0B)),
-              _buildProgressLegend('Refunded', const Color(0xFFEF4444)),
             ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildProgressLegend(String label, Color color) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 8,
-          height: 8,
-          decoration: BoxDecoration(shape: BoxShape.circle, color: color),
-        ),
-        const SizedBox(width: 5),
-        Text(
-          label,
-          style: const TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildFilterChip(FinancialReportController controller, String label) {
-    return Obx(() {
-      final isSelected = controller.selectedFilter.value == label;
-      return InkWell(
-        onTap: () => controller.setFilter(label),
-        borderRadius: BorderRadius.circular(20),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-          decoration: BoxDecoration(
-            color: isSelected ? AppColors.primaryPurple : Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: isSelected ? AppColors.primaryPurple : const Color(0xFFCBD5E1),
-            ),
-          ),
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: isSelected ? Colors.white : const Color(0xFF475569),
-            ),
-          ),
-        ),
-      );
-    });
-  }
-
-  Widget _buildOrderFinancialTile(SellerOrderModel order) {
-    Color badgeBg;
-    Color badgeColor;
-    String badgeText;
-
-    if (order.isCompleted) {
-      badgeBg = const Color(0xFFECFDF5);
-      badgeColor = const Color(0xFF10B981);
-      badgeText = 'Settled';
-    } else if (order.isCancelled) {
-      badgeBg = const Color(0xFFFEF2F2);
-      badgeColor = const Color(0xFFEF4444);
-      badgeText = 'Refunded';
-    } else {
-      badgeBg = const Color(0xFFFFFBEB);
-      badgeColor = const Color(0xFFF59E0B);
-      badgeText = 'Pending';
-    }
-
-    return Container(
-      padding: const EdgeInsets.all(13),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(9),
-            decoration: BoxDecoration(
-              color: badgeBg,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(Icons.receipt_rounded, size: 20, color: badgeColor),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        order.id.length > 8 ? '#${order.id.substring(order.id.length - 8).toUpperCase()}' : '#${order.id.toUpperCase()}',
-                        style: AppTextStyles.bold.copyWith(fontSize: 13, color: AppColors.darkText),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Rs. ${_formatAmount(order.totalAmount)}',
-                      style: AppTextStyles.bold.copyWith(fontSize: 13.5, color: AppColors.darkText),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        order.buyerName.isNotEmpty ? order.buyerName : 'Buyer',
-                        style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: badgeBg,
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        badgeText,
-                        style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: badgeColor),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
           ),
         ],
       ),
@@ -699,6 +721,6 @@ class FinancialReportScreen extends StatelessWidget {
     if (amount.truncateToDouble() == amount) {
       return amount.toInt().toString();
     }
-    return amount.toStringAsFixed(2);
+    return amount.toStringAsFixed(0);
   }
 }

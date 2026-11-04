@@ -104,6 +104,11 @@ class SellerRepositoryImpl implements SellerRepository {
   }
 
   @override
+  Future<dynamic> getSellerDeliveredStats([String? token]) {
+    return remoteDataSource.getSellerDeliveredStats(token);
+  }
+
+  @override
   Future<dynamic> getSellerRefundedOrders([String? token]) {
     return remoteDataSource.getSellerRefundedOrders(token);
   }

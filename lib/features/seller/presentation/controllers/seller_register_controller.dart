@@ -83,9 +83,14 @@ class SellerRegisterController extends GetxController {
   final List<String> businessTypes = [
     'Sole properietory',
     'Partnership',
-    'Private Limited',
-    'Corporate / Enterprise',
   ];
+
+  String normalizeBusinessType(String val) {
+    if (val.trim().toLowerCase().contains('partner')) {
+      return 'Partnership';
+    }
+    return 'Sole properietory';
+  }
 
   final List<String> provinces = [
     'KPK',
@@ -164,6 +169,11 @@ class SellerRegisterController extends GetxController {
   void nextStep() {
     if (currentStep.value == 0) {
       if (!step1FormKey.currentState!.validate()) return;
+      final cleanPhone = phoneController.text.replaceAll(RegExp(r'\D'), '');
+      if (cleanPhone.length != 11) {
+        CustomPopup.showError('Validation Error', 'Phone number must be exactly 11 digits (e.g. 03001234567)');
+        return;
+      }
       if (passwordController.text != confirmPasswordController.text) {
         CustomPopup.showError('Error', 'Passwords do not match');
         return;
@@ -240,7 +250,7 @@ class SellerRegisterController extends GetxController {
         confirmPassword: confirmPasswordController.text,
         role: 'Seller',
         storeName: storeNameController.text.trim(),
-        businessType: businessTypeController.text.trim(),
+        businessType: normalizeBusinessType(businessTypeController.text),
         city: cityController.text.trim(),
         province: provinceController.text.trim(),
         businessAddress: businessAddressController.text.trim(),

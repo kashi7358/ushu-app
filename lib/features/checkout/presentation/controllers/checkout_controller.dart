@@ -203,7 +203,11 @@ class CheckoutController extends GetxController {
     }
 
     for (var item in selectedItems) {
-      if (item.stock > 0 && item.quantity > item.stock) {
+      if (item.stock <= 0) {
+        CustomPopup.showToast('Out of Stock', '${item.name} is currently out of stock. Please remove it to proceed.', isError: true);
+        return;
+      }
+      if (item.quantity > item.stock) {
         CustomPopup.showToast('Stock Exceeded', '${item.name} has only ${item.stock} items in stock. Please adjust quantity.', isError: true);
         return;
       }
@@ -222,8 +226,14 @@ class CheckoutController extends GetxController {
       return;
     }
 
+    final String cleanPhone = phoneController.text.replaceAll(RegExp(r'\D'), '');
+    if (cleanPhone.length != 11) {
+      CustomPopup.showToast('Validation Error', 'Phone number must be exactly 11 digits (e.g. 03001234567)', isError: true);
+      return;
+    }
+
     final String finalFullName = fullNameController.text.trim();
-    final String finalPhone = phoneController.text.trim();
+    final String finalPhone = cleanPhone;
     final String finalAddress = addressLineController.text.trim();
     final String finalCity = cityController.text.trim();
     final String finalProvince = provinceController.text.trim();
@@ -316,8 +326,14 @@ class CheckoutController extends GetxController {
       return false;
     }
 
+    final String cleanPhone = phoneController.text.replaceAll(RegExp(r'\D'), '');
+    if (cleanPhone.length != 11) {
+      CustomPopup.showToast('Validation Error', 'Phone number must be exactly 11 digits (e.g. 03001234567)', isError: true);
+      return false;
+    }
+
     final String finalFullName = fullNameController.text.trim();
-    final String finalPhone = phoneController.text.trim();
+    final String finalPhone = cleanPhone;
     final String finalAddress = addressLineController.text.trim();
     final String finalCity = cityController.text.trim();
     final String finalProvince = provinceController.text.trim();

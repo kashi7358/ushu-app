@@ -98,9 +98,15 @@ class StoreScreen extends StatelessWidget {
                       child: storeBanner != null && storeBanner.isNotEmpty
                           ? Image.network(
                               storeBanner,
-                              fit: BoxFit.fill,
+                              fit: BoxFit.cover,
                               width: double.infinity,
                               height: double.infinity,
+                              errorBuilder: (_, __, ___) => Container(
+                                color: AppColors.primaryPurple,
+                                child: const Center(
+                                  child: Icon(Icons.storefront_rounded, size: 50, color: Colors.white54),
+                                ),
+                              ),
                             )
                           : Container(
                               color: AppColors.primaryPurple,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
@@ -670,6 +671,11 @@ class CreateBannerScreen extends StatelessWidget {
           TextFormField(
             controller: controller.phoneController,
             keyboardType: TextInputType.phone,
+            maxLength: 11,
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly,
+              LengthLimitingTextInputFormatter(11),
+            ],
             textInputAction: TextInputAction.done,
             style: TextStyle(
               fontSize: 13.5.sp,
@@ -683,6 +689,9 @@ class CreateBannerScreen extends StatelessWidget {
             validator: (value) {
               if (value == null || value.trim().isEmpty) {
                 return 'Please enter phone number';
+              }
+              if (value.trim().length != 11) {
+                return 'Phone number must be exactly 11 digits';
               }
               return null;
             },

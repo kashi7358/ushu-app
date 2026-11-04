@@ -60,9 +60,9 @@ class ApiEndpoints {
   static String searchKeyword(String keyword) => '$baseUrl/search/keyword?keyword=${Uri.encodeComponent(keyword)}';
 
 
-  // ==========================================
-  // SELLER APIS
-  // ==========================================
+  // ============================================
+  //                SELLER APIS
+  // ============================================
 
   // Authentification
   static const String createSeller = '$baseUrl/seller/create';
@@ -83,6 +83,7 @@ class ApiEndpoints {
   static String updateProduct(String productId) => '$baseUrl/product/update-product/$productId';
      // Seller Dashboard
   static const String sellerDashboardStats = '$baseUrl/dashboard/stats';
+  static const String sellerDeliveredStats = '$baseUrl/seller/delivered-stats';
 
   // Flash Sale
   static const String createFlashSale = '$baseUrl/flashSale/create';

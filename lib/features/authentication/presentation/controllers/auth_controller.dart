@@ -136,13 +136,19 @@ class AuthController extends GetxController {
       return;
     }
 
+    final cleanPhone = signupPhoneController.text.replaceAll(RegExp(r'\D'), '');
+    if (cleanPhone.length != 11) {
+      CustomPopup.showToast('Validation Error', 'Phone number must be exactly 11 digits (e.g. 03001234567)', isError: true);
+      return;
+    }
+
     try {
       isLoading.value = true;
       
       final user = await _signupUseCase.execute(
         fullName: signupNameController.text.trim(),
         email: signupEmailController.text.trim(),
-        phone: signupPhoneController.text.trim(),
+        phone: cleanPhone,
         password: signupPasswordController.text,
         confirmPassword: signupConfirmPasswordController.text,
         address: signupAddressController.text.trim(),

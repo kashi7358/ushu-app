@@ -68,12 +68,14 @@ class SellerDashboardController extends GetxController {
         _repository.getSellerOrders().catchError((_) => null),
         _repository.getSellerDeliveredOrders().catchError((_) => null),
         _repository.getSellerRefundedOrders().catchError((_) => null),
+        _repository.getSellerDeliveredStats().catchError((_) => null),
       ]);
 
       final response = results[0];
       final ordersResponse = results[1];
       final deliveredOrdersResponse = results[2];
       final refundedOrdersResponse = results[3];
+      final deliveredStatsResponse = results[4];
 
       if (response is Map<String, dynamic>) {
         final parsed = SellerDashboardStatsModel.fromJson(response);
@@ -97,9 +99,60 @@ class SellerDashboardController extends GetxController {
         unpaidAmount.value = parsed.unpaidAmount;
       }
 
-      // 1. Parse Dedicated Delivered Orders API
+      // 1. Parse Dedicated Delivered Stats & Orders API
       final List<SellerOrderModel> directDelivered = [];
-      if (deliveredOrdersResponse is Map) {
+      
+      // Parse from deliveredStatsResponse if available
+      if (deliveredStatsResponse is Map) {
+        final rawDeliveredStats = deliveredStatsResponse['allDeliveredOrders'] ??
+            deliveredStatsResponse['deliveredOrders'] ??
+            deliveredStatsResponse['orders'] ??
+            deliveredStatsResponse['data'];
+        if (rawDeliveredStats is List) {
+          for (final o in rawDeliveredStats) {
+            if (o is Map<String, dynamic>) {
+              directDelivered.add(SellerOrderModel.fromJson(o));
+            } else if (o is Map) {
+              directDelivered.add(SellerOrderModel.fromJson(Map<String, dynamic>.from(o)));
+            }
+          }
+        }
+
+        // Exact paidAmount & unpaidAmount from delivered-stats
+        if (deliveredStatsResponse['paidAmount'] != null) {
+          paidAmount.value = (deliveredStatsResponse['paidAmount'] is num)
+              ? (deliveredStatsResponse['paidAmount'] as num).toDouble()
+              : double.tryParse(deliveredStatsResponse['paidAmount'].toString()) ?? 0.0;
+        }
+        if (deliveredStatsResponse['unpaidAmount'] != null) {
+          unpaidAmount.value = (deliveredStatsResponse['unpaidAmount'] is num)
+              ? (deliveredStatsResponse['unpaidAmount'] as num).toDouble()
+              : double.tryParse(deliveredStatsResponse['unpaidAmount'].toString()) ?? 0.0;
+        }
+        if (deliveredStatsResponse['totalPayout'] != null && paidAmount.value == 0.0 && unpaidAmount.value == 0.0) {
+          unpaidAmount.value = (deliveredStatsResponse['totalPayout'] is num)
+              ? (deliveredStatsResponse['totalPayout'] as num).toDouble()
+              : double.tryParse(deliveredStatsResponse['totalPayout'].toString()) ?? 0.0;
+        }
+        if (deliveredStatsResponse['totalDelivered'] != null) {
+          final int totDelivered = (deliveredStatsResponse['totalDelivered'] is num)
+              ? (deliveredStatsResponse['totalDelivered'] as num).toInt()
+              : int.tryParse(deliveredStatsResponse['totalDelivered'].toString()) ?? 0;
+          if (totDelivered > 0) {
+            stats.value = stats.value.copyWith(deliveredOrders: totDelivered);
+          }
+        }
+        if (deliveredStatsResponse['totalPayment'] != null || deliveredStatsResponse['totalPayout'] != null) {
+          final double payTotal = (deliveredStatsResponse['totalPayout'] ?? deliveredStatsResponse['totalPayment'] ?? 0.0) is num
+              ? (deliveredStatsResponse['totalPayout'] ?? deliveredStatsResponse['totalPayment'] as num).toDouble()
+              : double.tryParse((deliveredStatsResponse['totalPayout'] ?? deliveredStatsResponse['totalPayment']).toString()) ?? 0.0;
+          if (payTotal > 0 && stats.value.earningAmount == 0.0) {
+            stats.value = stats.value.copyWith(earningAmount: payTotal);
+          }
+        }
+      }
+
+      if (directDelivered.isEmpty && deliveredOrdersResponse is Map) {
         final rawDelivered = deliveredOrdersResponse['orders'] ??
             deliveredOrdersResponse['deliveredOrders'] ??
             deliveredOrdersResponse['data'] ??
@@ -181,15 +234,33 @@ class SellerDashboardController extends GetxController {
           deliveredOrders.assignAll(delivered);
           refundedOrders.assignAll(refunded);
 
-          // If paid / unpaid weren't explicitly provided by stats endpoint, compute intelligently from orders
-          if (paidAmount.value == 0.0 && stats.value.earningAmount > 0) {
-            paidAmount.value = stats.value.earningAmount;
-            unpaidAmount.value = 0.0;
-          } else if (paidAmount.value == 0.0 && delivered.isNotEmpty) {
-            final double deliveredSum = delivered.fold(0.0, (sum, o) => sum + o.totalAmount);
-            final double activeSum = parsedOrders.where((o) => o.isProcessing || o.isPending).fold(0.0, (sum, o) => sum + o.totalAmount);
-            paidAmount.value = deliveredSum;
-            unpaidAmount.value = activeSum;
+          final int activeCount = parsedOrders.where((o) => o.isPending || o.isProcessing).length;
+          final int deliveredCount = delivered.length;
+          final int cancelledCount = parsedOrders.where((o) => o.normalizedStatus.contains('cancel')).length;
+          final int returnedCount = refunded.length;
+
+          // If stats active/delivered/cancelled/returned are not populated by backend, hydrate from order lists
+          final int currentTotal = stats.value.activeOrders + stats.value.deliveredOrders + stats.value.cancelledOrders + stats.value.returnedOrders;
+          if (currentTotal == 0 && (activeCount > 0 || deliveredCount > 0 || cancelledCount > 0 || returnedCount > 0)) {
+            stats.value = stats.value.copyWith(
+              activeOrders: activeCount,
+              deliveredOrders: deliveredCount,
+              cancelledOrders: cancelledCount,
+              returnedOrders: returnedCount,
+            );
+          }
+
+          // Only fallback if both paidAmount and unpaidAmount are untouched (zero) and no deliveredStatsResponse was received
+          if (deliveredStatsResponse == null) {
+            if (paidAmount.value == 0.0 && unpaidAmount.value == 0.0 && stats.value.earningAmount > 0) {
+              paidAmount.value = stats.value.earningAmount;
+              unpaidAmount.value = 0.0;
+            } else if (paidAmount.value == 0.0 && unpaidAmount.value == 0.0 && delivered.isNotEmpty) {
+              final double deliveredSum = delivered.fold(0.0, (sum, o) => sum + o.totalAmount);
+              final double activeSum = parsedOrders.where((o) => o.isProcessing || o.isPending).fold(0.0, (sum, o) => sum + o.totalAmount);
+              paidAmount.value = deliveredSum;
+              unpaidAmount.value = activeSum;
+            }
           }
         }
       } else {
@@ -198,6 +269,12 @@ class SellerDashboardController extends GetxController {
         }
         if (directRefunded.isNotEmpty) {
           refundedOrders.assignAll(directRefunded);
+        }
+        if (stats.value.deliveredOrders == 0 && directDelivered.isNotEmpty) {
+          stats.value = stats.value.copyWith(deliveredOrders: directDelivered.length);
+        }
+        if (stats.value.returnedOrders == 0 && directRefunded.isNotEmpty) {
+          stats.value = stats.value.copyWith(returnedOrders: directRefunded.length);
         }
       }
 

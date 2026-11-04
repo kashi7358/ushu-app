@@ -15,7 +15,7 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    namespace = "com.example.uhsu_buy"
+    namespace = "com.ushu.buy"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 

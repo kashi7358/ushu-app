@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:dio/dio.dart';
 import '../../domain/entities/product_entity.dart';
@@ -23,10 +23,23 @@ class ProductDetailController extends GetxController {
 
   late final GetProductByIdUseCase _getProductByIdUseCase;
   late final String productId;
+  late final PageController imagePageController;
+
+  void selectImage(int index) {
+    selectedImageIndex.value = index;
+    if (imagePageController.hasClients) {
+      imagePageController.animateToPage(
+        index,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    }
+  }
 
   @override
   void onInit() {
     super.onInit();
+    imagePageController = PageController();
     final args = Get.arguments;
     if (args is Map) {
       productId = args['id']?.toString() ?? args['productId']?.toString() ?? '';
@@ -43,9 +56,24 @@ class ProductDetailController extends GetxController {
     fetchReviews();
   }
 
+  void updateProductIdAndFetch(String newId) {
+    if (newId.trim().isEmpty || newId == productId) return;
+    productId = newId;
+    product.value = null;
+    isLoading.value = true;
+    selectedQuantity.value = 1;
+    selectedImageIndex.value = 0;
+    fetchProductDetails();
+    fetchReviews();
+  }
+
   Future<void> fetchProductDetails() async {
     try {
       isLoading.value = true;
+      if (productId.trim().isEmpty) {
+        isLoading.value = false;
+        return;
+      }
       final result = await _getProductByIdUseCase.execute(productId);
       product.value = result;
       selectedImageIndex.value = 0;
@@ -88,6 +116,7 @@ class ProductDetailController extends GetxController {
 
   Future<void> fetchReviews() async {
     try {
+      if (productId.trim().isEmpty) return;
       final apiClient = ApiClient();
       final response = await apiClient.dio.get(
         ApiEndpoints.getReviews(productId),
@@ -188,5 +217,11 @@ class ProductDetailController extends GetxController {
       CustomPopup.showToast('Error', 'An error occurred while voting');
       return false;
     }
+  }
+
+  @override
+  void onClose() {
+    imagePageController.dispose();
+    super.onClose();
   }
 }

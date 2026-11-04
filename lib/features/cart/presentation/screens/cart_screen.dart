@@ -169,8 +169,11 @@ class CartScreen extends StatelessWidget {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'In Stock: ${item.stock}',
-                            style: AppTextStyles.medium.copyWith(fontSize: 11, color: AppColors.success),
+                            item.stock > 0 ? 'In Stock: ${item.stock}' : 'Out of Stock',
+                            style: AppTextStyles.medium.copyWith(
+                              fontSize: 11,
+                              color: item.stock > 0 ? AppColors.success : AppColors.error,
+                            ),
                           ),
                         ],
                       ),
@@ -222,7 +225,11 @@ class CartScreen extends StatelessWidget {
                             ),
                             InkWell(
                               onTap: () {
-                                if (item.stock > 0 && item.quantity >= item.stock) {
+                                if (item.stock <= 0) {
+                                  CustomPopup.showToast('Out of Stock', 'This item is currently out of stock', isError: true);
+                                  return;
+                                }
+                                if (item.quantity >= item.stock) {
                                   CustomPopup.showToast('Limit Reached', 'Only ${item.stock} items available in stock', isError: true);
                                   return;
                                 }
@@ -230,8 +237,8 @@ class CartScreen extends StatelessWidget {
                               },
                               child: Container(
                                 padding: const EdgeInsets.all(4),
-                                color: (item.stock > 0 && item.quantity >= item.stock) ? Colors.grey.shade50 : Colors.grey.shade100,
-                                child: Icon(Icons.add, size: 16, color: (item.stock > 0 && item.quantity >= item.stock) ? Colors.grey.shade300 : Colors.black54),
+                                color: (item.stock <= 0 || item.quantity >= item.stock) ? Colors.grey.shade50 : Colors.grey.shade100,
+                                child: Icon(Icons.add, size: 16, color: (item.stock <= 0 || item.quantity >= item.stock) ? Colors.grey.shade300 : Colors.black54),
                               ),
                             ),
                           ],
@@ -337,7 +344,11 @@ class CartScreen extends StatelessWidget {
                       return;
                     }
                     for (var it in selected) {
-                      if (it.stock > 0 && it.quantity > it.stock) {
+                      if (it.stock <= 0) {
+                        CustomPopup.showToast('Out of Stock', '${it.name} is currently out of stock. Please remove it to proceed.', isError: true);
+                        return;
+                      }
+                      if (it.quantity > it.stock) {
                         CustomPopup.showToast('Stock Exceeded', '${it.name} has only ${it.stock} items in stock. Please adjust quantity.', isError: true);
                         return;
                       }

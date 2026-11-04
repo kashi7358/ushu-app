@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_text_field.dart';
+import '../../../../core/utils/session_manager.dart';
+import '../../../../core/utils/validators.dart';
 import '../controllers/return_controller.dart';
 import '../../../profile/presentation/controllers/profile_controller.dart';
 
@@ -19,8 +22,26 @@ class _ReturnRequestScreenState extends State<ReturnRequestScreen> {
   final _bankNameController = TextEditingController();
   final _accountHolderController = TextEditingController();
   final _reasonController = TextEditingController();
+  final _phoneController = TextEditingController();
   
   final _formKey = GlobalKey<FormState>();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserPhone();
+  }
+
+  Future<void> _loadUserPhone() async {
+    final addr = await SessionManager.getSavedAddress();
+    if (addr != null && addr['phone'] != null && addr['phone']!.isNotEmpty) {
+      if (mounted) {
+        setState(() {
+          _phoneController.text = addr['phone']!;
+        });
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -28,6 +49,7 @@ class _ReturnRequestScreenState extends State<ReturnRequestScreen> {
     _bankNameController.dispose();
     _accountHolderController.dispose();
     _reasonController.dispose();
+    _phoneController.dispose();
     super.dispose();
   }
 
@@ -120,6 +142,22 @@ class _ReturnRequestScreenState extends State<ReturnRequestScreen> {
                 prefixIcon: const Icon(Icons.numbers_outlined),
                 validator: (v) => v!.length < 16 ? 'Valid IBAN required' : null,
               ),
+              const SizedBox(height: 16),
+
+              Text('Contact Phone Number', style: AppTextStyles.semiBold.copyWith(color: AppColors.darkText)),
+              const SizedBox(height: 8),
+              AppTextField(
+                controller: _phoneController,
+                hintText: '03001234567',
+                keyboardType: TextInputType.phone,
+                maxLength: 11,
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                  LengthLimitingTextInputFormatter(11),
+                ],
+                prefixIcon: const Icon(Icons.phone_outlined),
+                validator: Validators.validatePhone,
+              ),
               const SizedBox(height: 32),
 
               AppButton(
@@ -131,11 +169,11 @@ class _ReturnRequestScreenState extends State<ReturnRequestScreen> {
                       orderItemId: orderItemId,
                       name: profileCtrl.userName.value,
                       email: profileCtrl.userEmail.value,
-                      phone: '00000000000', // Need phone from profile or order
-                      iban: _ibanController.text,
-                      accountHolderName: _accountHolderController.text,
-                      bankName: _bankNameController.text,
-                      reason: _reasonController.text,
+                      phone: _phoneController.text.trim(),
+                      iban: _ibanController.text.trim(),
+                      accountHolderName: _accountHolderController.text.trim(),
+                      bankName: _bankNameController.text.trim(),
+                      reason: _reasonController.text.trim(),
                       quantity: quantity,
                     );
                   }

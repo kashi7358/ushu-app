@@ -576,54 +576,76 @@ class CustomPopup {
     );
   }
 
+  static OverlayEntry? _lottieOverlay;
+
   static void showFastLottie(String lottieAsset, {double width = 120, double height = 120}) {
-    if (Get.isDialogOpen ?? false) {
-      Get.back();
-    }
-    Get.dialog(
-      Center(
-        child: TweenAnimationBuilder<double>(
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.elasticOut,
-          tween: Tween<double>(begin: 0.5, end: 1.0),
-          builder: (context, scale, child) {
-            return Transform.scale(scale: scale, child: child);
-          },
-          child: Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(24),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.08),
-                  blurRadius: 30,
-                  offset: const Offset(0, 10),
+    hideFastLottie();
+
+    final context = Get.overlayContext ?? Get.context;
+    if (context == null) return;
+
+    final overlay = Overlay.maybeOf(context);
+    if (overlay == null) return;
+
+    _lottieOverlay = OverlayEntry(
+      builder: (context) => Material(
+        color: Colors.black.withValues(alpha: 0.15),
+        child: Center(
+          child: TweenAnimationBuilder<double>(
+            duration: const Duration(milliseconds: 250),
+            curve: Curves.easeOutBack,
+            tween: Tween<double>(begin: 0.6, end: 1.0),
+            builder: (context, scale, child) {
+              return Transform.scale(scale: scale, child: child);
+            },
+            child: Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.1),
+                    blurRadius: 30,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
+              ),
+              child: Lottie.asset(
+                lottieAsset,
+                width: width,
+                height: height,
+                repeat: false,
+                errorBuilder: (_, __, ___) => const Icon(
+                  Icons.check_circle_rounded,
+                  color: AppColors.primaryPurple,
+                  size: 60,
                 ),
-              ],
-            ),
-            child: Lottie.asset(
-              lottieAsset,
-              width: width,
-              height: height,
-              repeat: false,
-              errorBuilder: (_, __, ___) => const Icon(
-                Icons.check_circle_rounded,
-                color: AppColors.primaryPurple,
-                size: 60,
               ),
             ),
           ),
         ),
       ),
-      barrierDismissible: true,
-      barrierColor: Colors.black.withValues(alpha: 0.1),
     );
 
-    Future.delayed(const Duration(milliseconds: 1500), () {
-      if (Get.isDialogOpen ?? false) {
-        Get.back();
-      }
+    overlay.insert(_lottieOverlay!);
+
+    // Automatically dismiss after 1200ms at most
+    Future.delayed(const Duration(milliseconds: 1200), () {
+      hideFastLottie();
     });
+  }
+
+  static void hideFastLottie() {
+    try {
+      if (_lottieOverlay != null && _lottieOverlay!.mounted) {
+        _lottieOverlay!.remove();
+      }
+    } catch (_) {}
+    _lottieOverlay = null;
+
+    if (Get.isDialogOpen ?? false) {
+      Get.back();
+    }
   }
 }

@@ -4,6 +4,8 @@ import 'package:dio/dio.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/network/api_endpoints.dart';
 import '../../../../core/utils/custom_popup.dart';
+import '../../../../core/utils/session_manager.dart';
+import '../../../../core/utils/home_cache_manager.dart';
 
 import '../../data/models/cart_item_model.dart';
 
@@ -31,67 +33,153 @@ class CartController extends GetxController {
     return total;
   }
 
-  Future<void> addToCart(String productId, int quantity, String productName) async {
+  Future<void> addToCart(String productId, int quantity, String productName, [int? currentStock]) async {
     if (isAddingToCart.value) return;
-    
-    // Check if product is already in cart and adding more will exceed stock
+
     final existingIndex = cartItems.indexWhere((item) => item.productId == productId || item.id == productId);
+    final availableStock = currentStock ?? (existingIndex != -1 ? cartItems[existingIndex].stock : null);
+
+    if (availableStock != null && availableStock <= 0) {
+      CustomPopup.showToast('Out of Stock', 'This item is currently out of stock', isError: true);
+      return;
+    }
+
     if (existingIndex != -1) {
       final existingItem = cartItems[existingIndex];
-      if (existingItem.stock > 0 && existingItem.quantity + quantity > existingItem.stock) {
-        CustomPopup.showToast('Stock Limit', 'Cannot add more. You have ${existingItem.quantity} in cart and available stock is ${existingItem.stock}', isError: true);
+      final itemStock = currentStock ?? existingItem.stock;
+      if (itemStock > 0 && existingItem.quantity + quantity > itemStock) {
+        CustomPopup.showToast('Stock Limit', 'Cannot add more. You have ${existingItem.quantity} in cart and available stock is $itemStock', isError: true);
         return;
       }
     }
 
-    // Optimistic UI: Show animation immediately for best UX
+    // Show animation immediately
     CustomPopup.showFastLottie('assets/lotties/add_to_cart_new.json');
     
     try {
       isAddingToCart.value = true;
-      
+      final token = SessionManager.token;
+      final headers = <String, dynamic>{
+        if (token != null && token.isNotEmpty) ...{
+          'Authorization': 'Bearer $token',
+          'auth-token': token,
+        },
+      };
+
       final response = await _apiClient.dio.post(
         ApiEndpoints.addToCart,
         data: {
           "productId": productId,
-          "quantity": quantity
+          "id": productId,
+          "quantity": quantity,
         },
-        options: Options(validateStatus: (status) => true),
+        options: Options(
+          headers: headers,
+          validateStatus: (status) => true,
+        ),
       );
-      
+
+      // Dismiss popup as soon as response is received
+      CustomPopup.hideFastLottie();
+
+      final statusCode = response.statusCode ?? 500;
       final data = response.data;
-      if (data['success'] == true) {
+      final bool isSuccess = (statusCode >= 200 && statusCode < 300) &&
+          (data == null ||
+              (data is Map &&
+                  data['success'] != false &&
+                  data['status'] != 'error' &&
+                  data['status'] != 'fail'));
+
+      if (isSuccess) {
         _updateCartItems(data);
+        if (currentStock != null) {
+          final idx = cartItems.indexWhere((i) => i.productId == productId || i.id == productId);
+          if (idx != -1 && cartItems[idx].stock != currentStock) {
+            cartItems[idx] = cartItems[idx].copyWith(stock: currentStock < 0 ? 0 : currentStock);
+            cartItems.refresh();
+          }
+        }
+        await fetchCart(); // Refresh from real backend
+        CustomPopup.showToast('Added to Cart', '$productName added to cart successfully!');
       } else {
-        CustomPopup.showToast('Failed', data['message'] ?? 'Could not add to cart', isError: true);
+        String msg = 'Could not add to cart';
+        if (data is Map) {
+          msg = data['message']?.toString() ??
+              data['error']?.toString() ??
+              data['msg']?.toString() ??
+              msg;
+        } else if (response.statusMessage != null && response.statusMessage!.isNotEmpty) {
+          msg = response.statusMessage!;
+        }
+        CustomPopup.showToast('Failed', msg, isError: true);
       }
     } catch (e) {
+      CustomPopup.hideFastLottie();
+      debugPrint('Error adding to cart: $e');
       CustomPopup.showToast('Error', 'An error occurred while adding to cart.', isError: true);
     } finally {
+      CustomPopup.hideFastLottie();
       isAddingToCart.value = false;
     }
   }
 
-  Future<bool> buyNow(String productId, int quantity, String productName) async {
+  Future<bool> buyNow(String productId, int quantity, String productName, [int? currentStock]) async {
     if (isAddingToCart.value) return false;
-    
+
+    if (currentStock != null && currentStock <= 0) {
+      CustomPopup.showToast('Out of Stock', 'This item is currently out of stock', isError: true);
+      return false;
+    }
+
     try {
       isAddingToCart.value = true;
       CustomPopup.showFastLottie('assets/lotties/add_to_cart_new.json');
-      
+
+      final token = SessionManager.token;
+      final headers = <String, dynamic>{
+        if (token != null && token.isNotEmpty) ...{
+          'Authorization': 'Bearer $token',
+          'auth-token': token,
+        },
+      };
+
       final response = await _apiClient.dio.post(
         ApiEndpoints.addToCart,
         data: {
           "productId": productId,
-          "quantity": quantity
+          "id": productId,
+          "quantity": quantity,
         },
-        options: Options(validateStatus: (status) => true),
+        options: Options(
+          headers: headers,
+          validateStatus: (status) => true,
+        ),
       );
-      
+
+      // Dismiss popup as soon as response is received
+      CustomPopup.hideFastLottie();
+
+      final statusCode = response.statusCode ?? 500;
       final data = response.data;
-      if (data != null && data['success'] == true) {
+      final bool isSuccess = (statusCode >= 200 && statusCode < 300) &&
+          (data == null ||
+              (data is Map &&
+                  data['success'] != false &&
+                  data['status'] != 'error' &&
+                  data['status'] != 'fail'));
+
+      if (isSuccess) {
         _updateCartItems(data);
-        
+        if (currentStock != null) {
+          final idx = cartItems.indexWhere((i) => i.productId == productId || i.id == productId);
+          if (idx != -1 && cartItems[idx].stock != currentStock) {
+            cartItems[idx] = cartItems[idx].copyWith(stock: currentStock < 0 ? 0 : currentStock);
+            cartItems.refresh();
+          }
+        }
+        await fetchCart(); // Refresh from real backend
+
         final index = cartItems.indexWhere((item) => item.productId == productId || item.id == productId);
         if (index != -1) {
           final targetItem = cartItems[index];
@@ -108,14 +196,25 @@ class CartController extends GetxController {
         }
         return true;
       } else {
-        CustomPopup.showToast('Failed', data?['message'] ?? 'Could not process Buy Now', isError: true);
+        String msg = 'Could not process Buy Now';
+        if (data is Map) {
+          msg = data['message']?.toString() ??
+              data['error']?.toString() ??
+              data['msg']?.toString() ??
+              msg;
+        } else if (response.statusMessage != null && response.statusMessage!.isNotEmpty) {
+          msg = response.statusMessage!;
+        }
+        CustomPopup.showToast('Failed', msg, isError: true);
         return false;
       }
     } catch (e) {
+      CustomPopup.hideFastLottie();
       debugPrint('Error during Buy Now: $e');
       CustomPopup.showToast('Error', 'An error occurred during Buy Now', isError: true);
       return false;
     } finally {
+      CustomPopup.hideFastLottie();
       isAddingToCart.value = false;
     }
   }
@@ -124,14 +223,27 @@ class CartController extends GetxController {
     try {
       isLoadingCart.value = true;
       isNoInternet.value = false;
+      final token = SessionManager.token;
+      final headers = <String, dynamic>{
+        if (token != null && token.isNotEmpty) ...{
+          'Authorization': 'Bearer $token',
+          'auth-token': token,
+        },
+      };
+
       final response = await _apiClient.dio.get(
         ApiEndpoints.getCart,
-        options: Options(validateStatus: (status) => true),
+        options: Options(
+          headers: headers,
+          validateStatus: (status) => true,
+        ),
       );
-      
+
+      final statusCode = response.statusCode ?? 500;
       final data = response.data;
-      if (data != null && data['success'] == true) {
+      if (statusCode >= 200 && statusCode < 300 && data != null) {
         _updateCartItems(data);
+        await syncCartItemsStockWithProducts();
       }
     } catch (e) {
       if (cartItems.isEmpty) {
@@ -140,6 +252,53 @@ class CartController extends GetxController {
       debugPrint('Error fetching cart: $e');
     } finally {
       isLoadingCart.value = false;
+    }
+  }
+
+  Future<void> syncCartItemsStockWithProducts() async {
+    if (cartItems.isEmpty) return;
+    try {
+      bool hasChanges = false;
+      final cached = await HomeCacheManager.getHomepageProducts();
+      final cachedMap = {for (var p in cached) p.id: p.stock};
+
+      for (int i = 0; i < cartItems.length; i++) {
+        final item = cartItems[i];
+        int? resolvedStock;
+        if (cachedMap.containsKey(item.productId)) {
+          resolvedStock = cachedMap[item.productId];
+        } else {
+          try {
+            final res = await _apiClient.dio.get(
+              '${ApiEndpoints.singleProduct}${item.productId}',
+              options: Options(validateStatus: (status) => true),
+            );
+            if (res.data is Map) {
+              dynamic pData = res.data['product'] ?? res.data['data'] ?? res.data['singleProduct'];
+              if (pData is Map) {
+                dynamic sVal = pData['stock'] ?? pData['stockQuantity'] ?? pData['countInStock'] ?? pData['quantity'];
+                if (sVal != null) {
+                  resolvedStock = int.tryParse(sVal.toString());
+                }
+              }
+            }
+          } catch (_) {}
+        }
+
+        if (resolvedStock != null) {
+          if (resolvedStock < 0) resolvedStock = 0;
+          if (item.stock != resolvedStock) {
+            cartItems[i] = item.copyWith(stock: resolvedStock);
+            hasChanges = true;
+          }
+        }
+      }
+
+      if (hasChanges) {
+        cartItems.refresh();
+      }
+    } catch (e) {
+      debugPrint('Error syncing cart stock: $e');
     }
   }
 
@@ -232,8 +391,33 @@ class CartController extends GetxController {
   }
 
   void _updateCartItems(dynamic data) {
-    if (data['data'] != null && data['data']['allItems'] != null) {
-      cartItems.value = (data['data']['allItems'] as List)
+    if (data == null) return;
+    List? itemsList;
+    if (data is Map) {
+      if (data['data'] != null) {
+        final d = data['data'];
+        if (d is Map) {
+          itemsList = d['allItems'] ?? d['items'] ?? d['cartItems'] ?? d['products'];
+        } else if (d is List) {
+          itemsList = d;
+        }
+      }
+      if (itemsList == null && data['cart'] != null) {
+        final c = data['cart'];
+        if (c is Map) {
+          itemsList = c['items'] ?? c['allItems'] ?? c['products'];
+        } else if (c is List) {
+          itemsList = c;
+        }
+      }
+      itemsList ??= data['allItems'] ?? data['items'] ?? data['cartItems'];
+    } else if (data is List) {
+      itemsList = data;
+    }
+
+    if (itemsList != null) {
+      cartItems.value = itemsList
+          .whereType<Map<String, dynamic>>()
           .map((e) => CartItemModel.fromJson(e))
           .toList();
     }

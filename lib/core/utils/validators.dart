@@ -15,8 +15,18 @@ class Validators {
     if (value == null || value.isEmpty) {
       return 'Password is required';
     }
-    if (value.length < 6) {
-      return 'Password must be at least 6 characters';
+    if (value.length < 8) {
+      return 'Password must be at least 8 characters long';
+    }
+    if (!RegExp(r'[A-Za-z]').hasMatch(value)) {
+      return 'Password must contain at least one letter';
+    }
+    if (!RegExp(r'\d').hasMatch(value)) {
+      return 'Password must contain at least one number';
+    }
+    const weakPasswords = ['12345678', 'password', 'password123', 'admin123', '11111111', '123456789', 'qwertyuiop'];
+    if (weakPasswords.contains(value.toLowerCase())) {
+      return 'Password is too common or weak. Choose a stronger password';
     }
     return null;
   }
@@ -29,8 +39,12 @@ class Validators {
   }
 
   static String? validatePhone(String? value) {
-    if (value == null || value.isEmpty) {
+    if (value == null || value.trim().isEmpty) {
       return 'Phone number is required';
+    }
+    final clean = value.trim();
+    if (!RegExp(r'^[0-9]{11}$').hasMatch(clean)) {
+      return 'Phone number must be exactly 11 digits (e.g. 03001234567)';
     }
     return null;
   }

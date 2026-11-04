@@ -274,22 +274,79 @@ class OrderController extends GetxController {
     }
   }
 
-  Future<void> cancelOrder(String orderId) async {
+  Future<void> cancelOrder(String orderId, [String reason = 'Cancelled by buyer']) async {
     CustomPopup.showLoading('Cancelling order...');
     try {
-      final response = await _apiClient.dio.patch(
+      final token = SessionManager.token;
+      final headers = <String, dynamic>{
+        if (token != null && token.isNotEmpty) ...{
+          'Authorization': 'Bearer $token',
+          'auth-token': token,
+        },
+      };
+
+      final payload = {
+        'reason': reason,
+        'cancellationReason': reason,
+        'status': 'cancelled',
+      };
+
+      var response = await _apiClient.dio.patch(
         ApiEndpoints.cancelOrder(orderId),
+        data: payload,
+        options: Options(
+          headers: headers,
+          validateStatus: (status) => true,
+        ),
       );
+
+      // If backend returns 404 or 405 on PATCH, try PUT or POST
+      if (response.statusCode == 404 || response.statusCode == 405) {
+        response = await _apiClient.dio.put(
+          ApiEndpoints.cancelOrder(orderId),
+          data: payload,
+          options: Options(
+            headers: headers,
+            validateStatus: (status) => true,
+          ),
+        );
+      }
+      if (response.statusCode == 404 || response.statusCode == 405) {
+        response = await _apiClient.dio.post(
+          ApiEndpoints.cancelOrder(orderId),
+          data: payload,
+          options: Options(
+            headers: headers,
+            validateStatus: (status) => true,
+          ),
+        );
+      }
 
       CustomPopup.hideLoading();
 
+      final statusCode = response.statusCode ?? 500;
       final data = response.data;
-      if (data != null && (data['success'] == true || data['status'] == 'success')) {
+      final bool isSuccess = (statusCode >= 200 && statusCode < 300) &&
+          (data == null ||
+              (data is Map &&
+                  data['success'] != false &&
+                  data['status'] != 'error' &&
+                  data['status'] != 'fail'));
+
+      if (isSuccess) {
         CustomPopup.showToast('Success', 'Order cancelled successfully');
         await fetchMyOrders(); // Refresh the list
       } else {
-        final msg = data is Map ? (data['message'] ?? 'Could not cancel order') : 'Could not cancel order';
-        CustomPopup.showToast('Failed', msg.toString(), isError: true);
+        String msg = 'Could not cancel order';
+        if (data is Map) {
+          msg = data['message']?.toString() ??
+              data['error']?.toString() ??
+              data['msg']?.toString() ??
+              msg;
+        } else if (response.statusMessage != null && response.statusMessage!.isNotEmpty) {
+          msg = response.statusMessage!;
+        }
+        CustomPopup.showToast('Failed', msg, isError: true);
       }
     } catch (e) {
       CustomPopup.hideLoading();

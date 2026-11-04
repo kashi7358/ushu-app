@@ -20,18 +20,38 @@ class CartItemModel {
   });
 
   factory CartItemModel.fromJson(Map<String, dynamic> json) {
-    int parsedStock = 10;
-    if (json['stock'] != null) {
-      parsedStock = int.tryParse(json['stock'].toString()) ?? 10;
-    } else if (json['productId'] is Map && json['productId']['stock'] != null) {
-      parsedStock = int.tryParse(json['productId']['stock'].toString()) ?? 10;
-    } else if (json['product'] is Map && json['product']['stock'] != null) {
-      parsedStock = int.tryParse(json['product']['stock'].toString()) ?? 10;
-    } else if (json['countInStock'] != null) {
-      parsedStock = int.tryParse(json['countInStock'].toString()) ?? 10;
-    } else if (json['stockQuantity'] != null) {
-      parsedStock = int.tryParse(json['stockQuantity'].toString()) ?? 10;
+    int? parsedStock;
+    void extractStockFromMap(Map map) {
+      if (parsedStock != null) return;
+      dynamic raw = map['stock'] ??
+          map['stockQuantity'] ??
+          map['Stock'] ??
+          map['countInStock'] ??
+          map['count_in_stock'] ??
+          map['availableStock'] ??
+          map['totalStock'] ??
+          map['quantity'] ??
+          map['qty'];
+      if (raw == null && map['inventory'] != null) {
+        if (map['inventory'] is Map) {
+          raw = map['inventory']['stock'] ??
+              map['inventory']['quantity'] ??
+              map['inventory']['countInStock'] ??
+              map['inventory']['availableStock'];
+        } else {
+          raw = map['inventory'];
+        }
+      }
+      if (raw != null) {
+        parsedStock = int.tryParse(raw.toString());
+      }
     }
+
+    if (json['productId'] is Map) extractStockFromMap(json['productId'] as Map);
+    if (parsedStock == null && json['product'] is Map) extractStockFromMap(json['product'] as Map);
+    if (parsedStock == null) extractStockFromMap(json);
+    final int? stockVal = parsedStock;
+    final int finalStock = (stockVal != null && stockVal > 0) ? stockVal : 0;
 
     String parsedProductId = '';
     if (json['productId'] is Map) {
@@ -59,9 +79,12 @@ class CartItemModel {
       }
     }
 
-    num parsedPrice = json['price'] ?? 0;
+    num parsedPrice = 0;
+    if (json['price'] != null) {
+      parsedPrice = num.tryParse(json['price'].toString()) ?? 0;
+    }
     if (parsedPrice == 0 && json['productId'] is Map) {
-      parsedPrice = json['productId']['price'] ?? 0;
+      parsedPrice = num.tryParse(json['productId']['price']?.toString() ?? '') ?? 0;
     }
 
     return CartItemModel(
@@ -71,8 +94,8 @@ class CartItemModel {
       image: parsedImage,
       price: parsedPrice,
       quantity: json['quantity'] != null ? (int.tryParse(json['quantity'].toString()) ?? 1) : 1,
-      stock: parsedStock,
-      isSelected: json['isSelected'] ?? false,
+      stock: finalStock,
+      isSelected: json['isSelected'] == true,
     );
   }
 

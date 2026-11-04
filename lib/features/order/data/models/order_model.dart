@@ -18,6 +18,8 @@ class OrderModel {
   final bool isReviewed;
   final int returnDays;
   final bool isReturned;
+  final String deliveredAt;
+  final String updatedAt;
 
   OrderModel({
     required this.id,
@@ -37,6 +39,8 @@ class OrderModel {
     this.isReviewed = false,
     this.returnDays = 7,
     this.isReturned = false,
+    this.deliveredAt = '',
+    this.updatedAt = '',
   });
 
   bool get canReturn {
@@ -45,16 +49,16 @@ class OrderModel {
     if (s != 'delivered' && s != 'completed') return false;
 
     try {
-      if (createdAt.isEmpty) return true;
-      final DateTime orderDate = DateTime.parse(createdAt).toLocal();
+      final String refStr = deliveredAt.isNotEmpty ? deliveredAt : (updatedAt.isNotEmpty ? updatedAt : createdAt);
+      if (refStr.isEmpty) return true;
+      final DateTime refDate = DateTime.parse(refStr).toLocal();
       final int maxDays = returnDays > 0 ? returnDays : 7;
-      final DateTime returnExpiry = orderDate.add(Duration(days: maxDays));
+      final DateTime returnExpiry = refDate.add(Duration(days: maxDays));
       return DateTime.now().isBefore(returnExpiry);
     } catch (_) {
       return true;
     }
   }
-
   factory OrderModel.fromJson(Map<String, dynamic> json) {
     var rawItems = json['items'] ?? json['orderItems'] ?? json['products'] ?? [];
     var itemsList = rawItems is List ? rawItems : [];
@@ -220,6 +224,8 @@ class OrderModel {
       isReviewed: hasBeenReviewed,
       returnDays: parsedReturnDays,
       isReturned: hasBeenReturned,
+      deliveredAt: json['deliveredAt']?.toString() ?? json['delivered_at']?.toString() ?? json['deliveryDate']?.toString() ?? '',
+      updatedAt: json['updatedAt']?.toString() ?? json['updated_at']?.toString() ?? '',
       items: itemsList.map((e) {
         if (e is Map<String, dynamic>) {
           return OrderItemModel.fromJson(e);

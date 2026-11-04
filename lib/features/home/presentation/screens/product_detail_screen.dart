@@ -114,7 +114,13 @@ class ProductDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final String currentArgId = (Get.arguments is Map)
+        ? (Get.arguments['id']?.toString() ?? Get.arguments['productId']?.toString() ?? '')
+        : (Get.arguments?.toString() ?? '');
     final controller = Get.put(ProductDetailController());
+    if (currentArgId.isNotEmpty && controller.productId != currentArgId) {
+      controller.updateProductIdAndFetch(currentArgId);
+    }
 
     return Scaffold(
       backgroundColor: Colors.grey.shade200,
@@ -239,10 +245,10 @@ class ProductDetailScreen extends StatelessWidget {
                       final existingQty = existingItem?.quantity ?? 0;
                       final selectedQty = controller.selectedQuantity.value;
                       if (existingQty + selectedQty > prod.stock) {
-                        CustomPopup.showToast('Stock Limit', 'Cannot add more. You have ' + existingQty.toString() + ' in cart and total stock is ' + prod.stock.toString(), isError: true);
+                        CustomPopup.showToast('Stock Limit', 'Cannot add more. You have $existingQty in cart and total stock is ${prod.stock}', isError: true);
                         return;
                       }
-                      cartCtrl.addToCart(prod.id, selectedQty, prod.name);
+                      cartCtrl.addToCart(prod.id, selectedQty, prod.name, prod.stock);
                     },
                     child: Container(
                       margin: const EdgeInsets.only(top: 8, bottom: 8, left: 8, right: 4),
@@ -277,11 +283,11 @@ class ProductDetailScreen extends StatelessWidget {
                       }
                       final selectedQty = controller.selectedQuantity.value;
                       if (selectedQty > prod.stock) {
-                        CustomPopup.showToast('Stock Limit', 'Only ' + prod.stock.toString() + ' items available in stock', isError: true);
+                        CustomPopup.showToast('Stock Limit', 'Only ${prod.stock} items available in stock', isError: true);
                         return;
                       }
                       final cartCtrl = Get.put(CartController());
-                      final success = await cartCtrl.buyNow(prod.id, selectedQty, prod.name);
+                      final success = await cartCtrl.buyNow(prod.id, selectedQty, prod.name, prod.stock);
                       if (success) {
                         await Future.delayed(const Duration(milliseconds: 300));
                         Get.toNamed('/checkout');
@@ -335,18 +341,22 @@ class ProductDetailScreen extends StatelessWidget {
                           height: 380,
                           width: double.infinity,
                           child: PageView.builder(
+                            controller: controller.imagePageController,
                             itemCount: images.length,
                             onPageChanged: (index) => controller.selectedImageIndex.value = index,
                             itemBuilder: (context, index) {
-                              return Obx(() => AnimatedSwitcher(
-                                duration: const Duration(milliseconds: 300),
+                              final imageUrl = images[index];
+                              return InteractiveViewer(
+                                maxScale: 3.0,
+                                minScale: 1.0,
                                 child: Image.network(
-                                  images[controller.selectedImageIndex.value],
-                                  key: ValueKey<int>(controller.selectedImageIndex.value),
+                                  imageUrl,
                                   fit: BoxFit.contain,
-                                  errorBuilder: (_, __, ___) => const Center(child: Icon(Icons.broken_image, size: 40, color: Colors.grey)),
+                                  errorBuilder: (_, __, ___) => const Center(
+                                    child: Icon(Icons.broken_image, size: 40, color: Colors.grey),
+                                  ),
                                 ),
-                              ));
+                              );
                             },
                           ),
                         ),
@@ -378,7 +388,7 @@ class ProductDetailScreen extends StatelessWidget {
                             return Obx(() {
                               final isSelected = controller.selectedImageIndex.value == index;
                               return GestureDetector(
-                                onTap: () => controller.selectedImageIndex.value = index,
+                                onTap: () => controller.selectImage(index),
                                 child: AnimatedContainer(
                                   duration: const Duration(milliseconds: 200),
                                   margin: const EdgeInsets.only(right: 10),
@@ -461,7 +471,7 @@ class ProductDetailScreen extends StatelessWidget {
                         Container(width: 1, height: 12, color: Colors.grey),
                         const SizedBox(width: 16),
                         Text(
-                          '${product.stock > 0 ? "In Stock" : "Out of Stock"} (${product.stock})',
+                          '${product.stock > 0 ? "In Stock" : "Out of Stock"} (${product.stock > 0 ? product.stock : 0})',
                           style: AppTextStyles.medium.copyWith(color: product.stock > 0 ? Colors.green : AppColors.error, fontSize: 12),
                         ),
                       ],
@@ -499,7 +509,7 @@ class ProductDetailScreen extends StatelessWidget {
                                 Obx(() => Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 16),
                                   child: Text(
-                                    '',
+                                    '${controller.selectedQuantity.value}',
                                     style: AppTextStyles.bold.copyWith(fontSize: 14, color: AppColors.darkText),
                                   ),
                                 )),

@@ -44,14 +44,14 @@ class FinancialReportController extends GetxController {
       errorMessage.value = '';
 
       final results = await Future.wait([
-        _repository.getFinancialReport().catchError((_) => null),
+        _repository.getSellerDeliveredStats().catchError((_) => null),
         _repository.getDashboardStats().catchError((_) => null),
         _repository.getSellerOrders().catchError((_) => null),
         _repository.getSellerDeliveredOrders().catchError((_) => null),
         _repository.getSellerRefundedOrders().catchError((_) => null),
       ]);
 
-      final financialRes = results[0];
+      final deliveredStatsRes = results[0];
       final statsRes = results[1];
       final ordersRes = results[2];
       final deliveredOrdersRes = results[3];
@@ -62,16 +62,7 @@ class FinancialReportController extends GetxController {
       double pending = 0.0;
       double refunds = 0.0;
 
-      // 1. Try parsing direct financial report response if JSON
-      if (financialRes is Map<String, dynamic>) {
-        final data = financialRes['data'] ?? financialRes;
-        if (data is Map) {
-          grossRevenue = _toDouble(data['totalRevenue'] ?? data['grossRevenue'] ?? data['totalEarnings']);
-          settled = _toDouble(data['settledPayout'] ?? data['paidAmount'] ?? data['settled']);
-          pending = _toDouble(data['pendingEscrow'] ?? data['unpaidAmount'] ?? data['pendingBalance']);
-          refunds = _toDouble(data['refundedAmount'] ?? data['refunds']);
-        }
-      }
+
 
       // 2. Supplement from stats if not set
       if (statsRes is Map<String, dynamic>) {
@@ -81,9 +72,41 @@ class FinancialReportController extends GetxController {
         if (pending == 0.0) pending = stats.unpaidAmount;
       }
 
-      // 3. Parse Dedicated Delivered Orders
+      // 3. Parse Dedicated Delivered Stats & Orders API
       final List<SellerOrderModel> directDelivered = [];
-      if (deliveredOrdersRes is Map) {
+
+      if (deliveredStatsRes is Map) {
+        final rawDeliveredStats = deliveredStatsRes['allDeliveredOrders'] ??
+            deliveredStatsRes['deliveredOrders'] ??
+            deliveredStatsRes['orders'] ??
+            deliveredStatsRes['data'];
+        if (rawDeliveredStats is List) {
+          for (final o in rawDeliveredStats) {
+            if (o is Map<String, dynamic>) {
+              directDelivered.add(SellerOrderModel.fromJson(o));
+            } else if (o is Map) {
+              directDelivered.add(SellerOrderModel.fromJson(Map<String, dynamic>.from(o)));
+            }
+          }
+        }
+
+        if (deliveredStatsRes['paidAmount'] != null) {
+          settled = _toDouble(deliveredStatsRes['paidAmount']);
+        }
+        if (deliveredStatsRes['unpaidAmount'] != null) {
+          pending = _toDouble(deliveredStatsRes['unpaidAmount']);
+        }
+        if (deliveredStatsRes['totalPayout'] != null) {
+          grossRevenue = _toDouble(deliveredStatsRes['totalPayout']);
+          if (settled == 0.0 && pending == 0.0) {
+            pending = grossRevenue;
+          }
+        } else if (deliveredStatsRes['totalPayment'] != null) {
+          grossRevenue = _toDouble(deliveredStatsRes['totalPayment']);
+        }
+      }
+
+      if (directDelivered.isEmpty && deliveredOrdersRes is Map) {
         final rawDelivered = deliveredOrdersRes['orders'] ??
             deliveredOrdersRes['deliveredOrders'] ??
             deliveredOrdersRes['data'] ??
@@ -154,51 +177,42 @@ class FinancialReportController extends GetxController {
         }
       }
 
-      // Combine orders ensuring delivered & refunded orders are represented
-      final existingIds = parsedOrders.map((o) => o.id).toSet();
-      for (final d in directDelivered) {
-        if (!existingIds.contains(d.id)) {
-          parsedOrders.add(d);
-          existingIds.add(d.id);
-        }
-      }
-      for (final r in directRefunded) {
-        if (!existingIds.contains(r.id)) {
-          parsedOrders.add(r);
-          existingIds.add(r.id);
-        }
+      // Only delivered orders (both paid and unpaid) shown in Financial Report
+      final List<SellerOrderModel> deliveredOnlyOrders = [];
+      if (directDelivered.isNotEmpty) {
+        deliveredOnlyOrders.addAll(directDelivered);
+      } else {
+        deliveredOnlyOrders.addAll(parsedOrders.where((o) => o.isCompleted));
       }
 
-      allFinancialOrders.assignAll(parsedOrders);
+      allFinancialOrders.assignAll(deliveredOnlyOrders);
 
-      // Calculate order totals
-      final deliveredList = directDelivered.isNotEmpty
-          ? directDelivered
-          : parsedOrders.where((o) => o.isCompleted).toList();
-      final pendingList = parsedOrders.where((o) => o.isPending || o.isProcessing).toList();
-      final cancelledList = directRefunded.isNotEmpty
-          ? directRefunded
-          : parsedOrders.where((o) => o.isCancelled).toList();
+      // Count of delivered orders separated into settled (paid) vs pending (unpaid)
+      final paidDeliveredList = deliveredOnlyOrders.where((o) => o.paymentStatus.toLowerCase() == 'paid' || o.paymentStatus.toLowerCase() == 'settled').toList();
+      final unpaidDeliveredList = deliveredOnlyOrders.where((o) => o.paymentStatus.toLowerCase() != 'paid' && o.paymentStatus.toLowerCase() != 'settled').toList();
 
-      totalDeliveredCount.value = deliveredList.length;
-      totalPendingCount.value = pendingList.length;
-      totalRefundedCount.value = cancelledList.length;
+      totalDeliveredCount.value = deliveredOnlyOrders.length;
+      totalPendingCount.value = unpaidDeliveredList.length;
+      totalRefundedCount.value = directRefunded.length;
 
-      final double calcDelivered = deliveredList.fold(0.0, (sum, o) => sum + o.totalAmount);
-      final double calcPending = pendingList.fold(0.0, (sum, o) => sum + o.totalAmount);
-      final double calcRefunded = cancelledList.fold(0.0, (sum, o) => sum + o.totalAmount);
+      final double calcPaid = paidDeliveredList.fold(0.0, (sum, o) => sum + o.totalAmount);
+      final double calcUnpaid = unpaidDeliveredList.fold(0.0, (sum, o) => sum + o.totalAmount);
+      final double calcRefunded = directRefunded.fold(0.0, (sum, o) => sum + o.totalAmount);
 
-      if (settled == 0.0 && calcDelivered > 0) settled = calcDelivered;
-      if (pending == 0.0 && calcPending > 0) pending = calcPending;
-      if (refunds == 0.0 && calcRefunded > 0) refunds = calcRefunded;
-      if (grossRevenue == 0.0) grossRevenue = settled + pending;
+      if (deliveredStatsRes == null) {
+        if (settled == 0.0 && calcPaid > 0) settled = calcPaid;
+        if (pending == 0.0 && calcUnpaid > 0) pending = calcUnpaid;
+        if (refunds == 0.0 && calcRefunded > 0) refunds = calcRefunded;
+        if (grossRevenue == 0.0) grossRevenue = settled + pending;
+      } else {
+        if (grossRevenue == 0.0) grossRevenue = settled + pending;
+      }
 
       totalRevenue.value = grossRevenue;
       settledPayout.value = settled;
       pendingEscrow.value = pending;
       refundedAmount.value = refunds;
-      // Net Profit estimated after platform commission (~5%)
-      netProfit.value = (settled * 0.95);
+      netProfit.value = settled;
 
       applyFilters();
     } catch (e) {
@@ -225,12 +239,10 @@ class FinancialReportController extends GetxController {
 
     List<SellerOrderModel> list = List.from(allFinancialOrders);
 
-    if (filter == 'Delivered') {
-      list = list.where((o) => o.isCompleted).toList();
-    } else if (filter == 'Pending') {
-      list = list.where((o) => o.isPending || o.isProcessing).toList();
-    } else if (filter == 'Cancelled') {
-      list = list.where((o) => o.isCancelled).toList();
+    if (filter == 'Paid' || filter == 'Settled') {
+      list = list.where((o) => o.paymentStatus.toLowerCase() == 'paid' || o.paymentStatus.toLowerCase() == 'settled').toList();
+    } else if (filter == 'Unpaid' || filter == 'Pending') {
+      list = list.where((o) => o.paymentStatus.toLowerCase() != 'paid' && o.paymentStatus.toLowerCase() != 'settled').toList();
     }
 
     if (query.isNotEmpty) {

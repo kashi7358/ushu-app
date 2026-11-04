@@ -35,6 +35,16 @@ class AppTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool isPhone = keyboardType == TextInputType.phone;
+    final List<TextInputFormatter>? effectiveFormatters = inputFormatters ??
+        (isPhone
+            ? [
+                FilteringTextInputFormatter.digitsOnly,
+                LengthLimitingTextInputFormatter(11),
+              ]
+            : null);
+    final int? effectiveMaxLength = maxLength ?? (isPhone ? 11 : null);
+
     return TextFormField(
       controller: controller,
       readOnly: readOnly,
@@ -43,8 +53,8 @@ class AppTextField extends StatelessWidget {
       keyboardType: keyboardType,
       validator: validator,
       maxLines: isPassword ? 1 : maxLines,
-      maxLength: maxLength,
-      inputFormatters: inputFormatters,
+      maxLength: effectiveMaxLength,
+      inputFormatters: effectiveFormatters,
       decoration: InputDecoration(
         hintText: hintText,
         prefixIcon: prefixIcon,

@@ -85,9 +85,10 @@ class ProductCard extends StatelessWidget {
                     right: 8,
                     child: GestureDetector(
                       onTap: () {
-                        if (Get.isRegistered<WishlistController>()) {
-                          Get.find<WishlistController>().toggleWishlist(product.id);
-                        }
+                        final wishlistCtrl = Get.isRegistered<WishlistController>()
+                            ? Get.find<WishlistController>()
+                            : Get.put(WishlistController());
+                        wishlistCtrl.toggleWishlist(product.id);
                       },
                       child: Container(
                         padding: const EdgeInsets.all(5),
@@ -99,10 +100,10 @@ class ProductCard extends StatelessWidget {
                           ],
                         ),
                         child: Obx(() {
-                          if (!Get.isRegistered<WishlistController>()) {
-                            return const Icon(Icons.favorite_border, size: 15, color: Colors.grey);
-                          }
-                          final isFav = Get.find<WishlistController>().isFavorite(product.id);
+                          final wishlistCtrl = Get.isRegistered<WishlistController>()
+                              ? Get.find<WishlistController>()
+                              : Get.put(WishlistController());
+                          final isFav = wishlistCtrl.isFavorite(product.id);
                           return Icon(
                             isFav ? Icons.favorite : Icons.favorite_border, 
                             size: 15, 

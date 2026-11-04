@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_text_styles.dart';
@@ -64,21 +65,28 @@ class CheckoutScreen extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Total Payment', style: AppTextStyles.medium.copyWith(fontSize: 12, color: AppColors.hintText)),
-                      const SizedBox(height: 2),
-                      Text(
-                        'Rs. $totalAmount',
-                        style: AppTextStyles.extraBold.copyWith(fontSize: 18, color: AppColors.primaryPurple),
-                      ),
-                    ],
+                  Expanded(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Total Payment', style: AppTextStyles.medium.copyWith(fontSize: 12, color: AppColors.hintText)),
+                        const SizedBox(height: 2),
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            'Rs. $totalAmount',
+                            style: AppTextStyles.extraBold.copyWith(fontSize: 18, color: AppColors.primaryPurple),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
+                  const SizedBox(width: 12),
                   SizedBox(
                     height: 48,
-                    width: 160,
+                    width: 150,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primaryPurple,
@@ -139,12 +147,16 @@ class CheckoutScreen extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  const Icon(Icons.location_on, color: AppColors.primaryPurple, size: 22),
-                  const SizedBox(width: 8),
-                  Text('Delivery Address', style: AppTextStyles.bold.copyWith(fontSize: 15, color: AppColors.darkText)),
-                ],
+              Expanded(
+                child: Row(
+                  children: [
+                    const Icon(Icons.location_on, color: AppColors.primaryPurple, size: 22),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text('Delivery Address', style: AppTextStyles.bold.copyWith(fontSize: 15, color: AppColors.darkText), overflow: TextOverflow.ellipsis),
+                    ),
+                  ],
+                ),
               ),
               InkWell(
                 onTap: () => controller.isEditingAddress.value = true,
@@ -173,9 +185,12 @@ class CheckoutScreen extends StatelessWidget {
             children: [
               const Icon(Icons.person_outline, size: 15, color: AppColors.hintText),
               const SizedBox(width: 6),
-              Text(
-                controller.fullNameController.text.isNotEmpty ? controller.fullNameController.text : 'Customer',
-                style: AppTextStyles.bold.copyWith(fontSize: 14, color: AppColors.darkText),
+              Flexible(
+                child: Text(
+                  controller.fullNameController.text.isNotEmpty ? controller.fullNameController.text : 'Customer',
+                  style: AppTextStyles.bold.copyWith(fontSize: 14, color: AppColors.darkText),
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
               const SizedBox(width: 14),
               const Icon(Icons.phone_outlined, size: 15, color: AppColors.hintText),
@@ -243,7 +258,17 @@ class CheckoutScreen extends StatelessWidget {
           const SizedBox(height: 14),
           _buildTextField(label: 'Full name', hint: 'John Doe', icon: Icons.person_outline, controller: controller.fullNameController),
           const SizedBox(height: 10),
-          _buildTextField(label: 'Phone', hint: '03001234567', icon: Icons.phone_outlined, controller: controller.phoneController, keyboardType: TextInputType.phone),
+          _buildTextField(
+            label: 'Phone',
+            hint: '03001234567',
+            icon: Icons.phone_outlined,
+            controller: controller.phoneController,
+            keyboardType: TextInputType.phone,
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly,
+              LengthLimitingTextInputFormatter(11),
+            ],
+          ),
           const SizedBox(height: 10),
           _buildTextField(label: 'Address line', hint: 'House, street, area', icon: Icons.home_outlined, controller: controller.addressLineController),
           const SizedBox(height: 10),
@@ -521,6 +546,7 @@ class CheckoutScreen extends StatelessWidget {
     required String hint,
     required IconData icon,
     TextInputType keyboardType = TextInputType.text,
+    List<TextInputFormatter>? inputFormatters,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -530,6 +556,7 @@ class CheckoutScreen extends StatelessWidget {
         TextField(
           controller: controller,
           keyboardType: keyboardType,
+          inputFormatters: inputFormatters,
           style: AppTextStyles.medium.copyWith(fontSize: 13),
           decoration: InputDecoration(
             hintText: hint,

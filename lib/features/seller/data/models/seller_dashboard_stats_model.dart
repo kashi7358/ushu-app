@@ -29,6 +29,36 @@ class SellerDashboardStatsModel {
 
   int get totalOrders => activeOrders + deliveredOrders + cancelledOrders + returnedOrders;
 
+  SellerDashboardStatsModel copyWith({
+    String? storeName,
+    String? sellerName,
+    String? sellerEmail,
+    int? totalProducts,
+    int? totalSalesProducts,
+    int? activeOrders,
+    int? deliveredOrders,
+    int? cancelledOrders,
+    int? returnedOrders,
+    double? earningAmount,
+    double? paidAmount,
+    double? unpaidAmount,
+  }) {
+    return SellerDashboardStatsModel(
+      storeName: storeName ?? this.storeName,
+      sellerName: sellerName ?? this.sellerName,
+      sellerEmail: sellerEmail ?? this.sellerEmail,
+      totalProducts: totalProducts ?? this.totalProducts,
+      totalSalesProducts: totalSalesProducts ?? this.totalSalesProducts,
+      activeOrders: activeOrders ?? this.activeOrders,
+      deliveredOrders: deliveredOrders ?? this.deliveredOrders,
+      cancelledOrders: cancelledOrders ?? this.cancelledOrders,
+      returnedOrders: returnedOrders ?? this.returnedOrders,
+      earningAmount: earningAmount ?? this.earningAmount,
+      paidAmount: paidAmount ?? this.paidAmount,
+      unpaidAmount: unpaidAmount ?? this.unpaidAmount,
+    );
+  }
+
   factory SellerDashboardStatsModel.fromJson(Map<String, dynamic> json) {
     int parseInt(dynamic val) {
       if (val == null) return 0;
@@ -46,10 +76,10 @@ class SellerDashboardStatsModel {
 
     // Try extracting from nested 'stats', 'data', or top-level
     final stats = (json['stats'] is Map)
-        ? json['stats'] as Map<String, dynamic>
+        ? Map<String, dynamic>.from(json['stats'] as Map)
         : (json['data'] is Map)
-            ? json['data'] as Map<String, dynamic>
-            : json;
+            ? Map<String, dynamic>.from(json['data'] as Map)
+            : Map<String, dynamic>.from(json);
 
     final double totalEarning = parseDouble(stats['earningAmount'] ?? stats['totalEarnings'] ?? stats['earnings'] ?? stats['revenue']);
     final double paid = parseDouble(stats['paidAmount'] ?? stats['paidEarnings'] ?? stats['paid'] ?? stats['payoutPaid'] ?? stats['settledEarnings']);

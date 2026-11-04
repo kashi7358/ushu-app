@@ -62,10 +62,22 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
 
   @override
   Future<ProductModel> getProductById(String id) async {
-    final response = await apiClient.dio.get('${ApiEndpoints.singleProduct}$id');
+    final response = await apiClient.dio.get(
+      '${ApiEndpoints.singleProduct}$id',
+      options: Options(validateStatus: (status) => true),
+    );
     final data = response.data;
-    if (data is Map<String, dynamic> && data['data'] != null) {
-      return ProductModel.fromJson(data['data']);
+    if (data is Map<String, dynamic>) {
+      dynamic prodJson = data['product'] ?? data['data'] ?? data['singleProduct'];
+      if (prodJson is Map<String, dynamic>) {
+        if (prodJson['product'] is Map<String, dynamic>) {
+          prodJson = prodJson['product'];
+        }
+        return ProductModel.fromJson(prodJson);
+      }
+      if (data.containsKey('_id') || data.containsKey('name') || data.containsKey('title')) {
+        return ProductModel.fromJson(data);
+      }
     }
     throw Exception('Product data not found');
   }

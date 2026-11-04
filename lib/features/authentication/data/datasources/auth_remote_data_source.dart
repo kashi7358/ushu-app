@@ -112,6 +112,12 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       ApiEndpoints.forgetPassword,
       data: {
         "Email": email,
+        "email": email,
+        "role": "Buyer",
+        "Role": "Buyer",
+        "portal": "buyer",
+        "portalType": "Buyer Portal",
+        "source": "buyer_app",
       }
     );
   }

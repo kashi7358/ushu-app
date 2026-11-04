@@ -49,6 +49,11 @@ class ReturnController extends GetxController {
     required String reason,
     required int quantity,
   }) async {
+    final cleanPhone = phone.replaceAll(RegExp(r'\D'), '');
+    if (cleanPhone.length != 11) {
+      CustomPopup.showToast('Validation Error', 'Phone number must be exactly 11 digits (e.g. 03001234567)', isError: true);
+      return;
+    }
     try {
       CustomPopup.showLoading('Submitting return request...');
       
@@ -73,11 +78,16 @@ class ReturnController extends GetxController {
       final response = await _apiClient.dio.post(
         ApiEndpoints.createReturnRequest,
         data: formData,
+        options: dio.Options(validateStatus: (status) => true),
       );
 
       CustomPopup.hideLoading();
 
-      if (response.statusCode == 200 || response.statusCode == 201 || (response.data != null && response.data['success'] == true)) {
+      final data = response.data;
+      final bool isSuccess = (response.statusCode == 200 || response.statusCode == 201) &&
+          (data == null || data['success'] != false);
+
+      if (isSuccess) {
         await SessionManager.markReturned(orderId);
         if (Get.isRegistered<OrderController>()) {
           Get.find<OrderController>().fetchMyOrders();
@@ -86,11 +96,19 @@ class ReturnController extends GetxController {
         Get.back(); // close the form
         fetchBuyerReturnRequests(); // Refresh list
       } else {
-        CustomPopup.showError('Error', 'Failed to submit return request');
+        final errorMsg = (data is Map && data['message'] != null)
+            ? data['message'].toString()
+            : (data is Map && data['error'] != null)
+                ? data['error'].toString()
+                : 'Failed to submit return request. Please verify your details.';
+        CustomPopup.showError('Return Failed', errorMsg);
       }
     } catch (e) {
       CustomPopup.hideLoading();
-      CustomPopup.showError('Error', 'An error occurred. Please try again.');
+      final err = (e is dio.DioException && e.response?.data is Map && e.response?.data['message'] != null)
+          ? e.response?.data['message'].toString()
+          : 'Could not submit return request. Please try again.';
+      CustomPopup.showError('Error', err ?? 'An error occurred. Please try again.');
       debugPrint('Error submitting return: $e');
     }
   }

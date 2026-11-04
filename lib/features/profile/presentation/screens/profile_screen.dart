@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:uhsu_buy/features/wishlist/presentation/controllers/wishlist_controller.dart';
 import '../../../../app/theme/app_colors.dart';
@@ -179,9 +180,10 @@ class ProfileScreen extends StatelessWidget {
                 child: Column(
                   children: [
                     Obx(() {
-                      final count = Get.isRegistered<WishlistController>() 
-                          ? Get.find<WishlistController>().wishlistedProductIds.length 
-                          : 0;
+                      final wishlistCtrl = Get.isRegistered<WishlistController>()
+                          ? Get.find<WishlistController>()
+                          : Get.put(WishlistController());
+                      final count = wishlistCtrl.wishlistedProductIds.length;
                       return _buildMenuTile(
                         Icons.favorite_border, 
                         'My Wishlist', 
@@ -486,7 +488,15 @@ class ProfileScreen extends StatelessWidget {
                   const SizedBox(height: 16),
                   TextField(controller: fullNameCtrl, decoration: const InputDecoration(labelText: 'Full Name', border: OutlineInputBorder())),
                   const SizedBox(height: 10),
-                  TextField(controller: phoneCtrl, keyboardType: TextInputType.phone, decoration: const InputDecoration(labelText: 'Phone', border: OutlineInputBorder())),
+                  TextField(
+                    controller: phoneCtrl,
+                    keyboardType: TextInputType.phone,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      LengthLimitingTextInputFormatter(11),
+                    ],
+                    decoration: const InputDecoration(labelText: 'Phone (11 digits)', border: OutlineInputBorder()),
+                  ),
                   const SizedBox(height: 10),
                   TextField(controller: addressCtrl, decoration: const InputDecoration(labelText: 'Address Line', border: OutlineInputBorder())),
                   const SizedBox(height: 10),
@@ -559,8 +569,14 @@ class ProfileScreen extends StatelessWidget {
                           return;
                         }
 
+                        final cleanPhone = phoneCtrl.text.replaceAll(RegExp(r'\D'), '');
+                        if (cleanPhone.length != 11) {
+                          CustomPopup.showToast('Validation Error', 'Phone number must be exactly 11 digits (e.g. 03001234567)', isError: true);
+                          return;
+                        }
+
                         final finalFullName = fullNameCtrl.text.trim();
-                        final finalPhone = phoneCtrl.text.trim();
+                        final finalPhone = cleanPhone;
                         final finalAddress = addressCtrl.text.trim();
                         final finalCity = cityCtrl.text.trim();
                         final finalProvince = provinceCtrl.text.trim();

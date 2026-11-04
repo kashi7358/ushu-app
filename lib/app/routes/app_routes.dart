@@ -52,7 +52,19 @@ class AppRoutes {
     }
 
     // 2. If a specific screen was recorded before app termination:
-    if (SessionManager.lastScreen != null && SessionManager.lastScreen!.isNotEmpty) {
+    // Avoid restoring to screens that require arguments (like product detail, checkout, etc.)
+    final unsafeInitialRoutes = [
+      productDetail,
+      store,
+      writeReview,
+      checkout,
+      returnRequest,
+      otp,
+      sellerOtp,
+    ];
+    if (SessionManager.lastScreen != null &&
+        SessionManager.lastScreen!.isNotEmpty &&
+        !unsafeInitialRoutes.contains(SessionManager.lastScreen)) {
       return SessionManager.lastScreen!;
     }
 

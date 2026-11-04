@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_text_styles.dart';
@@ -75,9 +76,13 @@ class SignupScreen extends StatelessWidget {
                   const SizedBox(height: 14),
                   AppTextField(
                     controller: controller.signupPhoneController,
-                    hintText: 'Phone number',
+                    hintText: 'Phone number (11 digits)',
                     keyboardType: TextInputType.phone,
                     validator: Validators.validatePhone,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      LengthLimitingTextInputFormatter(11),
+                    ],
                     prefixIcon: const Icon(Icons.phone_outlined, color: AppColors.primaryPurple, size: 22),
                   ),
                   const SizedBox(height: 14),

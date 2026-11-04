@@ -89,6 +89,23 @@ class ProductModel extends ProductEntity {
       rawReviews = (json['reviews'] as List).length;
     }
 
+    dynamic rawStockVal = json['stock'] ??
+        json['stockQuantity'] ??
+        json['Stock'] ??
+        json['countInStock'] ??
+        json['count_in_stock'] ??
+        json['quantity'] ??
+        json['inventory'] ??
+        json['totalStock'] ??
+        json['availableStock'] ??
+        json['qty'];
+
+    if (rawStockVal == null && json['inventory'] is Map) {
+      final inv = json['inventory'] as Map;
+      rawStockVal = inv['stock'] ?? inv['quantity'] ?? inv['countInStock'] ?? inv['availableStock'];
+    }
+    final int parsedStock = parseNum(rawStockVal).toInt();
+
     return ProductModel(
       id: json['_id']?.toString() ?? json['id']?.toString() ?? '',
       name: json['name']?.toString() ?? json['title']?.toString() ?? '',
@@ -99,7 +116,7 @@ class ProductModel extends ProductEntity {
       priceCurrency: json['priceCurrency']?.toString() ?? 'PKR',
       category: json['category']?.toString() ?? '',
       brand: json['brand']?.toString() ?? '',
-      stock: parseNum(json['stock']).toInt(),
+      stock: parsedStock < 0 ? 0 : parsedStock,
       image: mainImage,
       rating: parseNum(rawRating).toDouble(),
       totalReviews: rawReviews,

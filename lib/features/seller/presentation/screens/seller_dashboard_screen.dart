@@ -583,7 +583,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
                     Expanded(
                       child: _buildModernStatCard(
                         title: 'Delivered Orders',
-                        value: '${controller.stats.value.deliveredOrders}',
+                        value: '${controller.stats.value.deliveredOrders > 0 ? controller.stats.value.deliveredOrders : controller.deliveredOrders.length}',
                         icon: Icons.verified_rounded,
                         accentColor: const Color(0xFF10B981),
                         bgColor: const Color(0xFFECFDF5),
@@ -621,7 +621,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
                     Expanded(
                       child: _buildModernStatCard(
                         title: 'Returned Orders',
-                        value: '${controller.stats.value.returnedOrders}',
+                        value: '${controller.stats.value.returnedOrders > 0 ? controller.stats.value.returnedOrders : controller.refundedOrders.length}',
                         icon: Icons.assignment_return_rounded,
                         accentColor: const Color(0xFF06B6D4),
                         bgColor: const Color(0xFFECFEFF),
@@ -2402,12 +2402,19 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
           // Native Donut Chart for Mobile
           Obx(() {
             final active = controller.stats.value.activeOrders;
-            final delivered = controller.stats.value.deliveredOrders;
+            final delivered = controller.stats.value.deliveredOrders > 0
+                ? controller.stats.value.deliveredOrders
+                : controller.deliveredOrders.length;
             final cancelled = controller.stats.value.cancelledOrders;
-            final returned = controller.stats.value.returnedOrders;
-            final total = controller.stats.value.totalOrders > 0
-                ? controller.stats.value.totalOrders
-                : (controller.deliveredOrders.length + controller.refundedOrders.length);
+            final returned = controller.stats.value.returnedOrders > 0
+                ? controller.stats.value.returnedOrders
+                : controller.refundedOrders.length;
+            final sum = active + delivered + cancelled + returned;
+            final total = sum > 0
+                ? sum
+                : (controller.stats.value.totalOrders > 0
+                    ? controller.stats.value.totalOrders
+                    : (controller.deliveredOrders.length + controller.refundedOrders.length));
 
             return Center(
               child: SizedBox(
@@ -2456,65 +2463,76 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
           const SizedBox(height: 20),
 
           // Interactive Status Indicators Grid
-          Obx(() => Column(
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildStatusLegendChip(
-                      label: 'Active',
-                      count: controller.stats.value.activeOrders,
-                      color: const Color(0xFFF59E0B),
-                      onTap: () => Get.toNamed(
-                        AppRoutes.sellerOrders,
-                        arguments: {'tab': 'Processing'},
+          Obx(() {
+            final active = controller.stats.value.activeOrders;
+            final delivered = controller.stats.value.deliveredOrders > 0
+                ? controller.stats.value.deliveredOrders
+                : controller.deliveredOrders.length;
+            final cancelled = controller.stats.value.cancelledOrders;
+            final returned = controller.stats.value.returnedOrders > 0
+                ? controller.stats.value.returnedOrders
+                : controller.refundedOrders.length;
+
+            return Column(
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildStatusLegendChip(
+                        label: 'Active',
+                        count: active,
+                        color: const Color(0xFFF59E0B),
+                        onTap: () => Get.toNamed(
+                          AppRoutes.sellerOrders,
+                          arguments: {'tab': 'Processing'},
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: _buildStatusLegendChip(
-                      label: 'Delivered',
-                      count: controller.stats.value.deliveredOrders,
-                      color: const Color(0xFF10B981),
-                      onTap: () => Get.toNamed(
-                        AppRoutes.sellerOrders,
-                        arguments: {'tab': 'Completed'},
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: _buildStatusLegendChip(
+                        label: 'Delivered',
+                        count: delivered,
+                        color: const Color(0xFF10B981),
+                        onTap: () => Get.toNamed(
+                          AppRoutes.sellerOrders,
+                          arguments: {'tab': 'Completed'},
+                        ),
                       ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildStatusLegendChip(
-                      label: 'Cancelled',
-                      count: controller.stats.value.cancelledOrders,
-                      color: const Color(0xFFEF4444),
-                      onTap: () => Get.toNamed(
-                        AppRoutes.sellerOrders,
-                        arguments: {'tab': 'Cancelled'},
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildStatusLegendChip(
+                        label: 'Cancelled',
+                        count: cancelled,
+                        color: const Color(0xFFEF4444),
+                        onTap: () => Get.toNamed(
+                          AppRoutes.sellerOrders,
+                          arguments: {'tab': 'Cancelled'},
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: _buildStatusLegendChip(
-                      label: 'Returned',
-                      count: controller.stats.value.returnedOrders,
-                      color: const Color(0xFF06B6D4),
-                      onTap: () => Get.toNamed(
-                        AppRoutes.sellerOrders,
-                        arguments: {'tab': 'Cancelled'},
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: _buildStatusLegendChip(
+                        label: 'Returned',
+                        count: returned,
+                        color: const Color(0xFF06B6D4),
+                        onTap: () => Get.toNamed(
+                          AppRoutes.sellerOrders,
+                          arguments: {'tab': 'Cancelled'},
+                        ),
                       ),
                     ),
-                  ),
-                ],
-              ),
-            ],
-          )),
+                  ],
+                ),
+              ],
+            );
+          }),
         ],
       ),
     );
@@ -2627,62 +2645,169 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
           const SizedBox(height: 22),
 
           // Two Bar Pillars matching web dashboard screenshot
-          Obx(() => Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _buildPayoutBarColumn(
-                label: 'Paid',
-                amount: controller.paidAmount.value,
-                bottomColor: const Color(0xFFF59E0B),
-              ),
-              _buildPayoutBarColumn(
-                label: 'Unpaid',
-                amount: controller.unpaidAmount.value,
-                bottomColor: const Color(0xFF0F172A),
-              ),
-            ],
-          )),
+
+          Obx(() {
+
+            final double paid = controller.paidAmount.value;
+
+            final double unpaid = controller.unpaidAmount.value;
+
+            final double maxVal = paid > unpaid ? paid : unpaid;
+
+
+
+            final double paidHeight;
+
+            final double unpaidHeight;
+
+
+
+            if (maxVal > 0) {
+
+              paidHeight = (paid / maxVal) * 98.0 + 8.0;
+
+              unpaidHeight = (unpaid / maxVal) * 98.0 + 8.0;
+
+            } else {
+
+              paidHeight = 8.0;
+
+              unpaidHeight = 8.0;
+
+            }
+
+
+
+            return Row(
+
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+
+              children: [
+
+                _buildPayoutBarColumn(
+
+                  label: 'Paid',
+
+                  amount: paid,
+
+                  bottomColor: const Color(0xFFF59E0B),
+
+                  fillHeight: paidHeight,
+
+                ),
+
+                _buildPayoutBarColumn(
+
+                  label: 'Unpaid',
+
+                  amount: unpaid,
+
+                  bottomColor: const Color(0xFF0F172A),
+
+                  fillHeight: unpaidHeight,
+
+                ),
+
+              ],
+
+            );
+
+          }),
+
         ],
+
       ),
+
     );
+
   }
 
+
+
   Widget _buildPayoutBarColumn({
+
     required String label,
+
     required double amount,
+
     required Color bottomColor,
+
+    required double fillHeight,
+
   }) {
+
     final String formatted = 'Rs. ${amount.toStringAsFixed(amount.truncateToDouble() == amount ? 0 : 2)}';
 
+
+
     return Column(
+
       children: [
+
         Text(
+
           formatted,
+
           style: const TextStyle(
+
             fontSize: 13,
+
             fontWeight: FontWeight.w800,
+
             color: Color(0xFF0F172A),
+
           ),
+
         ),
+
         const SizedBox(height: 10),
+
         Container(
+
           width: 58,
+
           height: 118,
+
           decoration: BoxDecoration(
+
             color: const Color(0xFFF8FAFC),
+
             borderRadius: BorderRadius.circular(10),
+
             border: Border.all(color: const Color(0xFFE2E8F0)),
+
           ),
+
           alignment: Alignment.bottomCenter,
-          child: Container(
+
+          child: AnimatedContainer(
+
+            duration: const Duration(milliseconds: 500),
+
+            curve: Curves.easeOutCubic,
+
             width: double.infinity,
-            height: 7,
+
+            height: fillHeight,
+
             decoration: BoxDecoration(
+
               color: bottomColor,
-              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(9)),
+
+              borderRadius: BorderRadius.vertical(
+
+                bottom: const Radius.circular(9),
+
+                top: Radius.circular(fillHeight >= 110 ? 9 : 4),
+
+              ),
+
             ),
+
           ),
+
         ),
+
         const SizedBox(height: 9),
         Text(
           label,

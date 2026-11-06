@@ -155,7 +155,9 @@ class AuthController extends GetxController {
       );
 
       currentBuyerId = user.id;
-      await SessionManager.saveSession(user.id, user.email, user.fullName, token: user.token);
+      if (user.token != null && user.token!.isNotEmpty) {
+        await SessionManager.saveSession(user.id, user.email, user.fullName, token: user.token);
+      }
       Get.toNamed(AppRoutes.otp);
     } catch (e) {
       final error = ExceptionHandler.handle(e);

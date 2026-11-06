@@ -36,16 +36,27 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     
     final data = response.data;
     String? rootToken;
-    if (data is Map<String, dynamic> && data['token'] != null) {
-      rootToken = data['token'];
+    if (data is Map<String, dynamic>) {
+      rootToken = data['token']?.toString() ??
+          data['accessToken']?.toString() ??
+          data['authToken']?.toString() ??
+          data['jwt']?.toString();
+      if (rootToken == null && data['data'] is Map) {
+        final d = data['data'] as Map;
+        rootToken = d['token']?.toString() ?? d['accessToken']?.toString() ?? d['authToken']?.toString();
+      }
+      if (rootToken == null && data['buyer'] is Map) {
+        final b = data['buyer'] as Map;
+        rootToken = b['token']?.toString() ?? b['accessToken']?.toString();
+      }
     }
 
-    if (data is Map<String, dynamic> && data['data'] != null) {
-        return AuthUserModel.fromJson(data['data'], extraToken: rootToken);
-    } else if (data is Map<String, dynamic> && data['buyer'] != null) {
-        return AuthUserModel.fromJson(data['buyer'], extraToken: rootToken);
+    if (data is Map<String, dynamic> && data['data'] != null && data['data'] is Map<String, dynamic>) {
+      return AuthUserModel.fromJson(data['data'] as Map<String, dynamic>, extraToken: rootToken);
+    } else if (data is Map<String, dynamic> && data['buyer'] != null && data['buyer'] is Map<String, dynamic>) {
+      return AuthUserModel.fromJson(data['buyer'] as Map<String, dynamic>, extraToken: rootToken);
     }
-    return AuthUserModel.fromJson(data, extraToken: rootToken);
+    return AuthUserModel.fromJson(data is Map<String, dynamic> ? data : {}, extraToken: rootToken);
   }
 
   @override
@@ -73,16 +84,27 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     
     final data = response.data;
     String? rootToken;
-    if (data is Map<String, dynamic> && data['token'] != null) {
-      rootToken = data['token'];
+    if (data is Map<String, dynamic>) {
+      rootToken = data['token']?.toString() ??
+          data['accessToken']?.toString() ??
+          data['authToken']?.toString() ??
+          data['jwt']?.toString();
+      if (rootToken == null && data['data'] is Map) {
+        final d = data['data'] as Map;
+        rootToken = d['token']?.toString() ?? d['accessToken']?.toString() ?? d['authToken']?.toString();
+      }
+      if (rootToken == null && data['buyer'] is Map) {
+        final b = data['buyer'] as Map;
+        rootToken = b['token']?.toString() ?? b['accessToken']?.toString();
+      }
     }
 
-    if (data is Map<String, dynamic> && data['data'] != null) {
-        return AuthUserModel.fromJson(data['data'], extraToken: rootToken);
-    } else if (data is Map<String, dynamic> && data['buyer'] != null) {
-        return AuthUserModel.fromJson(data['buyer'], extraToken: rootToken);
+    if (data is Map<String, dynamic> && data['data'] != null && data['data'] is Map<String, dynamic>) {
+      return AuthUserModel.fromJson(data['data'] as Map<String, dynamic>, extraToken: rootToken);
+    } else if (data is Map<String, dynamic> && data['buyer'] != null && data['buyer'] is Map<String, dynamic>) {
+      return AuthUserModel.fromJson(data['buyer'] as Map<String, dynamic>, extraToken: rootToken);
     }
-    return AuthUserModel.fromJson(data, extraToken: rootToken);
+    return AuthUserModel.fromJson(data is Map<String, dynamic> ? data : {}, extraToken: rootToken);
   }
 
   @override

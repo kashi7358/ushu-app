@@ -19,8 +19,8 @@ class ContactUsController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    final userEmail = SessionManager.email;
-    if (userEmail != null) {
+    final userEmail = SessionManager.email ?? SessionManager.sellerEmail;
+    if (userEmail != null && userEmail.isNotEmpty) {
       emailController.text = userEmail;
     }
   }
@@ -52,6 +52,9 @@ class ContactUsController extends GetxController {
     String cleanToken = (rawToken ?? '').trim();
     if (cleanToken.toLowerCase().startsWith('bearer ')) {
       cleanToken = cleanToken.substring(7).trim();
+    }
+    if (cleanToken == 'null' || cleanToken == 'undefined') {
+      cleanToken = '';
     }
 
     if (cleanToken.isEmpty) {
@@ -96,7 +99,11 @@ class ContactUsController extends GetxController {
       );
 
       final data = response.data;
-      if (response.statusCode == 200 || response.statusCode == 201 || (data != null && data['success'] == true)) {
+      final bool isSuccess = response.statusCode == 200 ||
+          response.statusCode == 201 ||
+          (data != null && (data['success'] == true || data['status'] == 'success'));
+
+      if (isSuccess) {
         subjectController.clear();
         messageController.clear();
         CustomPopup.showSuccess(
@@ -104,16 +111,19 @@ class ContactUsController extends GetxController {
           'Thank you for reaching out to us. Your message has been sent successfully, and our team will get back to you shortly.',
         );
       } else if (response.statusCode == 401 ||
-          (data != null && data['message'] != null && data['message'].toString().toLowerCase().contains('unauthorized'))) {
-        await SessionManager.clearSession();
-        CustomPopup.showError(
-          'Session Expired',
-          'Your login session has expired on the server. Please sign in again to submit your support message.',
+          (data != null &&
+              data['message'] != null &&
+              data['message'].toString().toLowerCase().contains('unauthorized'))) {
+        CustomPopup.showWarning(
+          'Authentication Required',
+          'Could not verify your login session. Please sign in again to submit your support message.',
           buttonText: 'Sign In',
-          onConfirm: () => Get.off(() => const LoginScreen()),
+          onConfirm: () => Get.to(() => const LoginScreen()),
         );
       } else {
-        final errorMsg = data != null && data['message'] != null ? data['message'].toString() : 'Failed to send message';
+        final errorMsg = data != null && data['message'] != null
+            ? data['message'].toString()
+            : 'Failed to send message. Please try again.';
         CustomPopup.showToast('Failed', errorMsg, isError: true);
       }
     } catch (e) {

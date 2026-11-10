@@ -61,7 +61,7 @@ class ApiEndpoints {
 
 
   // ============================================
-  //                SELLER APIS
+        //     SELLER APIS
   // ============================================
 
   // Authentification

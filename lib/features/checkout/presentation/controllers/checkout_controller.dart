@@ -131,7 +131,20 @@ class CheckoutController extends GetxController {
       // Fallback to local cart selection if backend returned no selected items
       if (items.isEmpty) {
         final activeCart = cartController.cartItems.where((i) => i.isSelected).toList();
-        items = activeCart.isNotEmpty ? activeCart : cartController.cartItems.toList();
+        if (activeCart.isNotEmpty) {
+          items = activeCart;
+        } else if (cartController.cartItems.isNotEmpty) {
+          items = cartController.cartItems.map((e) => e.copyWith(isSelected: true)).toList();
+          for (var item in items) {
+            if (item.id.isNotEmpty) {
+              _apiClient.dio.patch(
+                ApiEndpoints.selectCartItem,
+                data: {"itemId": item.id},
+                options: Options(validateStatus: (status) => true),
+              );
+            }
+          }
+        }
       }
 
       selectedItems.value = items;
@@ -242,26 +255,140 @@ class CheckoutController extends GetxController {
 
     try {
       isLoading.value = true;
-      final response = await _apiClient.dio.post(
-        ApiEndpoints.checkout,
-        data: {
-          'address': {
-            'fullName': finalFullName,
-            'phone': finalPhone,
-            'addressline1': finalAddress,
-            'addressline2': finalAddress,
-            'city': finalCity,
-            'province': finalProvince,
-            'country': finalCountry,
-            'postalcode': finalPostalCode,
+
+      // 1. Ensure all selected items are marked as selected on backend before placing order
+      for (var item in selectedItems) {
+        if (!item.isSelected && item.id.isNotEmpty) {
+          try {
+            await _apiClient.dio.patch(
+              ApiEndpoints.selectCartItem,
+              data: {"itemId": item.id},
+              options: Options(validateStatus: (status) => true),
+            );
+          } catch (_) {}
+        }
+      }
+
+      Map<String, dynamic> buildPayload() {
+        final payMethod = selectedPaymentMethod.value.isNotEmpty ? selectedPaymentMethod.value : 'COD';
+        final addressMap = {
+          'fullName': finalFullName,
+          'name': finalFullName,
+          'phone': finalPhone,
+          'phoneNumber': finalPhone,
+          'addressline1': finalAddress,
+          'addressline2': finalAddress,
+          'addressLine': finalAddress,
+          'addressLine1': finalAddress,
+          'address': finalAddress,
+          'street': finalAddress,
+          'city': finalCity,
+          'province': finalProvince,
+          'state': finalProvince,
+          'country': finalCountry,
+          'postalcode': finalPostalCode,
+          'postalCode': finalPostalCode,
+          if (selectedAddressId != null && selectedAddressId!.isNotEmpty) ...{
+            '_id': selectedAddressId,
+            'id': selectedAddressId,
           },
-          'paymentMethod': selectedPaymentMethod.value.isNotEmpty ? selectedPaymentMethod.value : 'COD',
-        },
+        };
+
+        return {
+          'address': addressMap,
+          'shippingAddress': addressMap,
+          if (selectedAddressId != null && selectedAddressId!.isNotEmpty) ...{
+            'addressId': selectedAddressId,
+            'shippingAddressId': selectedAddressId,
+          },
+          'fullName': finalFullName,
+          'phone': finalPhone,
+          'addressLine': finalAddress,
+          'address': finalAddress,
+          'city': finalCity,
+          'province': finalProvince,
+          'country': finalCountry,
+          'postalCode': finalPostalCode,
+          'paymentMethod': payMethod,
+          'payment_method': payMethod,
+          'items': selectedItems.map((e) => {
+            'productId': e.productId,
+            'id': e.id,
+            '_id': e.id,
+            'quantity': e.quantity,
+            'price': e.price,
+            'name': e.name,
+            'image': e.image,
+          }).toList(),
+          'orderItems': selectedItems.map((e) => {
+            'productId': e.productId,
+            'id': e.id,
+            '_id': e.id,
+            'quantity': e.quantity,
+            'price': e.price,
+            'name': e.name,
+            'image': e.image,
+          }).toList(),
+        };
+      }
+
+      var response = await _apiClient.dio.post(
+        ApiEndpoints.checkout,
+        data: buildPayload(),
         options: Options(validateStatus: (status) => true),
       );
 
-      final data = response.data;
-      if (data != null && (data['success'] == true || response.statusCode == 200 || response.statusCode == 201)) {
+      var data = response.data;
+      bool isSuccess = data != null &&
+          (data['success'] == true ||
+           data['status'] == 'success' ||
+           data['order'] != null ||
+           response.statusCode == 200 ||
+           response.statusCode == 201);
+
+      // If backend responded with failure, attempt re-selecting all cart items and retry once
+      if (!isSuccess) {
+        for (var item in selectedItems) {
+          if (item.id.isNotEmpty) {
+            try {
+              await _apiClient.dio.patch(
+                ApiEndpoints.selectCartItem,
+                data: {"itemId": item.id},
+                options: Options(validateStatus: (status) => true),
+              );
+            } catch (_) {}
+          }
+        }
+        await Future.delayed(const Duration(milliseconds: 350));
+        response = await _apiClient.dio.post(
+          ApiEndpoints.checkout,
+          data: buildPayload(),
+          options: Options(validateStatus: (status) => true),
+        );
+        data = response.data;
+        isSuccess = data != null &&
+            (data['success'] == true ||
+             data['status'] == 'success' ||
+             data['order'] != null ||
+             response.statusCode == 200 ||
+             response.statusCode == 201);
+      }
+
+      // Verification check: verify if the order was created on backend
+      final orderCtrl = Get.isRegistered<OrderController>()
+          ? Get.find<OrderController>()
+          : Get.put(OrderController());
+      final countBefore = orderCtrl.orders.length;
+      if (!isSuccess) {
+        try {
+          await orderCtrl.fetchMyOrders();
+          if (orderCtrl.orders.length > countBefore) {
+            isSuccess = true;
+          }
+        } catch (_) {}
+      }
+
+      if (isSuccess) {
         // Silently save address to backend profile so it's available on web/other devices
         try {
           await _apiClient.dio.post(
@@ -295,9 +422,6 @@ class CheckoutController extends GetxController {
         CustomPopup.showFastLottie('assets/lotties/done.json');
         cartController.fetchCart();
         
-        final orderCtrl = Get.isRegistered<OrderController>() 
-            ? Get.find<OrderController>() 
-            : Get.put(OrderController());
         await orderCtrl.fetchMyOrders();
 
         Get.offNamed('/my-orders');

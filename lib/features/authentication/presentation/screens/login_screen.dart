@@ -64,7 +64,7 @@ class LoginScreen extends StatelessWidget {
                     controller: controller.loginPasswordController,
                     hintText: 'Password',
                     isPassword: !controller.isPasswordVisible.value,
-                    validator: Validators.validatePassword,
+                    validator: Validators.validateLoginPassword,
                     prefixIcon: const Icon(Icons.lock_outline, color: AppColors.primaryPurple, size: 22),
                     suffixIcon: IconButton(
                       icon: Icon(

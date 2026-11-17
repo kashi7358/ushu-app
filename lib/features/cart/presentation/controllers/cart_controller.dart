@@ -12,7 +12,7 @@ import '../../data/models/cart_item_model.dart';
 class CartController extends GetxController {
   final ApiClient _apiClient = ApiClient();
   final RxBool isAddingToCart = false.obs;
-  final RxBool isLoadingCart = false.obs;
+  final RxBool isLoadingCart = true.obs;
   final RxBool isNoInternet = false.obs;
 
   final RxList<CartItemModel> cartItems = <CartItemModel>[].obs;
@@ -186,13 +186,14 @@ class CartController extends GetxController {
           if (!targetItem.isSelected) {
             cartItems[index] = targetItem.copyWith(isSelected: true);
             cartItems.refresh();
+            try {
+              await _apiClient.dio.patch(
+                ApiEndpoints.selectCartItem,
+                data: {"itemId": targetItem.id},
+                options: Options(validateStatus: (status) => true),
+              );
+            } catch (_) {}
           }
-          // Fire select call asynchronously so navigation is not blocked
-          _apiClient.dio.patch(
-            ApiEndpoints.selectCartItem,
-            data: {"itemId": targetItem.id},
-            options: Options(validateStatus: (status) => true),
-          );
         }
         return true;
       } else {

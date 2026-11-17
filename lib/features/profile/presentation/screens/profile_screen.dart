@@ -213,7 +213,7 @@ class ProfileScreen extends StatelessWidget {
                   children: [
                     _buildMenuTile(Icons.location_on_outlined, 'Shipping Addresses', '', onTap: () => _showAddAddressSheet(context)),
                     _buildDivider(),
-                    _buildMenuTile(Icons.credit_card_outlined, 'Payment Methods', ''),
+                    _buildMenuTile(Icons.credit_card_outlined, 'Cash on Delivery', ''),
                     _buildDivider(),
                     _buildMenuTile(
                       Icons.storefront_outlined,

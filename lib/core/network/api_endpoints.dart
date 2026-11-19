@@ -13,6 +13,7 @@ class ApiEndpoints {
   static const String resendOtp = '$baseUrl/buyer/resend-otp';
   static const String forgetPassword = '$baseUrl/buyer/forget-password';
   static const String resetPassword = '$baseUrl/buyer/reset';
+  static const String deleteBuyerAccount = '$baseUrl/buyer/delete-account';
 
   // Home apis
   static const String allHomepageProducts = '$baseUrl/product/all-homepage';
@@ -70,6 +71,7 @@ class ApiEndpoints {
   static const String resendSellerOtp = '$baseUrl/seller/resend-otp';
   static const String loginSeller = '$baseUrl/seller/login';
   static const String sellerForgetPassword = '$baseUrl/seller/forget-password';
+  static const String deleteSellerAccount = '$baseUrl/seller/delete-account';
 
    // Create Store
   static const String createStore = '$domain/store/create';

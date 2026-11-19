@@ -1,7 +1,9 @@
+import 'package:dio/dio.dart';
 import 'package:get/get.dart';
 import '../../../../app/routes/app_routes.dart';
 import '../../../../core/errors/exception_handler.dart';
 import '../../../../core/network/api_client.dart';
+import '../../../../core/network/api_endpoints.dart';
 import '../../../../core/utils/session_manager.dart';
 import '../../../../core/utils/custom_popup.dart';
 import '../../data/datasources/seller_remote_data_source.dart';
@@ -345,6 +347,52 @@ class SellerDashboardController extends GetxController {
       await SessionManager.clearSellerSession();
       await SessionManager.setLastScreen(null);
       Get.offAllNamed(AppRoutes.sellerLogin);
+    }
+  }
+
+  Future<void> deleteSellerAccount() async {
+    final String? password = await CustomPopup.showDeleteAccountDialog(
+      title: 'Delete Seller Account',
+      message: 'Are you sure you want to permanently delete your Seller Account and Store? All your store products, active listings, and sales data will be wiped out.',
+    );
+
+    if (password == null || password.trim().isEmpty) {
+      return;
+    }
+
+    CustomPopup.showLoading('Deleting seller account...');
+    try {
+      final response = await ApiClient().dio.delete(
+        ApiEndpoints.deleteSellerAccount,
+        data: {
+          'Password': password.trim(),
+        },
+      );
+
+      CustomPopup.hideLoading();
+
+      final data = response.data;
+      if (data is Map && data['success'] == false) {
+        CustomPopup.showToast('Error', data['message']?.toString() ?? 'Failed to delete seller account', isError: true);
+        return;
+      }
+
+      CustomPopup.showToast('Success', data is Map ? (data['message']?.toString() ?? 'Seller account deleted successfully') : 'Seller account deleted successfully');
+
+      await SessionManager.clearSellerSession();
+      await SessionManager.setLastScreen(null);
+      Get.offAllNamed(AppRoutes.sellerLogin);
+    } catch (e) {
+      CustomPopup.hideLoading();
+      String errorMsg = 'Failed to delete seller account. Please verify your password and try again.';
+      if (e is DioException) {
+        if (e.response?.data is Map && e.response?.data['message'] != null) {
+          errorMsg = e.response!.data['message'].toString();
+        } else if (e.response?.statusCode == 400 || e.response?.statusCode == 401) {
+          errorMsg = 'Incorrect password. Please enter your correct password.';
+        }
+      }
+      CustomPopup.showToast('Error', errorMsg, isError: true);
     }
   }
 }

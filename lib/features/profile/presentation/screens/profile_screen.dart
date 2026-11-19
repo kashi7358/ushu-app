@@ -274,26 +274,35 @@ class ProfileScreen extends StatelessWidget {
                       onTap: () => Get.toNamed('/about-us'),
                     ),
                     _buildDivider(),
-                    SessionManager.isLoggedIn 
-                      ? _buildMenuTile(
-                          Icons.logout_outlined, 
-                          'Logout', 
-                          '', 
-                          color: AppColors.error,
-                          onTap: () async {
-                            final confirm = await CustomPopup.showLogoutConfirmation();
-                            if (confirm ?? false) {
-                              controller.logout();
-                            }
+                    if (SessionManager.isLoggedIn) ...[
+                      _buildMenuTile(
+                        Icons.delete_forever_outlined,
+                        'Delete Account',
+                        '',
+                        color: AppColors.error,
+                        onTap: () => controller.deleteAccount(),
+                      ),
+                      _buildDivider(),
+                      _buildMenuTile(
+                        Icons.logout_outlined, 
+                        'Logout', 
+                        '', 
+                        color: AppColors.error,
+                        onTap: () async {
+                          final confirm = await CustomPopup.showLogoutConfirmation();
+                          if (confirm ?? false) {
+                            controller.logout();
                           }
-                        )
-                      : _buildMenuTile(
-                          Icons.login_outlined,
-                          'Login / Register',
-                          '',
-                          color: AppColors.primaryPurple,
-                          onTap: () => Get.toNamed('/login'),
-                        ),
+                        },
+                      ),
+                    ] else
+                      _buildMenuTile(
+                        Icons.login_outlined,
+                        'Login / Register',
+                        '',
+                        color: AppColors.primaryPurple,
+                        onTap: () => Get.toNamed('/login'),
+                      ),
                   ],
                 ),
               ),

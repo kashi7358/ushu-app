@@ -1164,6 +1164,53 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
                       if (_scaffoldKey.currentState?.isDrawerOpen ?? false) {
                         Navigator.of(context).pop();
                       }
+                      controller.deleteSellerAccount();
+                    },
+                    borderRadius: BorderRadius.circular(14),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFEF2F2),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: const Color(0xFFFEE2E2)),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 34,
+                            height: 34,
+                            decoration: BoxDecoration(
+                              color: Colors.red.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Icon(Icons.delete_forever_rounded, color: Colors.red, size: 18),
+                          ),
+                          const SizedBox(width: 12),
+                          const Expanded(
+                            child: Text(
+                              'Delete Seller Account',
+                              style: TextStyle(
+                                color: Color(0xFFDC2626),
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                          const Icon(
+                            Icons.chevron_right_rounded,
+                            color: Color(0xFFF87171),
+                            size: 18,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  InkWell(
+                    onTap: () {
+                      if (_scaffoldKey.currentState?.isDrawerOpen ?? false) {
+                        Navigator.of(context).pop();
+                      }
                       controller.logout();
                     },
                     borderRadius: BorderRadius.circular(14),

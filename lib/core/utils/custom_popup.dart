@@ -506,6 +506,230 @@ class CustomPopup {
     );
   }
 
+  static Future<String?> showDeleteAccountDialog({
+    required String title,
+    required String message,
+  }) {
+    final passwordController = TextEditingController();
+    final isPasswordVisible = false.obs;
+    final errorMessage = ''.obs;
+
+    return Get.dialog<String?>(
+      Builder(builder: (context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
+          elevation: 0,
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+          child: TweenAnimationBuilder<double>(
+            duration: const Duration(milliseconds: 360),
+            curve: Curves.easeOutBack,
+            tween: Tween<double>(begin: 0.65, end: 1.0),
+            builder: (context, scale, child) {
+              return Transform.scale(scale: scale, child: child);
+            },
+            child: Stack(
+              clipBehavior: Clip.none,
+              alignment: Alignment.topCenter,
+              children: [
+                // Main Card
+                Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.only(top: 38),
+                  padding: const EdgeInsets.fromLTRB(22, 52, 22, 22),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(26),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF0F172A).withValues(alpha: 0.14),
+                        blurRadius: 36,
+                        offset: const Offset(0, 14),
+                      ),
+                    ],
+                  ),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          title,
+                          style: AppTextStyles.extraBold.copyWith(
+                            fontSize: 19.5,
+                            color: const Color(0xFF0F172A),
+                            letterSpacing: -0.3,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          message,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: Color(0xFF64748B),
+                            height: 1.45,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 18),
+                        Obx(() => Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                TextField(
+                                  controller: passwordController,
+                                  obscureText: !isPasswordVisible.value,
+                                  decoration: InputDecoration(
+                                    hintText: 'Enter your password to confirm',
+                                    hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+                                    prefixIcon: const Icon(Icons.lock_outline_rounded, size: 20, color: Color(0xFF64748B)),
+                                    suffixIcon: IconButton(
+                                      icon: Icon(
+                                        isPasswordVisible.value ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                                        size: 20,
+                                        color: const Color(0xFF64748B),
+                                      ),
+                                      onPressed: () => isPasswordVisible.toggle(),
+                                    ),
+                                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                    filled: true,
+                                    fillColor: const Color(0xFFF8FAFC),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(14),
+                                      borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(14),
+                                      borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(14),
+                                      borderSide: const BorderSide(color: Color(0xFFEF4444), width: 1.5),
+                                    ),
+                                  ),
+                                  onChanged: (_) {
+                                    if (errorMessage.isNotEmpty) errorMessage.value = '';
+                                  },
+                                ),
+                                if (errorMessage.isNotEmpty) ...[
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    errorMessage.value,
+                                    style: const TextStyle(color: Color(0xFFEF4444), fontSize: 12, fontWeight: FontWeight.w600),
+                                  ),
+                                ],
+                              ],
+                            )),
+                        const SizedBox(height: 22),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: SizedBox(
+                                height: 48,
+                                child: OutlinedButton(
+                                  onPressed: () => Get.back(result: null),
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: const Color(0xFF475569),
+                                    side: const BorderSide(color: Color(0xFFE2E8F0)),
+                                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(14),
+                                    ),
+                                  ),
+                                  child: const Text(
+                                    'Cancel',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: SizedBox(
+                                height: 48,
+                                child: ElevatedButton(
+                                  onPressed: () {
+                                    final pwd = passwordController.text.trim();
+                                    if (pwd.isEmpty) {
+                                      errorMessage.value = 'Password is required to delete account';
+                                      return;
+                                    }
+                                    Get.back(result: pwd);
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFFEF4444),
+                                    foregroundColor: Colors.white,
+                                    elevation: 0,
+                                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(14),
+                                    ),
+                                  ),
+                                  child: const Text(
+                                    'Delete',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w700,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                // Floating Icon Avatar
+                Positioned(
+                  top: 0,
+                  child: Container(
+                    width: 78,
+                    height: 78,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white,
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFFEF4444).withValues(alpha: 0.35),
+                          blurRadius: 22,
+                          offset: const Offset(0, 8),
+                        ),
+                      ],
+                    ),
+                    padding: const EdgeInsets.all(4.5),
+                    child: Container(
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(
+                          colors: [
+                            Color(0xFFEF4444),
+                            Color(0xFFDC2626),
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                      ),
+                      child: const Icon(Icons.delete_forever_rounded, color: Colors.white, size: 36),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      }),
+      barrierDismissible: true,
+      barrierColor: Colors.black.withValues(alpha: 0.45),
+    );
+  }
+
   static Future<bool?> showExitConfirmation() {
     return _showProConfirmDialog(
       title: 'Exit Application?',

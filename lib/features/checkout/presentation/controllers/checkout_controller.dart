@@ -295,7 +295,6 @@ class CheckoutController extends GetxController {
         };
 
         return {
-          'address': addressMap,
           'shippingAddress': addressMap,
           if (selectedAddressId != null && selectedAddressId!.isNotEmpty) ...{
             'addressId': selectedAddressId,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import '../../../../app/routes/app_routes.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_button.dart';
@@ -51,14 +52,26 @@ class SignupScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Join USHU BUY as a Customer',
+                    'Join USHU as a Customer',
                     style: AppTextStyles.medium.copyWith(
                       fontSize: 13,
                       color: AppColors.hintText,
                     ),
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 20),
+
+                  // Buyer / Seller Role Toggle Switcher
+                  _buildRoleToggle(
+                    isBuyer: true,
+                    onRoleChanged: (isBuyerSelected) {
+                      if (!isBuyerSelected) {
+                        Get.offNamed(AppRoutes.sellerRegister);
+                      }
+                    },
+                  ),
+
+                  const SizedBox(height: 8),
                   AppTextField(
                     controller: controller.signupNameController,
                     hintText: 'Full Name',
@@ -190,6 +203,107 @@ class SignupScreen extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildRoleToggle({required bool isBuyer, required Function(bool) onRoleChanged}) {
+    return Container(
+      height: 48,
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF1F5F9),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: GestureDetector(
+              onTap: () => onRoleChanged(true),
+              behavior: HitTestBehavior.opaque,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                decoration: BoxDecoration(
+                  color: isBuyer ? Colors.white : Colors.transparent,
+                  borderRadius: BorderRadius.circular(10),
+                  boxShadow: isBuyer
+                      ? [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.06),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ]
+                      : [],
+                ),
+                child: Center(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.shopping_bag_outlined,
+                        size: 18,
+                        color: isBuyer ? AppColors.primaryPurple : const Color(0xFF64748B),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Buyer Sign Up',
+                        style: TextStyle(
+                          fontSize: 13.5,
+                          fontWeight: isBuyer ? FontWeight.w700 : FontWeight.w500,
+                          color: isBuyer ? AppColors.primaryPurple : const Color(0xFF64748B),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Expanded(
+            child: GestureDetector(
+              onTap: () => onRoleChanged(false),
+              behavior: HitTestBehavior.opaque,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                decoration: BoxDecoration(
+                  color: !isBuyer ? Colors.white : Colors.transparent,
+                  borderRadius: BorderRadius.circular(10),
+                  boxShadow: !isBuyer
+                      ? [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.06),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ]
+                      : [],
+                ),
+                child: Center(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.storefront_outlined,
+                        size: 18,
+                        color: !isBuyer ? AppColors.primaryPurple : const Color(0xFF64748B),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Seller Sign Up',
+                        style: TextStyle(
+                          fontSize: 13.5,
+                          fontWeight: !isBuyer ? FontWeight.w700 : FontWeight.w500,
+                          color: !isBuyer ? AppColors.primaryPurple : const Color(0xFF64748B),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

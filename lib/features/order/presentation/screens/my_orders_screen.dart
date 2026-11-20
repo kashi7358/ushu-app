@@ -6,6 +6,7 @@ import '../../../../core/widgets/app_button.dart';
 import '../controllers/order_controller.dart';
 import '../../../../core/widgets/no_internet_widget.dart';
 import '../../../../core/utils/session_manager.dart';
+import '../../../../core/widgets/report_modal_bottom_sheet.dart';
 import '../../data/models/order_model.dart';
 
 class MyOrdersScreen extends StatelessWidget {
@@ -225,9 +226,38 @@ class MyOrdersScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 8),
-                Text(
-                  order.status.replaceAll('_', ' ').replaceAll('-', ' ').toUpperCase(),
-                  style: AppTextStyles.bold.copyWith(fontSize: 12, color: statusColor),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      order.status.replaceAll('_', ' ').replaceAll('-', ' ').toUpperCase(),
+                      style: AppTextStyles.bold.copyWith(fontSize: 12, color: statusColor),
+                    ),
+                    const SizedBox(width: 8),
+                    InkWell(
+                      onTap: () {
+                        final targetSellerId = order.sellerId.isNotEmpty
+                            ? order.sellerId
+                            : (order.storeId.isNotEmpty ? order.storeId : order.id);
+                        ReportModalBottomSheet.show(
+                          context: context,
+                          targetType: 'Seller',
+                          targetId: targetSellerId,
+                          targetTitle: 'Seller for Order #${order.id.length >= 8 ? order.id.substring(0, 8).toUpperCase() : order.id}',
+                          initialReason: 'item not delivered',
+                        );
+                      },
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade100,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(Icons.flag_outlined, size: 15, color: Colors.grey.shade600),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

@@ -33,6 +33,8 @@ class ProfileController extends GetxController {
 
   Future<void> logout() async {
     await SessionManager.clearSession();
+    await SessionManager.clearSellerSession();
+    await SessionManager.setLastScreen(null);
     // Reset in-memory state to protect privacy between accounts
     if (Get.isRegistered<CartController>()) {
       Get.find<CartController>().cartItems.clear();

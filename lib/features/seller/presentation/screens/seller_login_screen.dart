@@ -9,6 +9,7 @@ import '../../../../core/widgets/app_text_field.dart';
 import '../controllers/seller_login_controller.dart';
 
 import '../../../../core/utils/session_manager.dart';
+import '../../../../core/utils/custom_popup.dart';
 import '../../../../app/routes/app_routes.dart';
 
 class SellerLoginScreen extends StatelessWidget {
@@ -19,26 +20,27 @@ class SellerLoginScreen extends StatelessWidget {
     final controller = Get.put(SellerLoginController());
 
     return PopScope(
-      canPop: true,
-      onPopInvokedWithResult: (didPop, _) {
-        SessionManager.setLastScreen(null);
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (didPop) return;
+        final confirm = await CustomPopup.showSwitchToBuyerConfirmation();
+        if (confirm ?? false) {
+          SessionManager.setLastScreen(null);
+          if (context.mounted) {
+            if (Navigator.of(context).canPop()) {
+              Get.back();
+            } else {
+              Get.offAllNamed(AppRoutes.mainLayout);
+            }
+          }
+        }
       },
       child: Scaffold(
         backgroundColor: Colors.white,
         appBar: AppBar(
           backgroundColor: Colors.transparent,
           elevation: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: AppColors.darkText),
-            onPressed: () {
-              SessionManager.setLastScreen(null);
-              if (Navigator.of(context).canPop()) {
-                Get.back();
-              } else {
-                Get.offAllNamed(AppRoutes.mainLayout);
-              }
-            },
-          ),
+          automaticallyImplyLeading: false,
           title: Text(
             'Seller Center',
             style: AppTextStyles.bold.copyWith(color: AppColors.darkText, fontSize: 17),
@@ -76,7 +78,19 @@ class SellerLoginScreen extends StatelessWidget {
                     ),
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 28),
+                  const SizedBox(height: 20),
+
+                  // Buyer / Seller Role Toggle Switcher
+                  _buildRoleToggle(
+                    isBuyer: false,
+                    onRoleChanged: (isBuyerSelected) {
+                      if (isBuyerSelected) {
+                        Get.offNamed(AppRoutes.login);
+                      }
+                    },
+                  ),
+
+                  const SizedBox(height: 8),
                   AppTextField(
                     controller: controller.emailController,
                     hintText: 'Seller Email Address',
@@ -160,4 +174,105 @@ class SellerLoginScreen extends StatelessWidget {
     ),
   );
 }
+
+  Widget _buildRoleToggle({required bool isBuyer, required Function(bool) onRoleChanged}) {
+    return Container(
+      height: 48,
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF1F5F9),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: GestureDetector(
+              onTap: () => onRoleChanged(true),
+              behavior: HitTestBehavior.opaque,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                decoration: BoxDecoration(
+                  color: isBuyer ? Colors.white : Colors.transparent,
+                  borderRadius: BorderRadius.circular(10),
+                  boxShadow: isBuyer
+                      ? [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.06),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ]
+                      : [],
+                ),
+                child: Center(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.shopping_bag_outlined,
+                        size: 18,
+                        color: isBuyer ? AppColors.primaryPurple : const Color(0xFF64748B),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Buyer Login',
+                        style: TextStyle(
+                          fontSize: 13.5,
+                          fontWeight: isBuyer ? FontWeight.w700 : FontWeight.w500,
+                          color: isBuyer ? AppColors.primaryPurple : const Color(0xFF64748B),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Expanded(
+            child: GestureDetector(
+              onTap: () => onRoleChanged(false),
+              behavior: HitTestBehavior.opaque,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                decoration: BoxDecoration(
+                  color: !isBuyer ? Colors.white : Colors.transparent,
+                  borderRadius: BorderRadius.circular(10),
+                  boxShadow: !isBuyer
+                      ? [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.06),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ]
+                      : [],
+                ),
+                child: Center(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.storefront_outlined,
+                        size: 18,
+                        color: !isBuyer ? AppColors.primaryPurple : const Color(0xFF64748B),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Seller Login',
+                        style: TextStyle(
+                          fontSize: 13.5,
+                          fontWeight: !isBuyer ? FontWeight.w700 : FontWeight.w500,
+                          color: !isBuyer ? AppColors.primaryPurple : const Color(0xFF64748B),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }

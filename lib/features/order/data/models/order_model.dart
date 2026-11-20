@@ -20,6 +20,8 @@ class OrderModel {
   final bool isReturned;
   final String deliveredAt;
   final String updatedAt;
+  final String sellerId;
+  final String storeId;
 
   OrderModel({
     required this.id,
@@ -41,6 +43,8 @@ class OrderModel {
     this.isReturned = false,
     this.deliveredAt = '',
     this.updatedAt = '',
+    this.sellerId = '',
+    this.storeId = '',
   });
 
   bool get canReturn {
@@ -226,6 +230,8 @@ class OrderModel {
       isReturned: hasBeenReturned,
       deliveredAt: json['deliveredAt']?.toString() ?? json['delivered_at']?.toString() ?? json['deliveryDate']?.toString() ?? '',
       updatedAt: json['updatedAt']?.toString() ?? json['updated_at']?.toString() ?? '',
+      sellerId: (json['sellerId'] ?? json['seller']?['_id'] ?? json['seller']?['id'] ?? '').toString(),
+      storeId: (json['storeId'] ?? json['store']?['_id'] ?? json['store']?['id'] ?? '').toString(),
       items: itemsList.map((e) {
         if (e is Map<String, dynamic>) {
           return OrderItemModel.fromJson(e);

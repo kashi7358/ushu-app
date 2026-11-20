@@ -13,6 +13,7 @@ abstract class SellerRepository {
   Future<dynamic> loginSeller(String email, String password);
   Future<dynamic> forgetPassword(String email);
   Future<dynamic> createStore(CreateStoreRequestModel model);
+  Future<dynamic> updateStore(Map<String, dynamic> updateData);
   Future<dynamic> createProduct({required String storeId, required CreateProductRequestModel model});
   Future<dynamic> updateProduct({required String productId, required FormData formData});
   Future<dynamic> getProductsByStore(String storeId);

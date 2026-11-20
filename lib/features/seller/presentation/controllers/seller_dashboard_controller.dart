@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 import 'package:get/get.dart';
 import '../../../../app/routes/app_routes.dart';
@@ -26,6 +27,7 @@ class SellerDashboardController extends GetxController {
   final RxList<SellerOrderModel> refundedOrders = <SellerOrderModel>[].obs;
   final RxDouble paidAmount = 0.0.obs;
   final RxDouble unpaidAmount = 0.0.obs;
+  final RxMap<String, dynamic> storeDetails = <String, dynamic>{}.obs;
 
   late final SellerRepositoryImpl _repository;
 
@@ -46,6 +48,7 @@ class SellerDashboardController extends GetxController {
     storeLogo.value = SessionManager.sellerStoreLogo ?? '';
     final details = SessionManager.getSellerStoreDetailsMap();
     if (details != null) {
+      storeDetails.value = details;
       storeBanner.value = details['StoreBanner']?.toString() ??
           details['storeBanner']?.toString() ??
           details['banner']?.toString() ??
@@ -231,14 +234,14 @@ class SellerDashboardController extends GetxController {
               : parsedOrders.where((o) => o.isCompleted).toList();
           final refunded = directRefunded.isNotEmpty
               ? directRefunded
-              : parsedOrders.where((o) => o.isCancelled).toList();
+              : parsedOrders.where((o) => o.isRefunded).toList();
 
           deliveredOrders.assignAll(delivered);
           refundedOrders.assignAll(refunded);
 
           final int activeCount = parsedOrders.where((o) => o.isPending || o.isProcessing).length;
           final int deliveredCount = delivered.length;
-          final int cancelledCount = parsedOrders.where((o) => o.normalizedStatus.contains('cancel')).length;
+          final int cancelledCount = parsedOrders.where((o) => o.isCancelled).length;
           final int returnedCount = refunded.length;
 
           // If stats active/delivered/cancelled/returned are not populated by backend, hydrate from order lists
@@ -250,6 +253,13 @@ class SellerDashboardController extends GetxController {
               cancelledOrders: cancelledCount,
               returnedOrders: returnedCount,
             );
+          } else {
+            if (stats.value.deliveredOrders == 0 && deliveredCount > 0) {
+              stats.value = stats.value.copyWith(deliveredOrders: deliveredCount);
+            }
+            if (stats.value.returnedOrders == 0 && returnedCount > 0) {
+              stats.value = stats.value.copyWith(returnedOrders: returnedCount);
+            }
           }
 
           // Only fallback if both paidAmount and unpaidAmount are untouched (zero) and no deliveredStatsResponse was received
@@ -330,6 +340,49 @@ class SellerDashboardController extends GetxController {
         }
       }
     } catch (_) {}
+  }
+
+  Future<bool> updateStoreDetails(Map<String, dynamic> newFields) async {
+    try {
+      CustomPopup.showLoading('Updating store details...');
+
+      final existingMap = SessionManager.getSellerStoreDetailsMap() ?? {};
+      final updatedMap = Map<String, dynamic>.from(existingMap);
+      newFields.forEach((key, value) {
+        updatedMap[key] = value;
+      });
+
+      if (newFields.containsKey('storeName') || newFields.containsKey('StoreName')) {
+        final newName = newFields['storeName'] ?? newFields['StoreName'];
+        if (newName != null && newName.toString().trim().isNotEmpty) {
+          storeName.value = newName.toString().trim();
+          await SessionManager.saveStoreNameForEmail(
+            SessionManager.sellerEmail ?? '',
+            storeName.value,
+          );
+        }
+      }
+
+      await SessionManager.saveSellerStoreDetails(
+        storeName: storeName.value,
+        logoPath: storeLogo.value,
+        fullDetails: updatedMap,
+      );
+
+      try {
+        await _repository.updateStore(updatedMap);
+      } catch (e) {
+        debugPrint('Backend updateStore: $e');
+      }
+
+      CustomPopup.hideLoading();
+      CustomPopup.showSuccess('Success', 'Store details updated successfully');
+      return true;
+    } catch (e) {
+      CustomPopup.hideLoading();
+      CustomPopup.showError('Update Failed', e.toString());
+      return false;
+    }
   }
 
   void navigateToAddProduct() {

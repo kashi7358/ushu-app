@@ -31,7 +31,7 @@ class CreateProductController extends GetxController {
   final descriptionController = TextEditingController();
   final skuController = TextEditingController();
   final categoryController = TextEditingController(text: 'Electronics');
-  final subCategoryController = TextEditingController(text: 'Earbuds');
+  final subCategoryController = TextEditingController();
   final brandController = TextEditingController();
   final conditionController = TextEditingController(text: 'new');
   final tagsController = TextEditingController();

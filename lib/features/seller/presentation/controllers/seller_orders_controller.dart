@@ -220,7 +220,7 @@ class SellerOrdersController extends GetxController {
   int get pendingCount => allOrders.where((o) => o.isPending).length;
   int get processingCount => allOrders.where((o) => o.isProcessing).length;
   int get completedCount => allOrders.where((o) => o.isCompleted).length;
-  int get cancelledCount => allOrders.where((o) => o.isCancelled).length;
+  int get cancelledCount => allOrders.where((o) => o.isCancelled || o.isRefunded).length;
 
   void applyFilter() {
     List<SellerOrderModel> list = allOrders.toList();
@@ -236,7 +236,7 @@ class SellerOrdersController extends GetxController {
         list = list.where((o) => o.isCompleted).toList();
         break;
       case 'Cancelled':
-        list = list.where((o) => o.isCancelled).toList();
+        list = list.where((o) => o.isCancelled || o.isRefunded).toList();
         break;
     }
 

@@ -9,6 +9,7 @@ class SellerOrderModel {
   final double shippingFee;
   final double discount;
   final String createdAt;
+  final String buyerId;
   final String buyerName;
   final String buyerEmail;
   final String buyerPhone;
@@ -27,6 +28,7 @@ class SellerOrderModel {
     this.shippingFee = 0.0,
     this.discount = 0.0,
     required this.createdAt,
+    this.buyerId = '',
     this.buyerName = '',
     this.buyerEmail = '',
     this.buyerPhone = '',
@@ -60,7 +62,9 @@ class SellerOrderModel {
       normalizedStatus == 'delivered' || normalizedStatus == 'completed';
 
   bool get isCancelled =>
-      normalizedStatus.contains('cancel') ||
+      normalizedStatus.contains('cancel');
+
+  bool get isRefunded =>
       normalizedStatus.contains('return') ||
       normalizedStatus.contains('refund');
 
@@ -141,12 +145,14 @@ class SellerOrderModel {
     String bName = '';
     String bEmail = '';
     String bPhone = '';
+    String bId = '';
     String addrStr = '';
     String cityStr = '';
 
     final buyerObj = json['buyer'] ?? json['user'] ?? json['customer'] ?? json['buyerId'];
     if (buyerObj is Map) {
       final b = Map<String, dynamic>.from(buyerObj);
+      bId = b['_id']?.toString() ?? b['id']?.toString() ?? '';
       bName = b['fullName']?.toString() ??
           b['name']?.toString() ??
           b['userName']?.toString() ??
@@ -157,6 +163,11 @@ class SellerOrderModel {
           b['phoneNumber']?.toString() ??
           b['mobile']?.toString() ??
           '';
+    } else if (buyerObj is String) {
+      bId = buyerObj;
+    }
+    if (bId.isEmpty) {
+      bId = json['buyerId']?.toString() ?? json['userId']?.toString() ?? json['customerId']?.toString() ?? '';
     }
 
     final addrObj = json['address'] ?? json['shippingAddress'] ?? json['deliveryAddress'];
@@ -218,6 +229,7 @@ class SellerOrderModel {
       shippingFee: rawShip,
       discount: rawDisc,
       createdAt: (json['createdAt'] ?? json['date'] ?? json['created_at'] ?? '').toString(),
+      buyerId: bId,
       buyerName: bName,
       buyerEmail: bEmail,
       buyerPhone: bPhone,

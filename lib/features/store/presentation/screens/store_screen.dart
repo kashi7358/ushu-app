@@ -9,6 +9,7 @@ import '../../../home/data/models/product_model.dart';
 import '../../../main_layout/presentation/controllers/main_layout_controller.dart';
 import '../../../cart/presentation/controllers/cart_controller.dart';
 import 'package:add_to_cart_animation/add_to_cart_animation.dart';
+import '../../../../core/widgets/report_modal_bottom_sheet.dart';
 
 class StoreScreen extends StatelessWidget {
   const StoreScreen({super.key});
@@ -71,6 +72,21 @@ class StoreScreen extends StatelessWidget {
               backgroundColor: AppColors.primaryPurple,
               iconTheme: const IconThemeData(color: Colors.white),
               actions: [
+                IconButton(
+                  icon: const Icon(Icons.flag_outlined, color: Colors.white),
+                  tooltip: 'Report Store',
+                  onPressed: () {
+                    final storeName = controller.storeData['StoreName']?.toString() ??
+                        controller.storeData['storeName']?.toString() ??
+                        'Store';
+                    ReportModalBottomSheet.show(
+                      context: context,
+                      targetType: 'Store',
+                      targetId: controller.storeId,
+                      targetTitle: storeName,
+                    );
+                  },
+                ),
                 IconButton(
                   icon: AddToCartIcon(
                     key: controller.cartKey,

@@ -6,6 +6,8 @@ import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_text_styles.dart';
 import '../../../../app/routes/app_routes.dart';
 import '../../../../core/utils/session_manager.dart';
+import '../../../../core/utils/custom_popup.dart';
+import '../../../../core/widgets/report_modal_bottom_sheet.dart';
 import '../controllers/seller_dashboard_controller.dart';
 
 class SellerDashboardScreen extends StatefulWidget {
@@ -27,7 +29,21 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (didPop) return;
+        if (_scaffoldKey.currentState?.isDrawerOpen ?? false) {
+          _scaffoldKey.currentState?.closeDrawer();
+          return;
+        }
+        final confirm = await CustomPopup.showSwitchToBuyerConfirmation();
+        if (confirm ?? false) {
+          SessionManager.setLastScreen(AppRoutes.mainLayout);
+          Get.offAllNamed(AppRoutes.mainLayout);
+        }
+      },
+      child: Scaffold(
       key: _scaffoldKey,
       backgroundColor: const Color(0xFFF8FAFC),
       drawer: _buildSidebarDrawer(context, controller),
@@ -654,8 +670,9 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
           ),
         );
       }),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildQuickActionItem({
     required IconData icon,
@@ -1096,163 +1113,88 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
                   isSelected: false,
                   onTap: () => _navigateFromDrawer(() => Get.toNamed(AppRoutes.sellerPromotions)),
                 ),
+                const SizedBox(height: 10),
+
+                _buildDrawerSectionHeader('SWITCH & SUPPORT'),
+                _buildDrawerItem(
+                  icon: Icons.swap_horiz_rounded,
+                  title: 'Switch to Buyer App',
+                  isSelected: false,
+                  onTap: () async {
+                    if (_scaffoldKey.currentState?.isDrawerOpen ?? false) {
+                      Navigator.of(context).pop();
+                    }
+                    final confirm = await CustomPopup.showSwitchToBuyerConfirmation();
+                    if (confirm ?? false) {
+                      SessionManager.setLastScreen(AppRoutes.mainLayout);
+                      Get.offAllNamed(AppRoutes.mainLayout);
+                    }
+                  },
+                ),
+                _buildDrawerItem(
+                  icon: Icons.flag_outlined,
+                  title: 'Report Buyer / Issue',
+                  isSelected: false,
+                  onTap: () {
+                    if (_scaffoldKey.currentState?.isDrawerOpen ?? false) {
+                      Navigator.of(context).pop();
+                    }
+                    ReportModalBottomSheet.show(
+                      context: context,
+                      targetType: 'Buyer',
+                      targetId: '',
+                      initialReason: 'Unfair Review',
+                      isSeller: true,
+                    );
+                  },
+                ),
+                const SizedBox(height: 10),
+
+                _buildDrawerSectionHeader('ACCOUNT SECURITY'),
+                _buildDrawerItem(
+                  icon: Icons.delete_outline_rounded,
+                  title: 'Delete Seller Account',
+                  isSelected: false,
+                  textColor: const Color(0xFFDC2626),
+                  iconColor: const Color(0xFFDC2626),
+                  containerBgColor: const Color(0xFFFEF2F2),
+                  onTap: () {
+                    if (_scaffoldKey.currentState?.isDrawerOpen ?? false) {
+                      Navigator.of(context).pop();
+                    }
+                    controller.deleteSellerAccount();
+                  },
+                ),
               ],
             ),
           ),
 
-          const Divider(height: 1, color: Color(0xFFF1F5F9)),
-
-          // 3. Clean Professional Logout & App Info
+          // 3. Clean Professional Logout & App Info Footer
           SafeArea(
             top: false,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(14, 8, 14, 12),
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(12, 6, 12, 10),
+              decoration: const BoxDecoration(
+                border: Border(top: BorderSide(color: Color(0xFFF1F5F9))),
+              ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Switch to Buyer Mode Tile
-                  InkWell(
-                    onTap: () {
-                      if (_scaffoldKey.currentState?.isDrawerOpen ?? false) {
-                        Navigator.of(context).pop();
-                      }
-                      SessionManager.setLastScreen(AppRoutes.mainLayout);
-                      Get.offAllNamed(AppRoutes.mainLayout);
-                    },
-                    borderRadius: BorderRadius.circular(14),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                      margin: const EdgeInsets.only(bottom: 8),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF1F5F9),
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: const Color(0xFFE2E8F0)),
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 34,
-                            height: 34,
-                            decoration: BoxDecoration(
-                              color: AppColors.primaryPurple.withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: const Icon(Icons.shopping_bag_outlined, color: AppColors.primaryPurple, size: 18),
-                          ),
-                          const SizedBox(width: 12),
-                          const Expanded(
-                            child: Text(
-                              'Switch to Buyer App',
-                              style: TextStyle(
-                                color: Color(0xFF334155),
-                                fontSize: 13.5,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
-                          const Icon(
-                            Icons.chevron_right_rounded,
-                            color: Color(0xFF94A3B8),
-                            size: 18,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  InkWell(
-                    onTap: () {
-                      if (_scaffoldKey.currentState?.isDrawerOpen ?? false) {
-                        Navigator.of(context).pop();
-                      }
-                      controller.deleteSellerAccount();
-                    },
-                    borderRadius: BorderRadius.circular(14),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFEF2F2),
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: const Color(0xFFFEE2E2)),
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 34,
-                            height: 34,
-                            decoration: BoxDecoration(
-                              color: Colors.red.withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: const Icon(Icons.delete_forever_rounded, color: Colors.red, size: 18),
-                          ),
-                          const SizedBox(width: 12),
-                          const Expanded(
-                            child: Text(
-                              'Delete Seller Account',
-                              style: TextStyle(
-                                color: Color(0xFFDC2626),
-                                fontSize: 13.5,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
-                          const Icon(
-                            Icons.chevron_right_rounded,
-                            color: Color(0xFFF87171),
-                            size: 18,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  InkWell(
+                  _buildDrawerItem(
+                    icon: Icons.logout_rounded,
+                    title: 'Logout Account',
+                    isSelected: false,
+                    textColor: const Color(0xFFDC2626),
+                    iconColor: const Color(0xFFDC2626),
+                    containerBgColor: const Color(0xFFFEF2F2),
                     onTap: () {
                       if (_scaffoldKey.currentState?.isDrawerOpen ?? false) {
                         Navigator.of(context).pop();
                       }
                       controller.logout();
                     },
-                    borderRadius: BorderRadius.circular(14),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFEF2F2),
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: const Color(0xFFFEE2E2)),
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 34,
-                            height: 34,
-                            decoration: BoxDecoration(
-                              color: Colors.red.withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: const Icon(Icons.logout_rounded, color: Colors.red, size: 18),
-                          ),
-                          const SizedBox(width: 12),
-                          const Expanded(
-                            child: Text(
-                              'Logout Account',
-                              style: TextStyle(
-                                color: Color(0xFFDC2626),
-                                fontSize: 13.5,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
-                          const Icon(
-                            Icons.chevron_right_rounded,
-                            color: Color(0xFFF87171),
-                            size: 18,
-                          ),
-                        ],
-                      ),
-                    ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 6),
                   Text(
                     'USHU Seller Center • v1.0.0',
                     style: TextStyle(
@@ -1290,7 +1232,14 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
     required String title,
     required bool isSelected,
     required VoidCallback onTap,
+    Color? iconColor,
+    Color? textColor,
+    Color? containerBgColor,
   }) {
+    final effectiveIconColor = iconColor ?? (isSelected ? Colors.white : AppColors.primaryPurple);
+    final effectiveTextColor = textColor ?? (isSelected ? AppColors.primaryPurple : const Color(0xFF1E293B));
+    final effectiveBg = containerBgColor ?? (isSelected ? AppColors.primaryPurple : const Color(0xFFF8FAFC));
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2.5),
       child: InkWell(
@@ -1313,17 +1262,15 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
                 width: 35,
                 height: 35,
                 decoration: BoxDecoration(
-                  color: isSelected
-                      ? AppColors.primaryPurple
-                      : const Color(0xFFF8FAFC),
+                  color: effectiveBg,
                   borderRadius: BorderRadius.circular(10),
                   border: isSelected
                       ? null
-                      : Border.all(color: const Color(0xFFE2E8F0)),
+                      : Border.all(color: containerBgColor != null ? containerBgColor.withValues(alpha: 0.4) : const Color(0xFFE2E8F0)),
                 ),
                 child: Icon(
                   icon,
-                  color: isSelected ? Colors.white : AppColors.primaryPurple,
+                  color: effectiveIconColor,
                   size: 18,
                 ),
               ),
@@ -1334,7 +1281,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
                   style: TextStyle(
                     fontSize: 13.5,
                     fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
-                    color: isSelected ? AppColors.primaryPurple : const Color(0xFF1E293B),
+                    color: effectiveTextColor,
                   ),
                 ),
               ),
@@ -1449,450 +1396,725 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
 
   // Professional Store & Seller Profile BottomSheet
   void _showStoreProfileBottomSheet(BuildContext context, SellerDashboardController controller) {
-    final detailsMap = SessionManager.getSellerStoreDetailsMap() ?? {};
-
-    final storeName = controller.storeName.value.isNotEmpty
-        ? controller.storeName.value
-        : (detailsMap['StoreName'] ?? detailsMap['storeName'] ?? SessionManager.sellerStoreName ?? 'My Store');
-    final tagline = detailsMap['Storetagline']?.toString() ?? detailsMap['tagline']?.toString() ?? 'Official Seller Store';
-    final description = detailsMap['description']?.toString() ?? '';
-    final contactEmail = detailsMap['StoreContactEmail']?.toString() ?? detailsMap['email']?.toString() ?? controller.sellerEmail.value;
-    final whatsapp = detailsMap['StoreWhatsapp']?.toString() ?? detailsMap['whatsapp']?.toString() ?? '';
-    final city = detailsMap['PrimaryCity']?.toString() ?? detailsMap['city']?.toString() ?? '';
-    final warehouse = detailsMap['WarehouseAddress']?.toString() ?? detailsMap['warehouseAddress']?.toString() ?? '';
-    final language = detailsMap['language']?.toString() ?? 'Urdu';
-    final returnPolicy = detailsMap['ReturnPolicy']?.toString() ?? detailsMap['returnPolicy']?.toString() ?? '14 days';
-    final warranty = detailsMap['Warrenty']?.toString() ?? detailsMap['warranty']?.toString() ?? '6 months';
-    final processingTime = detailsMap['ProcessingTime']?.toString() ?? detailsMap['processingTime']?.toString() ?? '5-6 working days';
-    final cancellationPolicy = detailsMap['CancellationPolicy']?.toString() ?? detailsMap['cancellationPolicy']?.toString() ?? 'No';
-    final shippingMethod = detailsMap['ShippingMethod']?.toString() ?? detailsMap['shippingMethod']?.toString() ?? 'Ecom Courier';
-    final deliveryZones = detailsMap['DeliveryZones']?.toString() ?? detailsMap['deliveryZones']?.toString() ?? 'All over Pakistan';
-    final shippingCharges = detailsMap['ShippingCharges']?.toString() ?? detailsMap['shippingCharges']?.toString() ?? '200';
-    final logoPath = (detailsMap['logo'] != null && detailsMap['logo'].toString().isNotEmpty)
-        ? detailsMap['logo'].toString()
-        : (controller.storeLogo.value.isNotEmpty ? controller.storeLogo.value : SessionManager.sellerStoreLogo);
-    final bannerPath = controller.storeBanner.value.isNotEmpty
-        ? controller.storeBanner.value
-        : (detailsMap['StoreBanner']?.toString() ?? detailsMap['storeBanner'] ?? detailsMap['banner']?.toString());
-
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => DraggableScrollableSheet(
-        initialChildSize: 0.88,
-        minChildSize: 0.5,
-        maxChildSize: 0.96,
-        builder: (_, scrollController) => Container(
-          decoration: const BoxDecoration(
-            color: Color(0xFFF8FAFC),
-            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-          ),
-          clipBehavior: Clip.antiAlias,
-          child: Column(
-            children: [
-              // Header bar with drag handle and close icon
-              Container(
-                color: Colors.white,
-                padding: const EdgeInsets.fromLTRB(20, 10, 12, 12),
-                child: Column(
-                  children: [
-                    Center(
-                      child: Container(
-                        width: 40,
-                        height: 4.5,
-                        margin: const EdgeInsets.only(bottom: 10),
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade300,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                    ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      builder: (ctx) => StatefulBuilder(
+        builder: (sheetContext, setSheetState) {
+          final detailsMap = SessionManager.getSellerStoreDetailsMap() ?? {};
+
+          final storeName = controller.storeName.value.isNotEmpty
+              ? controller.storeName.value
+              : (detailsMap['StoreName'] ?? detailsMap['storeName'] ?? SessionManager.sellerStoreName ?? 'My Store');
+          final tagline = detailsMap['Storetagline']?.toString() ?? detailsMap['tagline']?.toString() ?? 'Official Seller Store';
+          final description = detailsMap['description']?.toString() ?? '';
+          final contactEmail = detailsMap['StoreContactEmail']?.toString() ?? detailsMap['email']?.toString() ?? controller.sellerEmail.value;
+          final whatsapp = detailsMap['StoreWhatsapp']?.toString() ?? detailsMap['whatsapp']?.toString() ?? '';
+          final city = detailsMap['PrimaryCity']?.toString() ?? detailsMap['city']?.toString() ?? '';
+          final warehouse = detailsMap['WarehouseAddress']?.toString() ?? detailsMap['warehouseAddress']?.toString() ?? '';
+          final language = detailsMap['language']?.toString() ?? 'Urdu';
+          final returnPolicy = detailsMap['ReturnPolicy']?.toString() ?? detailsMap['returnPolicy']?.toString() ?? '14 days';
+          final warranty = detailsMap['Warrenty']?.toString() ?? detailsMap['warranty']?.toString() ?? '6 months';
+          final processingTime = detailsMap['ProcessingTime']?.toString() ?? detailsMap['processingTime']?.toString() ?? '5-6 working days';
+          final cancellationPolicy = detailsMap['CancellationPolicy']?.toString() ?? detailsMap['cancellationPolicy']?.toString() ?? 'No';
+          final shippingMethod = detailsMap['ShippingMethod']?.toString() ?? detailsMap['shippingMethod']?.toString() ?? 'Ecom Courier';
+          final deliveryZones = detailsMap['DeliveryZones']?.toString() ?? detailsMap['deliveryZones']?.toString() ?? 'All over Pakistan';
+          final shippingCharges = detailsMap['ShippingCharges']?.toString() ?? detailsMap['shippingCharges']?.toString() ?? '200';
+          final logoPath = (detailsMap['logo'] != null && detailsMap['logo'].toString().isNotEmpty)
+              ? detailsMap['logo'].toString()
+              : (controller.storeLogo.value.isNotEmpty ? controller.storeLogo.value : SessionManager.sellerStoreLogo);
+          final bannerPath = controller.storeBanner.value.isNotEmpty
+              ? controller.storeBanner.value
+              : (detailsMap['StoreBanner']?.toString() ?? detailsMap['storeBanner'] ?? detailsMap['banner']?.toString());
+
+          return DraggableScrollableSheet(
+            initialChildSize: 0.88,
+            minChildSize: 0.5,
+            maxChildSize: 0.96,
+            builder: (_, scrollController) => Container(
+              decoration: const BoxDecoration(
+                color: Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: Column(
+                children: [
+                  // Header bar with drag handle and close icon
+                  Container(
+                    color: Colors.white,
+                    padding: const EdgeInsets.fromLTRB(20, 10, 12, 12),
+                    child: Column(
                       children: [
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(7),
-                              decoration: BoxDecoration(
-                                color: AppColors.primaryPurple.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: const Icon(Icons.storefront_rounded, color: AppColors.primaryPurple, size: 20),
+                        Center(
+                          child: Container(
+                            width: 40,
+                            height: 4.5,
+                            margin: const EdgeInsets.only(bottom: 10),
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade300,
+                              borderRadius: BorderRadius.circular(10),
                             ),
-                            const SizedBox(width: 10),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                          ),
+                        ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(7),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.primaryPurple.withValues(alpha: 0.1),
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: const Icon(Icons.storefront_rounded, color: AppColors.primaryPurple, size: 20),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(
+                                          'Store Details',
+                                          style: AppTextStyles.bold.copyWith(fontSize: 17, color: AppColors.darkText),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        Text(
+                                          'Verified Business & Operations',
+                                          style: TextStyle(fontSize: 11.5, color: Colors.grey.shade600),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
                               children: [
-                                Text(
-                                  'Store Details',
-                                  style: AppTextStyles.bold.copyWith(fontSize: 17.5, color: AppColors.darkText),
+                                InkWell(
+                                  onTap: () => _showEditStoreBottomSheet(
+                                    context: context,
+                                    controller: controller,
+                                    initialTab: 0,
+                                    onUpdated: () => setSheetState(() {}),
+                                  ),
+                                  borderRadius: BorderRadius.circular(10),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.primaryPurple.withValues(alpha: 0.08),
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(color: AppColors.primaryPurple.withValues(alpha: 0.2)),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: const [
+                                        Icon(Icons.edit_note_rounded, size: 16, color: AppColors.primaryPurple),
+                                        SizedBox(width: 4),
+                                        Text(
+                                          'Edit',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.bold,
+                                            color: AppColors.primaryPurple,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
                                 ),
-                                Text(
-                                  'Verified Business & Operations',
-                                  style: TextStyle(fontSize: 11.5, color: Colors.grey.shade600),
+                                const SizedBox(width: 6),
+                                IconButton(
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(),
+                                  icon: Container(
+                                    padding: const EdgeInsets.all(5),
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey.shade100,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(Icons.close_rounded, size: 18, color: Colors.black87),
+                                  ),
+                                  onPressed: () => Navigator.of(ctx).pop(),
                                 ),
                               ],
                             ),
                           ],
                         ),
-                        IconButton(
-                          icon: Container(
-                            padding: const EdgeInsets.all(4),
-                            decoration: BoxDecoration(
-                              color: Colors.grey.shade100,
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(Icons.close_rounded, size: 18, color: Colors.black87),
-                          ),
-                          onPressed: () => Navigator.of(ctx).pop(),
-                        ),
                       ],
                     ),
-                  ],
-                ),
-              ),
-              const Divider(height: 1, thickness: 1, color: Color(0xFFE2E8F0)),
+                  ),
+                  const Divider(height: 1, thickness: 1, color: Color(0xFFE2E8F0)),
 
-              // Scrollable Content
-              Expanded(
-                child: ListView(
-                  controller: scrollController,
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 30),
-                  children: [
-                    // Premium Store Hero Card (Banner + Overlapping Logo + Badges)
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.04),
-                            blurRadius: 14,
-                            offset: const Offset(0, 4),
+                  // Scrollable Content
+                  Expanded(
+                    child: ListView(
+                      controller: scrollController,
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 30),
+                      children: [
+                        // Premium Store Hero Card (Banner + Overlapping Logo + Badges + Edit Profile)
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.04),
+                                blurRadius: 14,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                            border: Border.all(color: Colors.grey.shade200),
                           ),
-                        ],
-                        border: Border.all(color: Colors.grey.shade200),
-                      ),
-                      clipBehavior: Clip.antiAlias,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Cover Banner
-                          Stack(
-                            clipBehavior: Clip.none,
+                          clipBehavior: Clip.antiAlias,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Container(
-                                height: 135,
-                                width: double.infinity,
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: [
-                                      AppColors.primaryPurple,
-                                      AppColors.secondaryViolet,
-                                    ],
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                  ),
-                                ),
-                                child: _buildAdaptiveImage(
-                                  path: bannerPath,
-                                  fit: BoxFit.cover,
-                                  width: double.infinity,
-                                  height: 135,
-                                  placeholder: Center(
-                                    child: Icon(
-                                      Icons.storefront_rounded,
-                                      size: 46,
-                                      color: Colors.white.withValues(alpha: 0.5),
+                              // Cover Banner
+                              Stack(
+                                clipBehavior: Clip.none,
+                                children: [
+                                  Container(
+                                    height: 135,
+                                    width: double.infinity,
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        colors: [
+                                          AppColors.primaryPurple,
+                                          AppColors.secondaryViolet,
+                                        ],
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                      ),
+                                    ),
+                                    child: _buildAdaptiveImage(
+                                      path: bannerPath,
+                                      fit: BoxFit.cover,
+                                      width: double.infinity,
+                                      height: 135,
+                                      placeholder: Center(
+                                        child: Icon(
+                                          Icons.storefront_rounded,
+                                          size: 46,
+                                          color: Colors.white.withValues(alpha: 0.5),
+                                        ),
+                                      ),
                                     ),
                                   ),
-                                ),
-                              ),
-                              // Floating Status Pill on Banner
-                              Positioned(
-                                top: 12,
-                                right: 12,
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: Colors.black.withValues(alpha: 0.5),
-                                    borderRadius: BorderRadius.circular(20),
-                                    border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+                                  // Floating Status Pill on Banner
+                                  Positioned(
+                                    top: 12,
+                                    right: 12,
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: Colors.black.withValues(alpha: 0.5),
+                                        borderRadius: BorderRadius.circular(20),
+                                        border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: const [
+                                          Icon(Icons.verified_rounded, size: 14, color: Colors.greenAccent),
+                                          SizedBox(width: 4),
+                                          Text(
+                                            'Active Store',
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
                                   ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: const [
-                                      Icon(Icons.verified_rounded, size: 14, color: Colors.greenAccent),
-                                      SizedBox(width: 4),
+                                  // Overlapping Circle Logo
+                                  Positioned(
+                                    bottom: -30,
+                                    left: 16,
+                                    child: Container(
+                                      width: 68,
+                                      height: 68,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: Colors.white,
+                                        border: Border.all(color: Colors.white, width: 3),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.black.withValues(alpha: 0.12),
+                                            blurRadius: 10,
+                                            offset: const Offset(0, 3),
+                                          ),
+                                        ],
+                                      ),
+                                      clipBehavior: Clip.antiAlias,
+                                      child: _buildAdaptiveImage(
+                                        path: logoPath,
+                                        fit: BoxFit.cover,
+                                        placeholder: Center(
+                                          child: Text(
+                                            storeName.isNotEmpty ? storeName[0].toUpperCase() : 'S',
+                                            style: AppTextStyles.extraBold.copyWith(
+                                              fontSize: 26,
+                                              color: AppColors.primaryPurple,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 38),
+
+                              // Store Name, Badges & Edit Profile
+                              Padding(
+                                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Expanded(
+                                            child: Row(
+                                              children: [
+                                                Flexible(
+                                                  child: Text(
+                                                    storeName,
+                                                    style: AppTextStyles.extraBold.copyWith(
+                                                      fontSize: 19,
+                                                      color: AppColors.darkText,
+                                                      letterSpacing: -0.3,
+                                                    ),
+                                                    maxLines: 1,
+                                                    overflow: TextOverflow.ellipsis,
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 6),
+                                                const Icon(Icons.verified_rounded, color: Color(0xFF10B981), size: 18),
+                                              ],
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          InkWell(
+                                            onTap: () => _showEditStoreProfileDialog(
+                                            context: context,
+                                            controller: controller,
+                                            currentStoreName: storeName,
+                                            currentTagline: tagline,
+                                            currentDescription: description,
+                                            onUpdated: () => setSheetState(() {}),
+                                          ),
+                                          borderRadius: BorderRadius.circular(8),
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                            decoration: BoxDecoration(
+                                              color: AppColors.primaryPurple.withValues(alpha: 0.08),
+                                              borderRadius: BorderRadius.circular(8),
+                                              border: Border.all(color: AppColors.primaryPurple.withValues(alpha: 0.15)),
+                                            ),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: const [
+                                                Icon(Icons.edit_outlined, size: 14, color: AppColors.primaryPurple),
+                                                SizedBox(width: 4),
+                                                Text(
+                                                  'Edit Profile',
+                                                  style: TextStyle(
+                                                    fontSize: 11.5,
+                                                    fontWeight: FontWeight.bold,
+                                                    color: AppColors.primaryPurple,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    if (tagline.isNotEmpty) ...[
+                                      const SizedBox(height: 3),
                                       Text(
-                                        'Active Store',
+                                        tagline,
                                         style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.bold,
+                                          fontSize: 13,
+                                          color: Colors.grey.shade600,
+                                          fontWeight: FontWeight.w500,
                                         ),
                                       ),
                                     ],
-                                  ),
-                                ),
-                              ),
-                              // Overlapping Circle Logo
-                              Positioned(
-                                bottom: -30,
-                                left: 16,
-                                child: Container(
-                                  width: 68,
-                                  height: 68,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: Colors.white,
-                                    border: Border.all(color: Colors.white, width: 3),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withValues(alpha: 0.12),
-                                        blurRadius: 10,
-                                        offset: const Offset(0, 3),
+                                    const SizedBox(height: 10),
+                                    SingleChildScrollView(
+                                      scrollDirection: Axis.horizontal,
+                                      child: Row(
+                                        children: [
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFFECFDF5),
+                                              borderRadius: BorderRadius.circular(20),
+                                              border: Border.all(color: const Color(0xFFA7F3D0)),
+                                            ),
+                                            child: const Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Icon(Icons.check_circle_rounded, size: 13, color: Color(0xFF10B981)),
+                                                SizedBox(width: 4),
+                                                Text(
+                                                  'Verified Merchant',
+                                                  style: TextStyle(
+                                                    color: Color(0xFF059669),
+                                                    fontSize: 11,
+                                                    fontWeight: FontWeight.w700,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                            decoration: BoxDecoration(
+                                              color: AppColors.primaryPurple.withValues(alpha: 0.08),
+                                              borderRadius: BorderRadius.circular(20),
+                                              border: Border.all(color: AppColors.primaryPurple.withValues(alpha: 0.2)),
+                                            ),
+                                            child: const Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Icon(Icons.local_shipping_rounded, size: 13, color: AppColors.primaryPurple),
+                                                SizedBox(width: 4),
+                                                Text(
+                                                  'Pakistan-wide Delivery',
+                                                  style: TextStyle(
+                                                    color: AppColors.primaryPurple,
+                                                    fontSize: 11,
+                                                    fontWeight: FontWeight.w700,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
                                       ),
-                                    ],
-                                  ),
-                                  clipBehavior: Clip.antiAlias,
-                                  child: _buildAdaptiveImage(
-                                    path: logoPath,
-                                    fit: BoxFit.cover,
-                                    placeholder: Center(
-                                      child: Text(
-                                        storeName.isNotEmpty ? storeName[0].toUpperCase() : 'S',
-                                        style: AppTextStyles.extraBold.copyWith(
-                                          fontSize: 26,
-                                          color: AppColors.primaryPurple,
+                                    ),
+                                    const SizedBox(height: 10),
+                                    // Interactive Description Box with Edit Icon
+                                    InkWell(
+                                      onTap: () => _showEditStoreProfileDialog(
+                                        context: context,
+                                        controller: controller,
+                                        currentStoreName: storeName,
+                                        currentTagline: tagline,
+                                        currentDescription: description,
+                                        onUpdated: () => setSheetState(() {}),
+                                      ),
+                                      borderRadius: BorderRadius.circular(12),
+                                      child: Container(
+                                        width: double.infinity,
+                                        padding: const EdgeInsets.all(12),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFF8FAFC),
+                                          borderRadius: BorderRadius.circular(12),
+                                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                                        ),
+                                        child: Row(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Expanded(
+                                              child: Text(
+                                                description.isNotEmpty
+                                                    ? description
+                                                    : 'Add a store description to help customers learn about your brand and products...',
+                                                style: TextStyle(
+                                                  fontSize: 12.5,
+                                                  color: description.isNotEmpty ? Colors.grey.shade800 : Colors.grey.shade500,
+                                                  fontStyle: description.isNotEmpty ? FontStyle.normal : FontStyle.italic,
+                                                  height: 1.45,
+                                                ),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 8),
+                                            Icon(
+                                              Icons.edit_outlined,
+                                              size: 15,
+                                              color: AppColors.primaryPurple.withValues(alpha: 0.8),
+                                            ),
+                                          ],
                                         ),
                                       ),
                                     ),
-                                  ),
+                                  ],
                                 ),
                               ),
                             ],
                           ),
-                          const SizedBox(height: 38),
+                        ),
+                        const SizedBox(height: 16),
 
-                          // Store Name & Tagline
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Flexible(
-                                      child: Text(
-                                        storeName,
-                                        style: AppTextStyles.extraBold.copyWith(
-                                          fontSize: 20,
-                                          color: AppColors.darkText,
-                                          letterSpacing: -0.3,
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 6),
-                                    const Icon(Icons.verified_rounded, color: Color(0xFF10B981), size: 19),
-                                  ],
-                                ),
-                                if (tagline.isNotEmpty) ...[
-                                  const SizedBox(height: 3),
-                                  Text(
-                                    tagline,
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      color: Colors.grey.shade600,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ],
-                                const SizedBox(height: 10),
-                                SingleChildScrollView(
-                                  scrollDirection: Axis.horizontal,
-                                  child: Row(
-                                    children: [
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xFFECFDF5),
-                                          borderRadius: BorderRadius.circular(20),
-                                          border: Border.all(color: const Color(0xFFA7F3D0)),
-                                        ),
-                                        child: const Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Icon(Icons.check_circle_rounded, size: 13, color: Color(0xFF10B981)),
-                                            SizedBox(width: 4),
-                                            Text(
-                                              'Verified Merchant',
-                                              style: TextStyle(
-                                                color: Color(0xFF059669),
-                                                fontSize: 11,
-                                                fontWeight: FontWeight.w700,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                        decoration: BoxDecoration(
-                                          color: AppColors.primaryPurple.withValues(alpha: 0.08),
-                                          borderRadius: BorderRadius.circular(20),
-                                          border: Border.all(color: AppColors.primaryPurple.withValues(alpha: 0.2)),
-                                        ),
-                                        child: const Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Icon(Icons.local_shipping_rounded, size: 13, color: AppColors.primaryPurple),
-                                            SizedBox(width: 4),
-                                            Text(
-                                              'Pakistan-wide Delivery',
-                                              style: TextStyle(
-                                                color: AppColors.primaryPurple,
-                                                fontSize: 11,
-                                                fontWeight: FontWeight.w700,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                if (description.isNotEmpty) ...[
-                                  const SizedBox(height: 10),
-                                  Container(
-                                    padding: const EdgeInsets.all(12),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFF8FAFC),
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(color: const Color(0xFFE2E8F0)),
-                                    ),
-                                    child: Text(
-                                      description,
-                                      style: TextStyle(
-                                        fontSize: 12.5,
-                                        color: Colors.grey.shade800,
-                                        height: 1.45,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ],
+                        // Section: Contact & Location Info Card with Edit Icon
+                        _buildModernInfoCard(
+                          title: 'Contact & Location',
+                          icon: Icons.contact_mail_outlined,
+                          onEdit: () => _showEditContactLocationDialog(
+                            context: context,
+                            controller: controller,
+                            currentEmail: contactEmail,
+                            currentWhatsapp: whatsapp,
+                            currentCity: city,
+                            currentWarehouse: warehouse,
+                            onUpdated: () => setSheetState(() {}),
+                          ),
+                          items: [
+                            _CardInfoItem(
+                              icon: Icons.person_outline_rounded,
+                              label: 'Store Owner',
+                              value: controller.sellerName.value.isNotEmpty ? controller.sellerName.value : 'Owner',
                             ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 16),
+                            _CardInfoItem(
+                              icon: Icons.email_outlined,
+                              label: 'Contact Email',
+                              value: contactEmail.isNotEmpty ? contactEmail : 'Not set',
+                              onEdit: () => _showEditContactLocationDialog(
+                                context: context,
+                                controller: controller,
+                                currentEmail: contactEmail,
+                                currentWhatsapp: whatsapp,
+                                currentCity: city,
+                                currentWarehouse: warehouse,
+                                onUpdated: () => setSheetState(() {}),
+                              ),
+                            ),
+                            _CardInfoItem(
+                              icon: Icons.chat_bubble_outline_rounded,
+                              label: 'WhatsApp',
+                              value: whatsapp.isNotEmpty ? whatsapp : 'Not set',
+                              highlightValue: whatsapp.isNotEmpty,
+                              onEdit: () => _showEditContactLocationDialog(
+                                context: context,
+                                controller: controller,
+                                currentEmail: contactEmail,
+                                currentWhatsapp: whatsapp,
+                                currentCity: city,
+                                currentWarehouse: warehouse,
+                                onUpdated: () => setSheetState(() {}),
+                              ),
+                            ),
+                            _CardInfoItem(
+                              icon: Icons.location_city_rounded,
+                              label: 'Primary City',
+                              value: city.isNotEmpty ? city : 'Not set',
+                              onEdit: () => _showEditContactLocationDialog(
+                                context: context,
+                                controller: controller,
+                                currentEmail: contactEmail,
+                                currentWhatsapp: whatsapp,
+                                currentCity: city,
+                                currentWarehouse: warehouse,
+                                onUpdated: () => setSheetState(() {}),
+                              ),
+                            ),
+                            _CardInfoItem(
+                              icon: Icons.warehouse_outlined,
+                              label: 'Warehouse Address',
+                              value: warehouse.isNotEmpty ? warehouse : 'Not set',
+                              onEdit: () => _showEditContactLocationDialog(
+                                context: context,
+                                controller: controller,
+                                currentEmail: contactEmail,
+                                currentWhatsapp: whatsapp,
+                                currentCity: city,
+                                currentWarehouse: warehouse,
+                                onUpdated: () => setSheetState(() {}),
+                              ),
+                            ),
+                            _CardInfoItem(
+                              icon: Icons.language_rounded,
+                              label: 'Language',
+                              value: language,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
 
-                    // Section: Contact & Location Info Card
-                    _buildModernInfoCard(
-                      title: 'Contact & Location',
-                      icon: Icons.contact_mail_outlined,
-                      items: [
-                        _CardInfoItem(
-                          icon: Icons.person_outline_rounded,
-                          label: 'Store Owner',
-                          value: controller.sellerName.value.isNotEmpty ? controller.sellerName.value : 'Owner',
+                        // Section: Shipping & Delivery Card with Edit Icon
+                        _buildModernInfoCard(
+                          title: 'Shipping & Delivery',
+                          icon: Icons.local_shipping_outlined,
+                          onEdit: () => _showEditPoliciesDialog(
+                            context: context,
+                            controller: controller,
+                            currentShippingMethod: shippingMethod,
+                            currentDeliveryZones: deliveryZones,
+                            currentShippingCharges: shippingCharges,
+                            currentReturnPolicy: returnPolicy,
+                            currentWarranty: warranty,
+                            currentProcessingTime: processingTime,
+                            currentCancellationPolicy: cancellationPolicy,
+                            onUpdated: () => setSheetState(() {}),
+                          ),
+                          items: [
+                            _CardInfoItem(
+                              icon: Icons.delivery_dining_outlined,
+                              label: 'Shipping Method',
+                              value: shippingMethod,
+                              onEdit: () => _showEditPoliciesDialog(
+                                context: context,
+                                controller: controller,
+                                currentShippingMethod: shippingMethod,
+                                currentDeliveryZones: deliveryZones,
+                                currentShippingCharges: shippingCharges,
+                                currentReturnPolicy: returnPolicy,
+                                currentWarranty: warranty,
+                                currentProcessingTime: processingTime,
+                                currentCancellationPolicy: cancellationPolicy,
+                                onUpdated: () => setSheetState(() {}),
+                              ),
+                            ),
+                            _CardInfoItem(
+                              icon: Icons.map_outlined,
+                              label: 'Delivery Coverage',
+                              value: deliveryZones,
+                              onEdit: () => _showEditPoliciesDialog(
+                                context: context,
+                                controller: controller,
+                                currentShippingMethod: shippingMethod,
+                                currentDeliveryZones: deliveryZones,
+                                currentShippingCharges: shippingCharges,
+                                currentReturnPolicy: returnPolicy,
+                                currentWarranty: warranty,
+                                currentProcessingTime: processingTime,
+                                currentCancellationPolicy: cancellationPolicy,
+                                onUpdated: () => setSheetState(() {}),
+                              ),
+                            ),
+                            _CardInfoItem(
+                              icon: Icons.payments_outlined,
+                              label: 'Delivery Charges',
+                              value: 'Rs. $shippingCharges',
+                              highlightValue: true,
+                              onEdit: () => _showEditPoliciesDialog(
+                                context: context,
+                                controller: controller,
+                                currentShippingMethod: shippingMethod,
+                                currentDeliveryZones: deliveryZones,
+                                currentShippingCharges: shippingCharges,
+                                currentReturnPolicy: returnPolicy,
+                                currentWarranty: warranty,
+                                currentProcessingTime: processingTime,
+                                currentCancellationPolicy: cancellationPolicy,
+                                onUpdated: () => setSheetState(() {}),
+                              ),
+                            ),
+                          ],
                         ),
-                        _CardInfoItem(
-                          icon: Icons.email_outlined,
-                          label: 'Contact Email',
-                          value: contactEmail.isNotEmpty ? contactEmail : 'Not set',
-                        ),
-                        if (whatsapp.isNotEmpty)
-                          _CardInfoItem(
-                            icon: Icons.chat_bubble_outline_rounded,
-                            label: 'WhatsApp',
-                            value: whatsapp,
-                            highlightValue: true,
+                        const SizedBox(height: 16),
+
+                        // Section: Policies & Guarantees Card with Edit Icon
+                        _buildModernInfoCard(
+                          title: 'Store Policies',
+                          icon: Icons.gavel_outlined,
+                          onEdit: () => _showEditPoliciesDialog(
+                            context: context,
+                            controller: controller,
+                            currentShippingMethod: shippingMethod,
+                            currentDeliveryZones: deliveryZones,
+                            currentShippingCharges: shippingCharges,
+                            currentReturnPolicy: returnPolicy,
+                            currentWarranty: warranty,
+                            currentProcessingTime: processingTime,
+                            currentCancellationPolicy: cancellationPolicy,
+                            onUpdated: () => setSheetState(() {}),
                           ),
-                        if (city.isNotEmpty)
-                          _CardInfoItem(
-                            icon: Icons.location_city_rounded,
-                            label: 'Primary City',
-                            value: city,
-                          ),
-                        if (warehouse.isNotEmpty)
-                          _CardInfoItem(
-                            icon: Icons.warehouse_outlined,
-                            label: 'Warehouse Address',
-                            value: warehouse,
-                          ),
-                        _CardInfoItem(
-                          icon: Icons.language_rounded,
-                          label: 'Language',
-                          value: language,
+                          items: [
+                            _CardInfoItem(
+                              icon: Icons.keyboard_return_rounded,
+                              label: 'Return Policy',
+                              value: returnPolicy,
+                              onEdit: () => _showEditPoliciesDialog(
+                                context: context,
+                                controller: controller,
+                                currentShippingMethod: shippingMethod,
+                                currentDeliveryZones: deliveryZones,
+                                currentShippingCharges: shippingCharges,
+                                currentReturnPolicy: returnPolicy,
+                                currentWarranty: warranty,
+                                currentProcessingTime: processingTime,
+                                currentCancellationPolicy: cancellationPolicy,
+                                onUpdated: () => setSheetState(() {}),
+                              ),
+                            ),
+                            _CardInfoItem(
+                              icon: Icons.verified_user_outlined,
+                              label: 'Warranty',
+                              value: warranty,
+                              onEdit: () => _showEditPoliciesDialog(
+                                context: context,
+                                controller: controller,
+                                currentShippingMethod: shippingMethod,
+                                currentDeliveryZones: deliveryZones,
+                                currentShippingCharges: shippingCharges,
+                                currentReturnPolicy: returnPolicy,
+                                currentWarranty: warranty,
+                                currentProcessingTime: processingTime,
+                                currentCancellationPolicy: cancellationPolicy,
+                                onUpdated: () => setSheetState(() {}),
+                              ),
+                            ),
+                            _CardInfoItem(
+                              icon: Icons.access_time_rounded,
+                              label: 'Processing Time',
+                              value: processingTime,
+                              onEdit: () => _showEditPoliciesDialog(
+                                context: context,
+                                controller: controller,
+                                currentShippingMethod: shippingMethod,
+                                currentDeliveryZones: deliveryZones,
+                                currentShippingCharges: shippingCharges,
+                                currentReturnPolicy: returnPolicy,
+                                currentWarranty: warranty,
+                                currentProcessingTime: processingTime,
+                                currentCancellationPolicy: cancellationPolicy,
+                                onUpdated: () => setSheetState(() {}),
+                              ),
+                            ),
+                            _CardInfoItem(
+                              icon: Icons.highlight_off_rounded,
+                              label: 'Cancellation Policy',
+                              value: cancellationPolicy,
+                              onEdit: () => _showEditPoliciesDialog(
+                                context: context,
+                                controller: controller,
+                                currentShippingMethod: shippingMethod,
+                                currentDeliveryZones: deliveryZones,
+                                currentShippingCharges: shippingCharges,
+                                currentReturnPolicy: returnPolicy,
+                                currentWarranty: warranty,
+                                currentProcessingTime: processingTime,
+                                currentCancellationPolicy: cancellationPolicy,
+                                onUpdated: () => setSheetState(() {}),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
-                    const SizedBox(height: 16),
-
-                    // Section: Shipping & Delivery Card
-                    _buildModernInfoCard(
-                      title: 'Shipping & Delivery',
-                      icon: Icons.local_shipping_outlined,
-                      items: [
-                        _CardInfoItem(
-                          icon: Icons.delivery_dining_outlined,
-                          label: 'Shipping Method',
-                          value: shippingMethod,
-                        ),
-                        _CardInfoItem(
-                          icon: Icons.map_outlined,
-                          label: 'Delivery Coverage',
-                          value: deliveryZones,
-                        ),
-                        _CardInfoItem(
-                          icon: Icons.payments_outlined,
-                          label: 'Delivery Charges',
-                          value: 'Rs. $shippingCharges',
-                          highlightValue: true,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Section: Policies & Guarantees Card
-                    _buildModernInfoCard(
-                      title: 'Store Policies',
-                      icon: Icons.gavel_outlined,
-                      items: [
-                        _CardInfoItem(
-                          icon: Icons.keyboard_return_rounded,
-                          label: 'Return Policy',
-                          value: returnPolicy,
-                        ),
-                        _CardInfoItem(
-                          icon: Icons.verified_user_outlined,
-                          label: 'Warranty',
-                          value: warranty,
-                        ),
-                        _CardInfoItem(
-                          icon: Icons.access_time_rounded,
-                          label: 'Processing Time',
-                          value: processingTime,
-                        ),
-                        _CardInfoItem(
-                          icon: Icons.highlight_off_rounded,
-                          label: 'Cancellation Policy',
-                          value: cancellationPolicy,
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -1901,6 +2123,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
     required String title,
     required IconData icon,
     required List<_CardInfoItem> items,
+    VoidCallback? onEdit,
   }) {
     return Container(
       decoration: BoxDecoration(
@@ -1920,18 +2143,58 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
         children: [
           // Card Header
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
+            padding: const EdgeInsets.fromLTRB(16, 12, 12, 10),
             child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Icon(icon, size: 18, color: AppColors.primaryPurple),
-                const SizedBox(width: 8),
-                Text(
-                  title,
-                  style: AppTextStyles.bold.copyWith(
-                    fontSize: 13.5,
-                    color: AppColors.darkText,
+                Expanded(
+                  child: Row(
+                    children: [
+                      Icon(icon, size: 18, color: AppColors.primaryPurple),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          title,
+                          style: AppTextStyles.bold.copyWith(
+                            fontSize: 13.5,
+                            color: AppColors.darkText,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
+                if (onEdit != null) ...[
+                  const SizedBox(width: 8),
+                  InkWell(
+                    onTap: onEdit,
+                    borderRadius: BorderRadius.circular(8),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryPurple.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: const [
+                          Icon(Icons.edit_outlined, size: 13, color: AppColors.primaryPurple),
+                          SizedBox(width: 4),
+                          Text(
+                            'Edit',
+                            style: TextStyle(
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.primaryPurple,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -1945,7 +2208,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
             separatorBuilder: (_, __) => Divider(height: 1, color: Colors.grey.shade100),
             itemBuilder: (context, index) {
               final item = items[index];
-              return Padding(
+              final rowContent = Padding(
                 padding: const EdgeInsets.symmetric(vertical: 7),
                 child: Row(
                   children: [
@@ -1959,35 +2222,618 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
                       child: Icon(item.icon, size: 16, color: AppColors.primaryPurple),
                     ),
                     const SizedBox(width: 10),
-                    Text(
-                      item.label,
-                      style: const TextStyle(
-                        fontSize: 12.5,
-                        color: Color(0xFF64748B),
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const Spacer(),
-                    Flexible(
+                    Expanded(
+                      flex: 4,
                       child: Text(
-                        item.value,
-                        textAlign: TextAlign.right,
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: item.highlightValue ? AppColors.primaryPurple : AppColors.darkText,
+                        item.label,
+                        style: const TextStyle(
+                          fontSize: 12.5,
+                          color: Color(0xFF64748B),
+                          fontWeight: FontWeight.w500,
                         ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      flex: 6,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          Flexible(
+                            child: Text(
+                              item.value,
+                              textAlign: TextAlign.right,
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: item.highlightValue ? AppColors.primaryPurple : AppColors.darkText,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (item.onEdit != null) ...[
+                            const SizedBox(width: 6),
+                            Icon(Icons.edit_outlined, size: 13, color: AppColors.primaryPurple.withValues(alpha: 0.7)),
+                          ],
+                        ],
+                      ),
+                    ),
                   ],
                 ),
               );
+
+              if (item.onEdit != null) {
+                return InkWell(
+                  onTap: item.onEdit,
+                  borderRadius: BorderRadius.circular(8),
+                  child: rowContent,
+                );
+              }
+              return rowContent;
             },
           ),
         ],
       ),
+    );
+  }
+
+  void _showEditStoreProfileDialog({
+    required BuildContext context,
+    required SellerDashboardController controller,
+    required String currentStoreName,
+    required String currentTagline,
+    required String currentDescription,
+    required VoidCallback onUpdated,
+  }) {
+    _showEditStoreBottomSheet(
+      context: context,
+      controller: controller,
+      initialTab: 0,
+      onUpdated: onUpdated,
+    );
+  }
+
+  void _showEditContactLocationDialog({
+    required BuildContext context,
+    required SellerDashboardController controller,
+    required String currentEmail,
+    required String currentWhatsapp,
+    required String currentCity,
+    required String currentWarehouse,
+    required VoidCallback onUpdated,
+  }) {
+    _showEditStoreBottomSheet(
+      context: context,
+      controller: controller,
+      initialTab: 1,
+      onUpdated: onUpdated,
+    );
+  }
+
+  void _showEditPoliciesDialog({
+    required BuildContext context,
+    required SellerDashboardController controller,
+    required String currentShippingMethod,
+    required String currentDeliveryZones,
+    required String currentShippingCharges,
+    required String currentReturnPolicy,
+    required String currentWarranty,
+    required String currentProcessingTime,
+    required String currentCancellationPolicy,
+    required VoidCallback onUpdated,
+  }) {
+    _showEditStoreBottomSheet(
+      context: context,
+      controller: controller,
+      initialTab: 2,
+      onUpdated: onUpdated,
+    );
+  }
+
+  void _showEditStoreBottomSheet({
+    required BuildContext context,
+    required SellerDashboardController controller,
+    int initialTab = 0,
+    required VoidCallback onUpdated,
+  }) {
+    final rawStore = SessionManager.getSellerStoreDetailsMap() ?? {};
+    String g(String k1, [String? k2, String? k3]) {
+      final v = rawStore[k1] ?? (k2 != null ? rawStore[k2] : null) ?? (k3 != null ? rawStore[k3] : null);
+      return v?.toString().trim() ?? '';
+    }
+
+    final nameCtrl = TextEditingController(
+      text: controller.storeName.value.isNotEmpty
+          ? controller.storeName.value
+          : (g('storeName', 'StoreName', 'name').isNotEmpty ? g('storeName', 'StoreName', 'name') : (SessionManager.sellerStoreName ?? '')),
+    );
+    final taglineCtrl = TextEditingController(text: g('storeTagline', 'Storetagline', 'tagline'));
+    final descCtrl = TextEditingController(text: g('description', 'StoreDescription'));
+
+    final emailCtrl = TextEditingController(text: g('storeContactEmail', 'StoreContactEmail', 'email'));
+    final whatsappCtrl = TextEditingController(text: g('storeWhatsapp', 'StoreWhatsapp', 'whatsapp'));
+    final cityCtrl = TextEditingController(text: g('primaryCity', 'PrimaryCity', 'city'));
+    final warehouseCtrl = TextEditingController(text: g('warehouseAddress', 'WarehouseAddress'));
+
+    final shippingMethodCtrl = TextEditingController(text: g('shippingMethod', 'ShippingMethod'));
+    final deliveryZonesCtrl = TextEditingController(text: g('deliveryZones', 'DeliveryZones'));
+    final shippingChargesCtrl = TextEditingController(text: g('shippingCharges', 'ShippingCharges'));
+    final processingTimeCtrl = TextEditingController(text: g('processingTime', 'ProcessingTime'));
+    final returnPolicyCtrl = TextEditingController(text: g('returnPolicy', 'ReturnPolicy'));
+    final warrantyCtrl = TextEditingController(text: g('warranty', 'Warrenty'));
+    final cancellationPolicyCtrl = TextEditingController(text: g('cancellationPolicy', 'CancellationPolicy'));
+
+    final formKey = GlobalKey<FormState>();
+    int selectedTab = initialTab;
+    bool isSaving = false;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetCtx) => StatefulBuilder(
+        builder: (context, setModalState) {
+          return Container(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.90,
+            ),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Drag handle
+                Center(
+                  child: Container(
+                    width: 42,
+                    height: 4.5,
+                    margin: const EdgeInsets.only(top: 12, bottom: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                ),
+                // Sheet Header
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 6, 16, 12),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryPurple.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(Icons.mode_edit_outline_rounded, color: AppColors.primaryPurple, size: 20),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Edit Store Details',
+                              style: AppTextStyles.bold.copyWith(fontSize: 17, color: AppColors.darkText),
+                            ),
+                            Text(
+                              'Update your public profile, contact & operational policies',
+                              style: TextStyle(fontSize: 11.5, color: Colors.grey.shade600),
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                        icon: Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade100,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.close_rounded, size: 18, color: Colors.black87),
+                        ),
+                        onPressed: () => Navigator.of(sheetCtx).pop(),
+                      ),
+                    ],
+                  ),
+                ),
+                // Modern Segmented Tab Pills
+                Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF1F5F9),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Row(
+                    children: [
+                      _buildEditTabPill(
+                        label: 'Store Profile',
+                        icon: Icons.storefront_rounded,
+                        isSelected: selectedTab == 0,
+                        onTap: () => setModalState(() => selectedTab = 0),
+                      ),
+                      _buildEditTabPill(
+                        label: 'Contact & City',
+                        icon: Icons.contact_mail_outlined,
+                        isSelected: selectedTab == 1,
+                        onTap: () => setModalState(() => selectedTab = 1),
+                      ),
+                      _buildEditTabPill(
+                        label: 'Policies',
+                        icon: Icons.local_shipping_outlined,
+                        isSelected: selectedTab == 2,
+                        onTap: () => setModalState(() => selectedTab = 2),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                const Divider(height: 1, thickness: 1, color: Color(0xFFE2E8F0)),
+
+                // Form Scrollable Body
+                Flexible(
+                  child: SingleChildScrollView(
+                    padding: EdgeInsets.fromLTRB(20, 16, 20, MediaQuery.of(context).viewInsets.bottom + 16),
+                    child: Form(
+                      key: formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (selectedTab == 0) ...[
+                            _buildModernFormField(
+                              label: 'Store Name *',
+                              hint: 'Enter your brand / store name',
+                              icon: Icons.business_rounded,
+                              controller: nameCtrl,
+                              validator: (val) => val == null || val.trim().isEmpty ? 'Store name is required' : null,
+                            ),
+                            const SizedBox(height: 14),
+                            _buildModernFormField(
+                              label: 'Store Tagline',
+                              hint: 'e.g. Quality Goods for Every Home',
+                              icon: Icons.short_text_rounded,
+                              controller: taglineCtrl,
+                            ),
+                            const SizedBox(height: 14),
+                            _buildModernFormField(
+                              label: 'Store Description',
+                              hint: 'Describe your store, specialty, and services for buyers...',
+                              icon: Icons.notes_rounded,
+                              controller: descCtrl,
+                              maxLines: 4,
+                            ),
+                          ] else if (selectedTab == 1) ...[
+                            _buildModernFormField(
+                              label: 'Contact Email *',
+                              hint: 'store@example.com',
+                              icon: Icons.email_outlined,
+                              controller: emailCtrl,
+                              keyboardType: TextInputType.emailAddress,
+                              validator: (val) {
+                                if (val == null || val.trim().isEmpty) return 'Email is required';
+                                if (!val.contains('@')) return 'Enter a valid email address';
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 14),
+                            _buildModernFormField(
+                              label: 'WhatsApp Number',
+                              hint: '03XXXXXXXXX',
+                              icon: Icons.chat_bubble_outline_rounded,
+                              controller: whatsappCtrl,
+                              keyboardType: TextInputType.phone,
+                            ),
+                            const SizedBox(height: 14),
+                            _buildModernFormField(
+                              label: 'Primary City',
+                              hint: 'e.g. Lahore, Karachi, Islamabad',
+                              icon: Icons.location_city_rounded,
+                              controller: cityCtrl,
+                            ),
+                            const SizedBox(height: 14),
+                            _buildModernFormField(
+                              label: 'Warehouse Address',
+                              hint: 'Complete street, building, area address...',
+                              icon: Icons.warehouse_outlined,
+                              controller: warehouseCtrl,
+                              maxLines: 2,
+                            ),
+                          ] else ...[
+                            _buildModernFormField(
+                              label: 'Shipping Method',
+                              hint: 'e.g. Standard Courier / Express',
+                              icon: Icons.local_shipping_outlined,
+                              controller: shippingMethodCtrl,
+                            ),
+                            const SizedBox(height: 14),
+                            _buildModernFormField(
+                              label: 'Delivery Coverage / Zones',
+                              hint: 'e.g. All over Pakistan',
+                              icon: Icons.map_outlined,
+                              controller: deliveryZonesCtrl,
+                            ),
+                            const SizedBox(height: 14),
+                            _buildModernFormField(
+                              label: 'Delivery Charges (Rs.)',
+                              hint: 'e.g. 200',
+                              icon: Icons.payments_outlined,
+                              controller: shippingChargesCtrl,
+                              keyboardType: TextInputType.number,
+                            ),
+                            const SizedBox(height: 14),
+                            _buildModernFormField(
+                              label: 'Processing Time',
+                              hint: 'e.g. 1-2 working days',
+                              icon: Icons.schedule_rounded,
+                              controller: processingTimeCtrl,
+                            ),
+                            const SizedBox(height: 14),
+                            _buildModernFormField(
+                              label: 'Return Policy',
+                              hint: 'e.g. 7 days return & refund',
+                              icon: Icons.assignment_return_outlined,
+                              controller: returnPolicyCtrl,
+                            ),
+                            const SizedBox(height: 14),
+                            _buildModernFormField(
+                              label: 'Warranty Policy',
+                              hint: 'e.g. 6 months official warranty',
+                              icon: Icons.verified_user_outlined,
+                              controller: warrantyCtrl,
+                            ),
+                            const SizedBox(height: 14),
+                            _buildModernFormField(
+                              label: 'Cancellation Policy',
+                              hint: 'e.g. Within 24 hours of order',
+                              icon: Icons.highlight_off_rounded,
+                              controller: cancellationPolicyCtrl,
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+
+                // Bottom Action Bar
+                Container(
+                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 18),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, -3),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        flex: 3,
+                        child: OutlinedButton(
+                          onPressed: isSaving ? null : () => Navigator.of(sheetCtx).pop(),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            side: BorderSide(color: Colors.grey.shade300),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          ),
+                          child: const Text(
+                            'Cancel',
+                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        flex: 5,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [AppColors.primaryPurple, AppColors.secondaryViolet],
+                            ),
+                            borderRadius: BorderRadius.circular(14),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColors.primaryPurple.withValues(alpha: 0.35),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: ElevatedButton(
+                            onPressed: isSaving
+                                ? null
+                                : () async {
+                                    if (formKey.currentState?.validate() ?? false) {
+                                      setModalState(() => isSaving = true);
+                                      final payload = <String, dynamic>{
+                                        'StoreName': nameCtrl.text.trim(),
+                                        'storeName': nameCtrl.text.trim(),
+                                        'Storetagline': taglineCtrl.text.trim(),
+                                        'storeTagline': taglineCtrl.text.trim(),
+                                        'tagline': taglineCtrl.text.trim(),
+                                        'description': descCtrl.text.trim(),
+                                        'StoreContactEmail': emailCtrl.text.trim(),
+                                        'storeContactEmail': emailCtrl.text.trim(),
+                                        'email': emailCtrl.text.trim(),
+                                        'StoreWhatsapp': whatsappCtrl.text.trim(),
+                                        'storeWhatsapp': whatsappCtrl.text.trim(),
+                                        'whatsapp': whatsappCtrl.text.trim(),
+                                        'PrimaryCity': cityCtrl.text.trim(),
+                                        'primaryCity': cityCtrl.text.trim(),
+                                        'city': cityCtrl.text.trim(),
+                                        'WarehouseAddress': warehouseCtrl.text.trim(),
+                                        'warehouseAddress': warehouseCtrl.text.trim(),
+                                        'ShippingMethod': shippingMethodCtrl.text.trim(),
+                                        'shippingMethod': shippingMethodCtrl.text.trim(),
+                                        'DeliveryZones': deliveryZonesCtrl.text.trim(),
+                                        'deliveryZones': deliveryZonesCtrl.text.trim(),
+                                        'ShippingCharges': shippingChargesCtrl.text.trim(),
+                                        'shippingCharges': shippingChargesCtrl.text.trim(),
+                                        'ReturnPolicy': returnPolicyCtrl.text.trim(),
+                                        'returnPolicy': returnPolicyCtrl.text.trim(),
+                                        'Warrenty': warrantyCtrl.text.trim(),
+                                        'warranty': warrantyCtrl.text.trim(),
+                                        'ProcessingTime': processingTimeCtrl.text.trim(),
+                                        'processingTime': processingTimeCtrl.text.trim(),
+                                        'CancellationPolicy': cancellationPolicyCtrl.text.trim(),
+                                        'cancellationPolicy': cancellationPolicyCtrl.text.trim(),
+                                      };
+                                      final success = await controller.updateStoreDetails(payload);
+                                      if (sheetCtx.mounted) {
+                                        setModalState(() => isSaving = false);
+                                      }
+                                      if (success) {
+                                        if (sheetCtx.mounted) {
+                                          Navigator.of(sheetCtx).pop();
+                                        }
+                                        onUpdated();
+                                      }
+                                    }
+                                  },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.transparent,
+                              shadowColor: Colors.transparent,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                            ),
+                            child: isSaving
+                                ? const SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                  )
+                                : const Text(
+                                    'Save Changes',
+                                    style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.bold, color: Colors.white),
+                                  ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildEditTabPill({
+    required String label,
+    required IconData icon,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          decoration: BoxDecoration(
+            color: isSelected ? Colors.white : Colors.transparent,
+            borderRadius: BorderRadius.circular(10),
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.06),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : null,
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                size: 15,
+                color: isSelected ? AppColors.primaryPurple : const Color(0xFF64748B),
+              ),
+              const SizedBox(width: 5),
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                    color: isSelected ? AppColors.primaryPurple : const Color(0xFF64748B),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildModernFormField({
+    required String label,
+    required String hint,
+    required IconData icon,
+    required TextEditingController controller,
+    int maxLines = 1,
+    TextInputType? keyboardType,
+    String? Function(String?)? validator,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 12.5,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF334155),
+          ),
+        ),
+        const SizedBox(height: 6),
+        TextFormField(
+          controller: controller,
+          maxLines: maxLines,
+          keyboardType: keyboardType,
+          validator: validator,
+          style: const TextStyle(fontSize: 13.5, color: Color(0xFF0F172A), fontWeight: FontWeight.w500),
+          decoration: InputDecoration(
+            hintText: hint,
+            hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+            prefixIcon: maxLines == 1 ? Icon(icon, size: 18, color: const Color(0xFF64748B)) : null,
+            filled: true,
+            fillColor: const Color(0xFFF8FAFC),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: AppColors.primaryPurple, width: 1.5),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -3270,11 +4116,13 @@ class _CardInfoItem {
   final String label;
   final String value;
   final bool highlightValue;
+  final VoidCallback? onEdit;
 
   const _CardInfoItem({
     required this.icon,
     required this.label,
     required this.value,
     this.highlightValue = false,
+    this.onEdit,
   });
 }

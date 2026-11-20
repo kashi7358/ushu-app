@@ -5,6 +5,7 @@ import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_text_styles.dart';
 import '../../../../core/utils/session_manager.dart';
 import '../../../../core/utils/custom_popup.dart';
+import '../../../../core/widgets/report_modal_bottom_sheet.dart';
 import '../controllers/product_detail_controller.dart';
 import '../../../cart/presentation/controllers/cart_controller.dart';
 import '../../../wishlist/presentation/controllers/wishlist_controller.dart';
@@ -137,38 +138,120 @@ class ProductDetailScreen extends StatelessWidget {
           ),
         ),
         actions: [
-          Obx(() {
-            final product = controller.product.value;
-            final isRegistered = Get.isRegistered<WishlistController>();
-            final isFav = isRegistered && product != null 
-                ? Get.find<WishlistController>().isFavorite(product.id) 
-                : false;
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Wishlist Button
+                Obx(() {
+                  final product = controller.product.value;
+                  final isRegistered = Get.isRegistered<WishlistController>();
+                  final isFav = isRegistered && product != null 
+                      ? Get.find<WishlistController>().isFavorite(product.id) 
+                      : false;
 
-            return Container(
-              margin: const EdgeInsets.all(8),
-              decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.3), shape: BoxShape.circle),
-              child: IconButton(
-                icon: Icon(
-                  isFav ? Icons.favorite : Icons.favorite_border, 
-                  color: isFav ? AppColors.error : AppColors.white, 
-                  size: 20
+                  return GestureDetector(
+                    onTap: () {
+                      if (isRegistered && product != null) {
+                        Get.find<WishlistController>().toggleWishlist(product.id);
+                      }
+                    },
+                    child: Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.35),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        isFav ? Icons.favorite : Icons.favorite_border, 
+                        color: isFav ? AppColors.error : AppColors.white, 
+                        size: 19,
+                      ),
+                    ),
+                  );
+                }),
+                const SizedBox(width: 8),
+                // Share Button
+                GestureDetector(
+                  onTap: () => _showShareOptions(context),
+                  child: Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.35),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.share_rounded, color: AppColors.white, size: 18),
+                  ),
                 ),
-                onPressed: () {
-                  if (isRegistered && product != null) {
-                    Get.find<WishlistController>().toggleWishlist(product.id);
-                  }
-                },
-              ),
-            );
-          }),
-          Container(
-            margin: const EdgeInsets.all(8),
-            decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.3), shape: BoxShape.circle),
-            child: IconButton(
-              icon: const Icon(Icons.share, color: AppColors.white, size: 20),
-              onPressed: () {
-                _showShareOptions(context);
-              },
+                const SizedBox(width: 8),
+                // Three-Dots Menu (Holds Report Product & Additional Options)
+                PopupMenuButton<String>(
+                  padding: EdgeInsets.zero,
+                  offset: const Offset(0, 44),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  color: Colors.white,
+                  elevation: 8,
+                  child: Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.35),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.more_vert_rounded, color: AppColors.white, size: 20),
+                  ),
+                  onSelected: (value) {
+                    if (value == 'share') {
+                      _showShareOptions(context);
+                    } else if (value == 'report') {
+                      final product = controller.product.value;
+                      final prodId = (product != null && product.id.isNotEmpty) ? product.id : currentArgId;
+                      if (prodId.isNotEmpty) {
+                        ReportModalBottomSheet.show(
+                          context: context,
+                          targetType: 'Product',
+                          targetId: prodId,
+                          targetTitle: product?.name ?? 'Product',
+                        );
+                      }
+                    }
+                  },
+                  itemBuilder: (ctx) => [
+                    PopupMenuItem<String>(
+                      value: 'share',
+                      height: 42,
+                      child: Row(
+                        children: const [
+                          Icon(Icons.share_outlined, size: 18, color: Color(0xFF334155)),
+                          SizedBox(width: 10),
+                          Text(
+                            'Share Product',
+                            style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w500, color: Color(0xFF1E293B)),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuDivider(height: 1),
+                    PopupMenuItem<String>(
+                      value: 'report',
+                      height: 42,
+                      child: Row(
+                        children: const [
+                          Icon(Icons.flag_outlined, size: 18, color: Color(0xFFDC2626)),
+                          SizedBox(width: 10),
+                          Text(
+                            'Report Product',
+                            style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600, color: Color(0xFFDC2626)),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
         ],

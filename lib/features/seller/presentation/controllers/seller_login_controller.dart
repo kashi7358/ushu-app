@@ -29,16 +29,7 @@ class SellerLoginController extends GetxController {
     final remoteDataSource = SellerRemoteDataSourceImpl(apiClient);
     _repository = SellerRepositoryImpl(remoteDataSource);
 
-    // If seller is already logged in AND has a created store, redirect directly to Seller Dashboard
-    final hasStore = SessionManager.sellerStoreId != null &&
-        SessionManager.sellerStoreId!.trim().isNotEmpty;
-    if (SessionManager.isSellerLoggedIn && hasStore) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        Get.offAllNamed(AppRoutes.sellerDashboard);
-      });
-    } else {
-      SessionManager.setLastScreen(AppRoutes.sellerLogin);
-    }
+    SessionManager.setLastScreen(AppRoutes.sellerLogin);
   }
 
   @override

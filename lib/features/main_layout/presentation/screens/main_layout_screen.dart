@@ -113,7 +113,7 @@ class MainLayoutScreen extends StatelessWidget {
               const BottomNavigationBarItem(
                 icon: Icon(Icons.person_outline),
                 activeIcon: Icon(Icons.person),
-                label: 'Profile',
+                label: 'Account',
               ),
             ],
           ),

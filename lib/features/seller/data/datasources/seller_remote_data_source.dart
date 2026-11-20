@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/network/api_endpoints.dart';
+import '../../../../core/utils/session_manager.dart';
 import '../models/create_banner_request_model.dart';
 import '../models/update_banner_request_model.dart';
 import '../models/create_flash_sale_request_model.dart';
@@ -15,6 +16,7 @@ abstract class SellerRemoteDataSource {
   Future<dynamic> loginSeller(String email, String password);
   Future<dynamic> forgetPassword(String email);
   Future<dynamic> createStore(CreateStoreRequestModel model);
+  Future<dynamic> updateStore(Map<String, dynamic> updateData);
   Future<dynamic> createProduct({required String storeId, required CreateProductRequestModel model});
   Future<dynamic> updateProduct({required String productId, required FormData formData});
   Future<dynamic> getProductsByStore(String storeId);
@@ -199,6 +201,41 @@ class SellerRemoteDataSourceImpl implements SellerRemoteDataSource {
           : null,
     );
     return response.data;
+  }
+
+  @override
+  Future<dynamic> updateStore(Map<String, dynamic> updateData) async {
+    final storeId = SessionManager.sellerStoreId;
+    try {
+      final response = await apiClient.dio.put(
+        ApiEndpoints.updateStore,
+        data: updateData,
+      );
+      return response.data;
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404 || e.response?.statusCode == 405) {
+        try {
+          final fallbackUrl = (storeId != null && storeId.isNotEmpty)
+              ? '${ApiEndpoints.updateStore}/$storeId'
+              : ApiEndpoints.updateStore;
+          final response2 = await apiClient.dio.patch(
+            fallbackUrl,
+            data: updateData,
+          );
+          return response2.data;
+        } on DioException catch (e2) {
+          if (e2.response?.statusCode == 404 || e2.response?.statusCode == 405) {
+            final response3 = await apiClient.dio.post(
+              ApiEndpoints.updateStore,
+              data: updateData,
+            );
+            return response3.data;
+          }
+          rethrow;
+        }
+      }
+      rethrow;
+    }
   }
 
   @override

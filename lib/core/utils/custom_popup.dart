@@ -506,6 +506,18 @@ class CustomPopup {
     );
   }
 
+  /// Confirmation dialog before switching from Seller to Buyer panel
+  static Future<bool?> showSwitchToBuyerConfirmation() {
+    return _showProConfirmDialog(
+      title: 'Switch to Buyer Panel?',
+      message: 'Are you sure you want to leave the Seller Center and go to the Buyer shopping experience?',
+      icon: Icons.shopping_bag_outlined,
+      accentColor: AppColors.primaryPurple,
+      confirmText: 'Switch to Buyer',
+      cancelText: 'Stay in Seller',
+    );
+  }
+
   static Future<String?> showDeleteAccountDialog({
     required String title,
     required String message,

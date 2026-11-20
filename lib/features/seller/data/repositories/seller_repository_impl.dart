@@ -74,6 +74,11 @@ class SellerRepositoryImpl implements SellerRepository {
   }
 
   @override
+  Future<dynamic> updateStore(Map<String, dynamic> updateData) {
+    return remoteDataSource.updateStore(updateData);
+  }
+
+  @override
   Future<dynamic> createFlashSale(CreateFlashSaleRequestModel model) {
     return remoteDataSource.createFlashSale(model);
   }

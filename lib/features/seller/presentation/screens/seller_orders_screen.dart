@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:shimmer/shimmer.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_text_styles.dart';
+import '../../../../core/widgets/report_modal_bottom_sheet.dart';
 import '../../data/models/seller_order_model.dart';
 import '../controllers/seller_orders_controller.dart';
 
@@ -635,14 +636,56 @@ class SellerOrdersScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'CUSTOMER & DELIVERY DETAILS',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w800,
-                        color: Color(0xFF64748B),
-                        letterSpacing: 0.6,
-                      ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'CUSTOMER & DELIVERY DETAILS',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF64748B),
+                            letterSpacing: 0.6,
+                          ),
+                        ),
+                        InkWell(
+                          onTap: () {
+                            final targetBuyerId = order.buyerId.isNotEmpty ? order.buyerId : order.id;
+                            ReportModalBottomSheet.show(
+                              context: context,
+                              targetType: 'Buyer',
+                              targetId: targetBuyerId,
+                              targetTitle: order.buyerName.isNotEmpty ? order.buyerName : 'Customer',
+                              initialReason: 'Unfair Review',
+                              isSeller: true,
+                            );
+                          },
+                          borderRadius: BorderRadius.circular(8),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFEF4444).withValues(alpha: 0.08),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: const Color(0xFFEF4444).withValues(alpha: 0.2)),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.flag_outlined, size: 12, color: Color(0xFFEF4444)),
+                                SizedBox(width: 4),
+                                Text(
+                                  'Report Buyer',
+                                  style: TextStyle(
+                                    fontSize: 10.5,
+                                    fontWeight: FontWeight.w700,
+                                    color: Color(0xFFEF4444),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 10),
                     _buildDetailRow(Icons.person_outline_rounded, 'Customer', order.buyerName),

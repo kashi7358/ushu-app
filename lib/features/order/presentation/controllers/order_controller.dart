@@ -15,12 +15,21 @@ class OrderController extends GetxController {
   final RxBool isNoInternet = false.obs;
   final RxString selectedTab = 'all'.obs;
 
+  void selectTabFromArgs(dynamic args) {
+    if (args is Map && args['tab'] != null) {
+      final tab = args['tab'].toString().trim().toLowerCase();
+      if (tab.isNotEmpty) {
+        selectedTab.value = tab;
+        return;
+      }
+    }
+    selectedTab.value = 'all';
+  }
+
   @override
   void onInit() {
     super.onInit();
-    if (Get.arguments != null && Get.arguments['tab'] != null) {
-      selectedTab.value = Get.arguments['tab'].toString();
-    }
+    selectTabFromArgs(Get.arguments);
     if (SessionManager.isLoggedIn) {
       fetchMyOrders();
     }

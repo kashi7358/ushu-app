@@ -1046,6 +1046,27 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
                     }
                   },
                 ),
+                _buildDrawerItem(
+                  icon: Icons.person_outline_rounded,
+                  title: 'Seller Profile & Password',
+                  isSelected: false,
+                  onTap: () {
+                    if (_scaffoldKey.currentState?.isDrawerOpen ?? false) {
+                      Navigator.of(context).pop();
+                    }
+                    _showEditSellerProfileDialog(
+                      context: context,
+                      controller: controller,
+                      currentFullName: controller.sellerName.value.isNotEmpty
+                          ? controller.sellerName.value
+                          : controller.sellerProfile.value.fullName,
+                      currentPhone: controller.sellerPhone.value.isNotEmpty
+                          ? controller.sellerPhone.value
+                          : controller.sellerProfile.value.phoneNumber,
+                      onUpdated: () {},
+                    );
+                  },
+                ),
                 const SizedBox(height: 10),
 
                 _buildDrawerSectionHeader('INVENTORY & SALES'),
@@ -1862,6 +1883,101 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
                         ),
                         const SizedBox(height: 16),
 
+                        // Section: Seller Profile & Identity (from GET /seller/me)
+                        Obx(() {
+                          final sellerFullName = controller.sellerName.value.isNotEmpty
+                              ? controller.sellerName.value
+                              : (controller.sellerProfile.value.fullName.isNotEmpty
+                                  ? controller.sellerProfile.value.fullName
+                                  : 'Seller Account');
+                          final sellerEmailVal = controller.sellerEmail.value.isNotEmpty
+                              ? controller.sellerEmail.value
+                              : (controller.sellerProfile.value.email.isNotEmpty
+                                  ? controller.sellerProfile.value.email
+                                  : contactEmail);
+                          final sellerPhoneVal = controller.sellerPhone.value.isNotEmpty
+                              ? controller.sellerPhone.value
+                              : controller.sellerProfile.value.phoneNumber;
+                          final sellerStatusVal = controller.sellerStatus.value.isNotEmpty
+                              ? controller.sellerStatus.value
+                              : (controller.sellerProfile.value.status.isNotEmpty
+                                  ? controller.sellerProfile.value.status
+                                  : 'Approved');
+                          final businessTypeVal = controller.businessType.value.isNotEmpty
+                              ? controller.businessType.value
+                              : controller.sellerProfile.value.businessType;
+                          final cnicVal = controller.cnic.value.isNotEmpty
+                              ? controller.cnic.value
+                              : controller.sellerProfile.value.cnic;
+                          final bankNameVal = controller.bankName.value.isNotEmpty
+                              ? controller.bankName.value
+                              : controller.sellerProfile.value.bankName;
+                          final ibanVal = controller.ibanNumber.value.isNotEmpty
+                              ? controller.ibanNumber.value
+                              : controller.sellerProfile.value.ibanNumber;
+
+                          return _buildModernInfoCard(
+                            title: 'Seller Account Profile',
+                            icon: Icons.badge_outlined,
+                            onEdit: () => _showEditSellerProfileDialog(
+                              context: context,
+                              controller: controller,
+                              currentFullName: sellerFullName,
+                              currentPhone: sellerPhoneVal,
+                              onUpdated: () => setSheetState(() {}),
+                            ),
+                            items: [
+                              _CardInfoItem(
+                                icon: Icons.person_rounded,
+                                label: 'Full Name',
+                                value: sellerFullName,
+                              ),
+                              _CardInfoItem(
+                                icon: Icons.email_outlined,
+                                label: 'Account Email',
+                                value: sellerEmailVal.isNotEmpty ? sellerEmailVal : 'Not set',
+                              ),
+                              if (sellerPhoneVal.isNotEmpty)
+                                _CardInfoItem(
+                                  icon: Icons.phone_android_rounded,
+                                  label: 'Registered Phone',
+                                  value: sellerPhoneVal,
+                                ),
+                              _CardInfoItem(
+                                icon: Icons.verified_user_rounded,
+                                label: 'Account Status',
+                                value: sellerStatusVal,
+                                highlightValue: true,
+                              ),
+                              if (businessTypeVal.isNotEmpty)
+                                _CardInfoItem(
+                                  icon: Icons.business_center_outlined,
+                                  label: 'Business Type',
+                                  value: businessTypeVal,
+                                ),
+                              if (cnicVal.isNotEmpty)
+                                _CardInfoItem(
+                                  icon: Icons.credit_card_rounded,
+                                  label: 'CNIC / National ID',
+                                  value: cnicVal,
+                                ),
+                              if (bankNameVal.isNotEmpty)
+                                _CardInfoItem(
+                                  icon: Icons.account_balance_outlined,
+                                  label: 'Bank Name',
+                                  value: bankNameVal,
+                                ),
+                              if (ibanVal.isNotEmpty)
+                                _CardInfoItem(
+                                  icon: Icons.account_balance_wallet_outlined,
+                                  label: 'IBAN / Account #',
+                                  value: ibanVal,
+                                ),
+                            ],
+                          );
+                        }),
+                        const SizedBox(height: 16),
+
                         // Section: Contact & Location Info Card with Edit Icon
                         _buildModernInfoCard(
                           title: 'Contact & Location',
@@ -2276,6 +2392,410 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
             },
           ),
         ],
+      ),
+    );
+  }
+
+  void _showEditSellerProfileDialog({
+    required BuildContext context,
+    required SellerDashboardController controller,
+    required String currentFullName,
+    required String currentPhone,
+    required VoidCallback onUpdated,
+  }) {
+    final fullNameCtrl = TextEditingController(text: currentFullName);
+    final phoneCtrl = TextEditingController(text: currentPhone);
+    final currentPassCtrl = TextEditingController();
+    final newPassCtrl = TextEditingController();
+    final confirmPassCtrl = TextEditingController();
+
+    bool obscureCurrent = true;
+    bool obscureNew = true;
+    bool obscureConfirm = true;
+    bool changePasswordExpanded = false;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (bottomSheetCtx) => StatefulBuilder(
+        builder: (ctx, setDialogState) {
+          return Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(ctx).viewInsets.bottom,
+            ),
+            child: Container(
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+              ),
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Handle Bar
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 4.5,
+                        margin: const EdgeInsets.only(bottom: 12),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade300,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                    ),
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryPurple.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(
+                            Icons.badge_outlined,
+                            color: AppColors.primaryPurple,
+                            size: 20,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Update Seller Profile',
+                                style: AppTextStyles.bold.copyWith(fontSize: 16),
+                              ),
+                              Text(
+                                'Update your personal name, phone and password',
+                                style: TextStyle(fontSize: 11.5, color: Colors.grey.shade600),
+                              ),
+                            ],
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: () => Navigator.of(ctx).pop(),
+                          icon: const Icon(Icons.close_rounded, size: 20),
+                          visualDensity: VisualDensity.compact,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Full Name Field
+                    Text(
+                      'Full Name *',
+                      style: AppTextStyles.bold.copyWith(fontSize: 12.5, color: AppColors.darkText),
+                    ),
+                    const SizedBox(height: 6),
+                    TextField(
+                      controller: fullNameCtrl,
+                      decoration: InputDecoration(
+                        hintText: 'Enter your full name',
+                        hintStyle: TextStyle(fontSize: 13, color: Colors.grey.shade400),
+                        prefixIcon: const Icon(Icons.person_outline_rounded, size: 19, color: AppColors.primaryPurple),
+                        filled: true,
+                        fillColor: const Color(0xFFF8FAFC),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: AppColors.primaryPurple, width: 1.5),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+
+                    // Phone Number Field
+                    Text(
+                      'Phone Number *',
+                      style: AppTextStyles.bold.copyWith(fontSize: 12.5, color: AppColors.darkText),
+                    ),
+                    const SizedBox(height: 6),
+                    TextField(
+                      controller: phoneCtrl,
+                      keyboardType: TextInputType.phone,
+                      decoration: InputDecoration(
+                        hintText: 'e.g. 03185915209',
+                        hintStyle: TextStyle(fontSize: 13, color: Colors.grey.shade400),
+                        prefixIcon: const Icon(Icons.phone_outlined, size: 19, color: AppColors.primaryPurple),
+                        filled: true,
+                        fillColor: const Color(0xFFF8FAFC),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: AppColors.primaryPurple, width: 1.5),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Change Password Expandable Card
+                    Container(
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: changePasswordExpanded
+                              ? AppColors.primaryPurple.withValues(alpha: 0.35)
+                              : Colors.grey.shade300,
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          InkWell(
+                            onTap: () {
+                              setDialogState(() {
+                                changePasswordExpanded = !changePasswordExpanded;
+                              });
+                            },
+                            borderRadius: BorderRadius.circular(14),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.lock_reset_rounded,
+                                    size: 20,
+                                    color: changePasswordExpanded ? AppColors.primaryPurple : Colors.grey.shade700,
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'Change Password',
+                                          style: AppTextStyles.bold.copyWith(
+                                            fontSize: 13,
+                                            color: changePasswordExpanded ? AppColors.primaryPurple : AppColors.darkText,
+                                          ),
+                                        ),
+                                        Text(
+                                          'Update password along with profile',
+                                          style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  Icon(
+                                    changePasswordExpanded
+                                        ? Icons.keyboard_arrow_up_rounded
+                                        : Icons.keyboard_arrow_down_rounded,
+                                    color: Colors.grey.shade600,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          if (changePasswordExpanded) ...[
+                            const Divider(height: 1, thickness: 1, color: Color(0xFFE2E8F0)),
+                            Padding(
+                              padding: const EdgeInsets.all(14),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  // Current Password
+                                  Text(
+                                    'Current Password *',
+                                    style: AppTextStyles.bold.copyWith(fontSize: 12, color: AppColors.darkText),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  TextField(
+                                    controller: currentPassCtrl,
+                                    obscureText: obscureCurrent,
+                                    decoration: InputDecoration(
+                                      hintText: 'Enter current password',
+                                      prefixIcon: const Icon(Icons.lock_outline_rounded, size: 18),
+                                      suffixIcon: IconButton(
+                                        icon: Icon(
+                                          obscureCurrent ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                                          size: 18,
+                                        ),
+                                        onPressed: () => setDialogState(() => obscureCurrent = !obscureCurrent),
+                                      ),
+                                      filled: true,
+                                      fillColor: Colors.white,
+                                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 10),
+
+                                  // New Password
+                                  Text(
+                                    'New Password *',
+                                    style: AppTextStyles.bold.copyWith(fontSize: 12, color: AppColors.darkText),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  TextField(
+                                    controller: newPassCtrl,
+                                    obscureText: obscureNew,
+                                    decoration: InputDecoration(
+                                      hintText: 'Enter new password',
+                                      prefixIcon: const Icon(Icons.vpn_key_outlined, size: 18),
+                                      suffixIcon: IconButton(
+                                        icon: Icon(
+                                          obscureNew ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                                          size: 18,
+                                        ),
+                                        onPressed: () => setDialogState(() => obscureNew = !obscureNew),
+                                      ),
+                                      filled: true,
+                                      fillColor: Colors.white,
+                                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 10),
+
+                                  // Confirm Password
+                                  Text(
+                                    'Confirm New Password *',
+                                    style: AppTextStyles.bold.copyWith(fontSize: 12, color: AppColors.darkText),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  TextField(
+                                    controller: confirmPassCtrl,
+                                    obscureText: obscureConfirm,
+                                    decoration: InputDecoration(
+                                      hintText: 'Re-enter new password',
+                                      prefixIcon: const Icon(Icons.check_circle_outline_rounded, size: 18),
+                                      suffixIcon: IconButton(
+                                        icon: Icon(
+                                          obscureConfirm ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                                          size: 18,
+                                        ),
+                                        onPressed: () => setDialogState(() => obscureConfirm = !obscureConfirm),
+                                      ),
+                                      filled: true,
+                                      fillColor: Colors.white,
+                                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Action Buttons (Cancel / Save)
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () => Navigator.of(ctx).pop(),
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 13),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              side: BorderSide(color: Colors.grey.shade300),
+                            ),
+                            child: const Text('Cancel', style: TextStyle(color: Colors.black87, fontWeight: FontWeight.w600)),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: () async {
+                              final name = fullNameCtrl.text.trim();
+                              final phone = phoneCtrl.text.trim();
+
+                              if (name.isEmpty) {
+                                CustomPopup.showToast('Validation Error', 'Please enter your full name', isError: true);
+                                return;
+                              }
+                              if (phone.isEmpty) {
+                                CustomPopup.showToast('Validation Error', 'Please enter your phone number', isError: true);
+                                return;
+                              }
+
+                              String? curPass;
+                              String? newPass;
+                              String? confPass;
+
+                              if (changePasswordExpanded || currentPassCtrl.text.isNotEmpty || newPassCtrl.text.isNotEmpty) {
+                                curPass = currentPassCtrl.text.trim();
+                                newPass = newPassCtrl.text.trim();
+                                confPass = confirmPassCtrl.text.trim();
+
+                                if (curPass.isEmpty) {
+                                  CustomPopup.showToast('Validation Error', 'Please enter current password', isError: true);
+                                  return;
+                                }
+                                if (newPass.isEmpty) {
+                                  CustomPopup.showToast('Validation Error', 'Please enter new password', isError: true);
+                                  return;
+                                }
+                                if (confPass.isEmpty) {
+                                  CustomPopup.showToast('Validation Error', 'Please confirm your new password', isError: true);
+                                  return;
+                                }
+                                if (newPass != confPass) {
+                                  CustomPopup.showToast('Validation Error', 'New passwords do not match', isError: true);
+                                  return;
+                                }
+                                if (newPass.length < 6) {
+                                  CustomPopup.showToast('Validation Error', 'New password must be at least 6 characters', isError: true);
+                                  return;
+                                }
+                              }
+
+                              final success = await controller.updateSellerAccountProfile(
+                                fullName: name,
+                                phoneNumber: phone,
+                                currentPassword: curPass,
+                                newPassword: newPass,
+                                confirmPassword: confPass,
+                              );
+
+                              if (success && ctx.mounted) {
+                                Navigator.of(ctx).pop();
+                                onUpdated();
+                              }
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primaryPurple,
+                              padding: const EdgeInsets.symmetric(vertical: 13),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
+                            child: const Text(
+                              'Save Changes',
+                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
       ),
     );
   }

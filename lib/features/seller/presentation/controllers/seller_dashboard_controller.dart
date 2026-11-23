@@ -10,6 +10,7 @@ import '../../../../core/utils/custom_popup.dart';
 import '../../data/datasources/seller_remote_data_source.dart';
 import '../../data/models/seller_dashboard_stats_model.dart';
 import '../../data/models/seller_order_model.dart';
+import '../../data/models/seller_profile_model.dart';
 import '../../data/repositories/seller_repository_impl.dart';
 
 class SellerDashboardController extends GetxController {
@@ -22,6 +23,19 @@ class SellerDashboardController extends GetxController {
   final RxString storeBanner = ''.obs;
   final RxString sellerName = ''.obs;
   final RxString sellerEmail = ''.obs;
+  final RxString sellerPhone = ''.obs;
+  final RxString sellerStatus = ''.obs;
+  final RxString sellerRole = ''.obs;
+  final RxString businessType = ''.obs;
+  final RxString city = ''.obs;
+  final RxString province = ''.obs;
+  final RxString businessAddress = ''.obs;
+  final RxString cnic = ''.obs;
+  final RxString bankName = ''.obs;
+  final RxString accountHolder = ''.obs;
+  final RxString ibanNumber = ''.obs;
+  final Rx<SellerProfileModel> sellerProfile = const SellerProfileModel().obs;
+  final RxBool isProfileLoading = false.obs;
 
   final RxList<SellerOrderModel> deliveredOrders = <SellerOrderModel>[].obs;
   final RxList<SellerOrderModel> refundedOrders = <SellerOrderModel>[].obs;
@@ -44,6 +58,7 @@ class SellerDashboardController extends GetxController {
     // Initial load from session
     sellerName.value = SessionManager.sellerName ?? 'Seller Account';
     sellerEmail.value = SessionManager.sellerEmail ?? '';
+    sellerStatus.value = SessionManager.sellerStatus ?? 'Active';
     storeName.value = SessionManager.sellerStoreName ?? 'My Store';
     storeLogo.value = SessionManager.sellerStoreLogo ?? '';
     final details = SessionManager.getSellerStoreDetailsMap();
@@ -64,8 +79,9 @@ class SellerDashboardController extends GetxController {
       isLoading.value = true;
       errorMessage.value = '';
 
-      // Trigger store hydration in parallel without blocking dashboard stats display
+      // Trigger store and seller profile hydration in parallel without blocking dashboard stats display
       _hydrateStoreDetails();
+      fetchSellerProfile();
 
       // Parallelize fetching stats, recent orders, delivered orders, and dedicated refunded orders
       final results = await Future.wait([
@@ -304,6 +320,145 @@ class SellerDashboardController extends GetxController {
       errorMessage.value = error.message;
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  Future<void> fetchSellerProfile() async {
+    try {
+      isProfileLoading.value = true;
+      final rawData = await _repository.getSellerProfile();
+      if (rawData is Map) {
+        final profile = SellerProfileModel.fromJson(rawData);
+        sellerProfile.value = profile;
+
+        if (profile.fullName.isNotEmpty) {
+          sellerName.value = profile.fullName;
+        } else if (profile.displayName.isNotEmpty) {
+          sellerName.value = profile.displayName;
+        }
+
+        if (profile.email.isNotEmpty) {
+          sellerEmail.value = profile.email;
+        }
+        if (profile.phoneNumber.isNotEmpty) {
+          sellerPhone.value = profile.phoneNumber;
+        }
+        if (profile.status.isNotEmpty) {
+          sellerStatus.value = profile.status;
+        }
+        if (profile.role.isNotEmpty) {
+          sellerRole.value = profile.role;
+        }
+        if (profile.businessType.isNotEmpty) {
+          businessType.value = profile.businessType;
+        }
+        if (profile.city.isNotEmpty) {
+          city.value = profile.city;
+        }
+        if (profile.province.isNotEmpty) {
+          province.value = profile.province;
+        }
+        if (profile.businessAddress.isNotEmpty) {
+          businessAddress.value = profile.businessAddress;
+        }
+        if (profile.cnic.isNotEmpty) {
+          cnic.value = profile.cnic;
+        }
+        if (profile.bankName.isNotEmpty) {
+          bankName.value = profile.bankName;
+        }
+        if (profile.accountHolder.isNotEmpty) {
+          accountHolder.value = profile.accountHolder;
+        }
+        if (profile.ibanNumber.isNotEmpty) {
+          ibanNumber.value = profile.ibanNumber;
+        }
+
+        if (profile.storeName.isNotEmpty && storeName.value == 'My Store') {
+          storeName.value = profile.storeName;
+        }
+        if (profile.storeLogo.isNotEmpty && storeLogo.value.isEmpty) {
+          storeLogo.value = profile.storeLogo;
+        }
+
+        await SessionManager.updateSellerInfo(
+          name: sellerName.value,
+          email: sellerEmail.value,
+          status: sellerStatus.value,
+          sellerId: profile.id.isNotEmpty ? profile.id : null,
+        );
+      }
+    } catch (e) {
+      debugPrint('SellerDashboardController.fetchSellerProfile error: $e');
+    } finally {
+      isProfileLoading.value = false;
+    }
+  }
+
+  Future<bool> updateSellerAccountProfile({
+    required String fullName,
+    required String phoneNumber,
+    String? currentPassword,
+    String? newPassword,
+    String? confirmPassword,
+  }) async {
+    try {
+      CustomPopup.showLoading('Updating seller profile...');
+
+      final Map<String, dynamic> body = {
+        'fullName': fullName.trim(),
+        'Phone_Number': phoneNumber.trim(),
+      };
+
+      if (currentPassword != null && currentPassword.trim().isNotEmpty) {
+        body['currentPassword'] = currentPassword.trim();
+        body['newPassword'] = (newPassword ?? '').trim();
+        body['confirmPassword'] = (confirmPassword ?? '').trim();
+      }
+
+      final response = await _repository.updateSellerProfile(body);
+      CustomPopup.hideLoading();
+
+      if (response is Map) {
+        if (response['success'] == false) {
+          CustomPopup.showToast(
+            'Update Failed',
+            response['message']?.toString() ?? 'Failed to update profile',
+            isError: true,
+          );
+          return false;
+        }
+      }
+
+      // Update local state and session
+      sellerName.value = fullName.trim();
+      sellerPhone.value = phoneNumber.trim();
+      sellerProfile.value = sellerProfile.value.copyWith(
+        fullName: fullName.trim(),
+        displayName: fullName.trim(),
+        phoneNumber: phoneNumber.trim(),
+      );
+
+      await SessionManager.updateSellerInfo(
+        name: fullName.trim(),
+      );
+
+      CustomPopup.showSuccess('Success', 'Seller profile updated successfully');
+      return true;
+    } catch (e) {
+      CustomPopup.hideLoading();
+      String errorMsg = 'Failed to update seller profile';
+      if (e is DioException) {
+        if (e.response?.data is Map && e.response?.data['message'] != null) {
+          errorMsg = e.response!.data['message'].toString();
+        } else if (e.response?.statusCode == 400) {
+          errorMsg = 'Invalid data or current password incorrect';
+        }
+      } else {
+        errorMsg = e.toString();
+      }
+      CustomPopup.showToast('Error', errorMsg, isError: true);
+      return false;
     }
   }
 

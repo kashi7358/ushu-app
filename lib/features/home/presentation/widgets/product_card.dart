@@ -27,7 +27,11 @@ class ProductCard extends StatelessWidget {
     }
 
     return GestureDetector(
-      onTap: () => Get.toNamed(AppRoutes.productDetail, arguments: product.id),
+      onTap: () => Get.toNamed(
+        AppRoutes.productDetail,
+        arguments: product.id,
+        preventDuplicates: false,
+      ),
       child: Container(
         decoration: BoxDecoration(
           color: AppColors.white,

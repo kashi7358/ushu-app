@@ -155,6 +155,25 @@ class SessionManager {
     await getSavedAddress();
   }
 
+  static Future<void> updateBuyerInfo({
+    String? userId,
+    String? fullName,
+    String? email,
+  }) async {
+    if (userId != null && userId.trim().isNotEmpty) {
+      _userId = userId.trim();
+      await _storage.write(key: 'userId', value: _userId);
+    }
+    if (fullName != null && fullName.trim().isNotEmpty) {
+      _fullName = fullName.trim();
+      await _storage.write(key: 'fullName', value: _fullName);
+    }
+    if (email != null && email.trim().isNotEmpty) {
+      _email = email.trim();
+      await _storage.write(key: 'email', value: _email);
+    }
+  }
+
   static Future<void> clearSession() async {
     _isLoggedIn = false;
     isUserLoggedInRx.value = false;
@@ -346,6 +365,30 @@ class SessionManager {
   static Future<void> saveSellerStoreId(String storeId) async {
     _sellerStoreId = storeId;
     await _storage.write(key: 'sellerStoreId', value: storeId);
+  }
+
+  static Future<void> updateSellerInfo({
+    String? name,
+    String? email,
+    String? status,
+    String? sellerId,
+  }) async {
+    if (name != null && name.trim().isNotEmpty) {
+      _sellerName = name.trim();
+      await _storage.write(key: 'sellerName', value: _sellerName);
+    }
+    if (email != null && email.trim().isNotEmpty) {
+      _sellerEmail = email.trim();
+      await _storage.write(key: 'sellerEmail', value: _sellerEmail);
+    }
+    if (status != null && status.trim().isNotEmpty) {
+      _sellerStatus = status.trim();
+      await _storage.write(key: 'sellerStatus', value: _sellerStatus);
+    }
+    if (sellerId != null && sellerId.trim().isNotEmpty) {
+      _sellerId = sellerId.trim();
+      await _storage.write(key: 'sellerId', value: _sellerId);
+    }
   }
 
   static String? get sellerStoreName => _sellerStoreName;

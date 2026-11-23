@@ -14,6 +14,8 @@ class ApiEndpoints {
   static const String forgetPassword = '$baseUrl/buyer/forget-password';
   static const String resetPassword = '$baseUrl/buyer/reset';
   static const String deleteBuyerAccount = '$baseUrl/buyer/delete-account';
+  static const String buyerProfile = '$baseUrl/buyer/profile';
+  static const String updateBuyerProfile = '$baseUrl/buyer/update-profile';
 
   // Home apis
   static const String allHomepageProducts = '$baseUrl/product/all-homepage';
@@ -73,6 +75,8 @@ class ApiEndpoints {
   static const String verifySellerEmail = '$baseUrl/seller/verify-email';
   static const String resendSellerOtp = '$baseUrl/seller/resend-otp';
   static const String loginSeller = '$baseUrl/seller/login';
+  static const String sellerMe = '$baseUrl/seller/me';
+  static const String updateSellerProfile = '$baseUrl/seller/update-profile';
   static const String sellerForgetPassword = '$baseUrl/seller/forget-password';
   static const String deleteSellerAccount = '$baseUrl/seller/delete-account';
 

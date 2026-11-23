@@ -14,6 +14,8 @@ abstract class SellerRemoteDataSource {
   Future<dynamic> verifySellerEmail({required String sellerId, required String otp});
   Future<dynamic> resendSellerOtp({required String sellerId});
   Future<dynamic> loginSeller(String email, String password);
+  Future<dynamic> getSellerProfile([String? token]);
+  Future<dynamic> updateSellerProfile(Map<String, dynamic> data, [String? token]);
   Future<dynamic> forgetPassword(String email);
   Future<dynamic> createStore(CreateStoreRequestModel model);
   Future<dynamic> updateStore(Map<String, dynamic> updateData);
@@ -96,6 +98,29 @@ class SellerRemoteDataSourceImpl implements SellerRemoteDataSource {
       },
     );
 
+    return response.data;
+  }
+
+  @override
+  Future<dynamic> getSellerProfile([String? token]) async {
+    final response = await apiClient.dio.get(
+      ApiEndpoints.sellerMe,
+      options: token != null && token.isNotEmpty
+          ? Options(headers: {'Authorization': 'Bearer $token'})
+          : null,
+    );
+    return response.data;
+  }
+
+  @override
+  Future<dynamic> updateSellerProfile(Map<String, dynamic> data, [String? token]) async {
+    final response = await apiClient.dio.patch(
+      ApiEndpoints.updateSellerProfile,
+      data: data,
+      options: token != null && token.isNotEmpty
+          ? Options(headers: {'Authorization': 'Bearer $token'})
+          : null,
+    );
     return response.data;
   }
 

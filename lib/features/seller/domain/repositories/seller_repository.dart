@@ -11,6 +11,8 @@ abstract class SellerRepository {
   Future<dynamic> verifySellerEmail({required String sellerId, required String otp});
   Future<dynamic> resendSellerOtp({required String sellerId});
   Future<dynamic> loginSeller(String email, String password);
+  Future<dynamic> getSellerProfile([String? token]);
+  Future<dynamic> updateSellerProfile(Map<String, dynamic> data, [String? token]);
   Future<dynamic> forgetPassword(String email);
   Future<dynamic> createStore(CreateStoreRequestModel model);
   Future<dynamic> updateStore(Map<String, dynamic> updateData);

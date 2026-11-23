@@ -13,8 +13,39 @@ import '../../../chatbot/presentation/screens/chatbot_screen.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:share_plus/share_plus.dart';
 
-class ProductDetailScreen extends StatelessWidget {
+class ProductDetailScreen extends StatefulWidget {
   const ProductDetailScreen({super.key});
+
+  @override
+  State<ProductDetailScreen> createState() => _ProductDetailScreenState();
+}
+
+class _ProductDetailScreenState extends State<ProductDetailScreen> {
+  late final String _currentArgId;
+  late final String _controllerTag;
+  late final ProductDetailController controller;
+
+  @override
+  void initState() {
+    super.initState();
+    final args = Get.arguments;
+    _currentArgId = (args is Map)
+        ? (args['id']?.toString() ?? args['productId']?.toString() ?? '')
+        : (args?.toString() ?? '');
+    _controllerTag = 'product_detail_${_currentArgId}_${identityHashCode(this)}';
+    controller = Get.put(
+      ProductDetailController(initialProductId: _currentArgId),
+      tag: _controllerTag,
+    );
+  }
+
+  @override
+  void dispose() {
+    if (Get.isRegistered<ProductDetailController>(tag: _controllerTag)) {
+      Get.delete<ProductDetailController>(tag: _controllerTag, force: true);
+    }
+    super.dispose();
+  }
 
   void _showShareOptions(BuildContext context) {
     showDialog(
@@ -41,7 +72,7 @@ class ProductDetailScreen extends StatelessWidget {
                       label: 'WhatsApp',
                       onTap: () {
                         Get.back();
-                        final product = Get.find<ProductDetailController>().product.value;
+                        final product = controller.product.value;
                         final shareText = 'Check out ${product?.name ?? 'this product'} on Ushu!';
                         SharePlus.instance.share(ShareParams(text: shareText));
                       },
@@ -52,7 +83,7 @@ class ProductDetailScreen extends StatelessWidget {
                       label: 'Facebook',
                       onTap: () {
                         Get.back();
-                        final product = Get.find<ProductDetailController>().product.value;
+                        final product = controller.product.value;
                         final shareText = 'Check out ${product?.name ?? 'this product'} on Ushu!';
                         SharePlus.instance.share(ShareParams(text: shareText));
                       },
@@ -63,7 +94,7 @@ class ProductDetailScreen extends StatelessWidget {
                       label: 'Instagram',
                       onTap: () {
                         Get.back();
-                        final product = Get.find<ProductDetailController>().product.value;
+                        final product = controller.product.value;
                         final shareText = 'Check out ${product?.name ?? 'this product'} on Ushu!';
                         SharePlus.instance.share(ShareParams(text: shareText));
                       },
@@ -115,14 +146,6 @@ class ProductDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final String currentArgId = (Get.arguments is Map)
-        ? (Get.arguments['id']?.toString() ?? Get.arguments['productId']?.toString() ?? '')
-        : (Get.arguments?.toString() ?? '');
-    final controller = Get.put(ProductDetailController());
-    if (currentArgId.isNotEmpty && controller.productId != currentArgId) {
-      controller.updateProductIdAndFetch(currentArgId);
-    }
-
     return Scaffold(
       backgroundColor: Colors.grey.shade200,
       extendBodyBehindAppBar: true,
@@ -208,7 +231,7 @@ class ProductDetailScreen extends StatelessWidget {
                       _showShareOptions(context);
                     } else if (value == 'report') {
                       final product = controller.product.value;
-                      final prodId = (product != null && product.id.isNotEmpty) ? product.id : currentArgId;
+                      final prodId = (product != null && product.id.isNotEmpty) ? product.id : _currentArgId;
                       if (prodId.isNotEmpty) {
                         ReportModalBottomSheet.show(
                           context: context,
@@ -274,7 +297,7 @@ class ProductDetailScreen extends StatelessWidget {
                       behavior: HitTestBehavior.opaque,
                       onTap: () {
                         if (controller.product.value?.storeId != null && controller.product.value!.storeId!.isNotEmpty) {
-                          Get.toNamed('/store', arguments: controller.product.value!.storeId);
+                          Get.toNamed('/store', arguments: controller.product.value!.storeId, preventDuplicates: false);
                         } else {
                           CustomPopup.showToast('Store not found', 'This product does not have a valid store.', isError: true);
                         }
@@ -667,7 +690,7 @@ class ProductDetailScreen extends StatelessWidget {
               GestureDetector(
                 onTap: () {
                   if (product.storeId != null && product.storeId!.isNotEmpty) {
-                    Get.toNamed('/store', arguments: product.storeId);
+                    Get.toNamed('/store', arguments: product.storeId, preventDuplicates: false);
                   }
                 },
                 child: Container(

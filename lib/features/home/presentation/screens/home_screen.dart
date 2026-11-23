@@ -6,6 +6,7 @@ import '../../../../core/utils/custom_popup.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_dimensions.dart';
 import '../../../../app/theme/app_text_styles.dart';
+import '../widgets/home_buyer_header.dart';
 import '../widgets/home_slider.dart';
 import '../widgets/product_card.dart';
 import '../controllers/home_controller.dart';
@@ -20,19 +21,6 @@ import '../../../../core/widgets/no_internet_widget.dart';
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
-  String _getGreeting() {
-    final hour = DateTime.now().hour;
-    if (hour >= 5 && hour < 12) {
-      return 'Good Morning,';
-    } else if (hour >= 12 && hour < 17) {
-      return 'Good Afternoon,';
-    } else if (hour >= 17 && hour < 21) {
-      return 'Good Evening,';
-    } else {
-      return 'Good Night,';
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final controller = Get.put(HomeController());
@@ -46,29 +34,9 @@ class HomeScreen extends StatelessWidget {
           child: CustomScrollView(
             physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
             slivers: [
-            // Greeting Top Area
-            SliverToBoxAdapter(
-              child: Container(
-                padding: const EdgeInsets.fromLTRB(AppDimensions.md, AppDimensions.lg, AppDimensions.md, AppDimensions.sm),
-                color: AppColors.lightBackground,
-                child: Row(
-                  children: [
-                    CircleAvatar(
-                      radius: 22,
-                      backgroundColor: AppColors.primaryPurple.withValues(alpha: 0.1),
-                      child: const Icon(Icons.person, color: AppColors.primaryPurple),
-                    ),
-                    const SizedBox(width: AppDimensions.sm),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(_getGreeting(), style: AppTextStyles.medium.copyWith(color: AppColors.hintText, fontSize: 11)),
-                        Text('Welcome to Ushu!', style: AppTextStyles.extraBold.copyWith(fontSize: 14, color: AppColors.darkText)),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
+            // Dynamic Buyer Profile Header (powered by GET /api/buyer/profile)
+            const SliverToBoxAdapter(
+              child: HomeBuyerHeader(),
             ),
             
             // Pinned Search Bar

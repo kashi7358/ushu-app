@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:lottie/lottie.dart';
@@ -813,75 +814,197 @@ class CustomPopup {
   }
 
   static OverlayEntry? _lottieOverlay;
+  static Completer<void>? _lottieCompleter;
+  static Timer? _lottieSafetyTimer;
 
-  static void showFastLottie(String lottieAsset, {double width = 120, double height = 120}) {
+  static Future<void> showFastLottie(
+    String lottieAsset, {
+    double width = 120,
+    double height = 120,
+    double speed = 1.0,
+  }) {
     hideFastLottie();
 
     final context = Get.overlayContext ?? Get.context;
-    if (context == null) return;
+    if (context == null) return Future.value();
 
     final overlay = Overlay.maybeOf(context);
-    if (overlay == null) return;
+    if (overlay == null) return Future.value();
 
-    _lottieOverlay = OverlayEntry(
-      builder: (context) => Material(
-        color: Colors.black.withValues(alpha: 0.15),
-        child: Center(
-          child: TweenAnimationBuilder<double>(
-            duration: const Duration(milliseconds: 250),
-            curve: Curves.easeOutBack,
-            tween: Tween<double>(begin: 0.6, end: 1.0),
-            builder: (context, scale, child) {
-              return Transform.scale(scale: scale, child: child);
-            },
-            child: Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.1),
-                    blurRadius: 30,
-                    offset: const Offset(0, 10),
-                  ),
-                ],
-              ),
-              child: Lottie.asset(
-                lottieAsset,
-                width: width,
-                height: height,
-                repeat: false,
-                errorBuilder: (_, __, ___) => const Icon(
+    final completer = Completer<void>();
+    _lottieCompleter = completer;
+
+    late final OverlayEntry entry;
+    entry = OverlayEntry(
+      builder: (_) => _FastLottieOverlayWidget(
+        lottieAsset: lottieAsset,
+        width: width,
+        height: height,
+        speed: speed,
+        onCompleted: () => _removeLottieEntry(entry, completer),
+      ),
+    );
+
+    _lottieOverlay = entry;
+    overlay.insert(entry);
+
+    _lottieSafetyTimer = Timer(const Duration(milliseconds: 5000), () {
+      _removeLottieEntry(entry, completer);
+    });
+
+    return completer.future;
+  }
+
+  static void _removeLottieEntry(
+    OverlayEntry entry,
+    Completer<void> completer,
+  ) {
+    if (identical(_lottieOverlay, entry)) {
+      _lottieSafetyTimer?.cancel();
+      _lottieSafetyTimer = null;
+      _lottieOverlay = null;
+      if (identical(_lottieCompleter, completer)) {
+        _lottieCompleter = null;
+      }
+    }
+    try {
+      if (entry.mounted) {
+        entry.remove();
+      }
+    } catch (_) {}
+    if (!completer.isCompleted) {
+      completer.complete();
+    }
+  }
+
+  static void hideFastLottie() {
+    _lottieSafetyTimer?.cancel();
+    _lottieSafetyTimer = null;
+
+    final entry = _lottieOverlay;
+    final completer = _lottieCompleter;
+    _lottieOverlay = null;
+    _lottieCompleter = null;
+
+    try {
+      if (entry != null && entry.mounted) {
+        entry.remove();
+      }
+    } catch (_) {}
+    if (completer != null && !completer.isCompleted) {
+      completer.complete();
+    }
+  }
+}
+
+class _FastLottieOverlayWidget extends StatefulWidget {
+  final String lottieAsset;
+  final double width;
+  final double height;
+  final double speed;
+  final VoidCallback onCompleted;
+
+  const _FastLottieOverlayWidget({
+    required this.lottieAsset,
+    required this.width,
+    required this.height,
+    required this.speed,
+    required this.onCompleted,
+  });
+
+  @override
+  State<_FastLottieOverlayWidget> createState() =>
+      _FastLottieOverlayWidgetState();
+}
+
+class _FastLottieOverlayWidgetState extends State<_FastLottieOverlayWidget>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  bool _hasCompleted = false;
+  Timer? _fallbackErrorTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this);
+    _controller.addStatusListener((status) {
+      if (status == AnimationStatus.completed && !_hasCompleted) {
+        _hasCompleted = true;
+        widget.onCompleted();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _fallbackErrorTimer?.cancel();
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _triggerFallbackDismiss() {
+    if (_hasCompleted || _fallbackErrorTimer != null) return;
+    _fallbackErrorTimer = Timer(const Duration(milliseconds: 900), () {
+      if (mounted && !_hasCompleted) {
+        _hasCompleted = true;
+        widget.onCompleted();
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.black.withValues(alpha: 0.15),
+      child: Center(
+        child: TweenAnimationBuilder<double>(
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeOutBack,
+          tween: Tween<double>(begin: 0.6, end: 1.0),
+          builder: (context, scale, child) {
+            return Transform.scale(scale: scale, child: child);
+          },
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.1),
+                  blurRadius: 30,
+                  offset: const Offset(0, 10),
+                ),
+              ],
+            ),
+            child: Lottie.asset(
+              widget.lottieAsset,
+              controller: _controller,
+              width: widget.width,
+              height: widget.height,
+              repeat: false,
+              onLoaded: (composition) {
+                if (!mounted || _hasCompleted) return;
+                final safeSpeed = widget.speed <= 0 ? 1.0 : widget.speed;
+                final rawMs = composition.duration.inMilliseconds;
+                final effectiveMs =
+                    (rawMs > 0 ? (rawMs / safeSpeed).round() : 1200)
+                        .clamp(300, 4800);
+                _controller.duration = Duration(milliseconds: effectiveMs);
+                _controller.forward(from: 0.0);
+              },
+              errorBuilder: (_, __, ___) {
+                _triggerFallbackDismiss();
+                return const Icon(
                   Icons.check_circle_rounded,
                   color: AppColors.primaryPurple,
                   size: 60,
-                ),
-              ),
+                );
+              },
             ),
           ),
         ),
       ),
     );
-
-    overlay.insert(_lottieOverlay!);
-
-    // Automatically dismiss after 1200ms at most
-    Future.delayed(const Duration(milliseconds: 1200), () {
-      hideFastLottie();
-    });
-  }
-
-  static void hideFastLottie() {
-    try {
-      if (_lottieOverlay != null && _lottieOverlay!.mounted) {
-        _lottieOverlay!.remove();
-      }
-    } catch (_) {}
-    _lottieOverlay = null;
-
-    if (Get.isDialogOpen ?? false) {
-      Get.back();
-    }
   }
 }

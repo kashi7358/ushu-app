@@ -14,6 +14,7 @@ import '../../../../core/utils/custom_popup.dart';
 import '../../../../core/utils/session_manager.dart';
 import '../../data/datasources/auth_remote_data_source.dart';
 import '../../data/repositories/auth_repository_impl.dart';
+import '../../../profile/presentation/controllers/profile_controller.dart';
 
 class AuthController extends GetxController {
   final loginFormKey = GlobalKey<FormState>();
@@ -115,6 +116,9 @@ class AuthController extends GetxController {
       
       await SessionManager.saveSession(user.id, user.email, user.fullName, token: user.token);
       await SessionManager.fetchUserAddressFromBackend();
+      if (Get.isRegistered<ProfileController>()) {
+        Get.find<ProfileController>().fetchBuyerProfile();
+      }
       Get.offAllNamed(AppRoutes.mainLayout);
       
     } catch (e) {
@@ -193,6 +197,9 @@ class AuthController extends GetxController {
             signupPasswordController.text,
           );
           await SessionManager.saveSession(user.id, user.email, user.fullName, token: user.token);
+          if (Get.isRegistered<ProfileController>()) {
+            Get.find<ProfileController>().fetchBuyerProfile();
+          }
         } catch (_) {}
       }
 

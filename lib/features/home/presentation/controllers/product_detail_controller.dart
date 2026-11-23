@@ -15,6 +15,10 @@ import '../../data/models/product_model.dart';
 import '../../../review/data/models/review_model.dart';
 
 class ProductDetailController extends GetxController {
+  final String? initialProductId;
+
+  ProductDetailController({this.initialProductId});
+
   final Rx<ProductEntity?> product = Rx<ProductEntity?>(null);
   final RxBool isLoading = true.obs;
   final RxInt selectedImageIndex = 0.obs;
@@ -22,7 +26,7 @@ class ProductDetailController extends GetxController {
   final reviews = <dynamic>[].obs;
 
   late final GetProductByIdUseCase _getProductByIdUseCase;
-  late final String productId;
+  String productId = '';
   late final PageController imagePageController;
 
   void selectImage(int index) {
@@ -40,11 +44,15 @@ class ProductDetailController extends GetxController {
   void onInit() {
     super.onInit();
     imagePageController = PageController();
-    final args = Get.arguments;
-    if (args is Map) {
-      productId = args['id']?.toString() ?? args['productId']?.toString() ?? '';
+    if (initialProductId != null && initialProductId!.trim().isNotEmpty) {
+      productId = initialProductId!.trim();
     } else {
-      productId = args?.toString() ?? '';
+      final args = Get.arguments;
+      if (args is Map) {
+        productId = args['id']?.toString() ?? args['productId']?.toString() ?? '';
+      } else {
+        productId = args?.toString() ?? '';
+      }
     }
     
     final apiClient = ApiClient();
@@ -63,6 +71,9 @@ class ProductDetailController extends GetxController {
     isLoading.value = true;
     selectedQuantity.value = 1;
     selectedImageIndex.value = 0;
+    if (imagePageController.hasClients) {
+      imagePageController.jumpToPage(0);
+    }
     fetchProductDetails();
     fetchReviews();
   }

@@ -8,6 +8,10 @@ import 'package:flutter/material.dart';
 import 'package:add_to_cart_animation/add_to_cart_animation.dart';
 
 class StoreController extends GetxController {
+  final String? initialStoreId;
+
+  StoreController({this.initialStoreId});
+
   final ApiClient _apiClient = ApiClient();
   
   final RxBool isLoading = true.obs;
@@ -15,7 +19,7 @@ class StoreController extends GetxController {
   final RxMap<String, dynamic> storeData = <String, dynamic>{}.obs;
   final RxList<dynamic> productsData = <dynamic>[].obs;
   
-  late String storeId;
+  String storeId = '';
 
   // AddToCartAnimation variables
   GlobalKey<CartIconKey> cartKey = GlobalKey<CartIconKey>();
@@ -24,7 +28,16 @@ class StoreController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    storeId = Get.arguments as String? ?? '';
+    if (initialStoreId != null && initialStoreId!.trim().isNotEmpty) {
+      storeId = initialStoreId!.trim();
+    } else {
+      final args = Get.arguments;
+      if (args is Map) {
+        storeId = args['id']?.toString() ?? args['storeId']?.toString() ?? '';
+      } else {
+        storeId = args?.toString() ?? '';
+      }
+    }
     if (storeId.isNotEmpty) {
       fetchStoreData();
     } else {
@@ -42,12 +55,19 @@ class StoreController extends GetxController {
       );
 
       final data = response.data;
-      if (data != null && data['success'] == true) {
-        storeData.value = data['store'] ?? {};
-        productsData.value = data['products'] ?? [];
+      if (data is Map && data['success'] == true) {
+        storeData.value = data['store'] is Map
+            ? Map<String, dynamic>.from(data['store'] as Map)
+            : {};
+        productsData.value = data['products'] is List
+            ? data['products'] as List
+            : [];
         _checkIfFollowing();
       } else {
-        CustomPopup.showError('Failed', data?['message'] ?? 'Store not found');
+        CustomPopup.showError(
+          'Failed',
+          data is Map ? (data['message']?.toString() ?? 'Store not found') : 'Store not found',
+        );
       }
     } catch (e) {
       CustomPopup.showError('Error', 'Failed to load store details');

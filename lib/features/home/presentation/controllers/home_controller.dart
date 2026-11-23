@@ -6,8 +6,10 @@ import '../../domain/usecases/get_trending_products_usecase.dart';
 import '../../domain/usecases/get_banner_products_usecase.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/utils/home_cache_manager.dart';
+import '../../../../core/utils/session_manager.dart';
 import '../../data/datasources/home_remote_data_source.dart';
 import '../../data/repositories/home_repository_impl.dart';
+import '../../../profile/presentation/controllers/profile_controller.dart';
 
 class HomeController extends GetxController {
   final RxList<ProductEntity> products = <ProductEntity>[].obs;
@@ -55,6 +57,8 @@ class HomeController extends GetxController {
       fetchProducts(),
       fetchFlashSale(),
       fetchTrendingProducts(),
+      if (SessionManager.isLoggedIn && Get.isRegistered<ProfileController>())
+        Get.find<ProfileController>().fetchBuyerProfile(silent: true),
     ]);
   }
 

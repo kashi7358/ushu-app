@@ -54,7 +54,7 @@ class CartController extends GetxController {
     }
 
     // Show animation immediately
-    CustomPopup.showFastLottie('assets/lotties/add_to_cart_new.json');
+    final lottieFuture = CustomPopup.showFastLottie('assets/lotties/add_to_cart_new.json');
     
     try {
       isAddingToCart.value = true;
@@ -79,9 +79,6 @@ class CartController extends GetxController {
         ),
       );
 
-      // Dismiss popup as soon as response is received
-      CustomPopup.hideFastLottie();
-
       final statusCode = response.statusCode ?? 500;
       final data = response.data;
       final bool isSuccess = (statusCode >= 200 && statusCode < 300) &&
@@ -100,9 +97,10 @@ class CartController extends GetxController {
             cartItems.refresh();
           }
         }
-        await fetchCart(); // Refresh from real backend
+        await Future.wait([fetchCart(), lottieFuture]); // Refresh from real backend and finish Lottie
         CustomPopup.showToast('Added to Cart', '$productName added to cart successfully!');
       } else {
+        CustomPopup.hideFastLottie();
         String msg = 'Could not add to cart';
         if (data is Map) {
           msg = data['message']?.toString() ??
@@ -119,7 +117,6 @@ class CartController extends GetxController {
       debugPrint('Error adding to cart: $e');
       CustomPopup.showToast('Error', 'An error occurred while adding to cart.', isError: true);
     } finally {
-      CustomPopup.hideFastLottie();
       isAddingToCart.value = false;
     }
   }
@@ -134,7 +131,7 @@ class CartController extends GetxController {
 
     try {
       isAddingToCart.value = true;
-      CustomPopup.showFastLottie('assets/lotties/add_to_cart_new.json');
+      final lottieFuture = CustomPopup.showFastLottie('assets/lotties/add_to_cart_new.json');
 
       final token = SessionManager.token;
       final headers = <String, dynamic>{
@@ -156,9 +153,6 @@ class CartController extends GetxController {
           validateStatus: (status) => true,
         ),
       );
-
-      // Dismiss popup as soon as response is received
-      CustomPopup.hideFastLottie();
 
       final statusCode = response.statusCode ?? 500;
       final data = response.data;
@@ -195,8 +189,10 @@ class CartController extends GetxController {
             } catch (_) {}
           }
         }
+        await lottieFuture;
         return true;
       } else {
+        CustomPopup.hideFastLottie();
         String msg = 'Could not process Buy Now';
         if (data is Map) {
           msg = data['message']?.toString() ??
@@ -215,7 +211,6 @@ class CartController extends GetxController {
       CustomPopup.showToast('Error', 'An error occurred during Buy Now', isError: true);
       return false;
     } finally {
-      CustomPopup.hideFastLottie();
       isAddingToCart.value = false;
     }
   }

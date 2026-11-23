@@ -17,10 +17,38 @@ import '../../../../app/routes/app_routes.dart';
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
+  String _computeInitials(String name) {
+    final parts = name
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((part) => part.isNotEmpty)
+        .toList();
+    if (parts.length >= 2) {
+      return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+    }
+    if (parts.length == 1 && parts[0].isNotEmpty) {
+      return parts[0][0].toUpperCase();
+    }
+    return 'U';
+  }
+
   @override
   Widget build(BuildContext context) {
-    final controller = Get.put(ProfileController());
+    final controller = Get.isRegistered<ProfileController>()
+        ? Get.find<ProfileController>()
+        : Get.put(ProfileController(), permanent: true);
     controller.loadFollowedStoresCount(); // Refresh count when screen is built
+    if (SessionManager.isLoggedIn &&
+        controller.buyerProfile.value == null &&
+        !controller.isProfileLoading.value) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (SessionManager.isLoggedIn &&
+            controller.buyerProfile.value == null &&
+            !controller.isProfileLoading.value) {
+          controller.fetchBuyerProfile(silent: true);
+        }
+      });
+    }
 
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
@@ -51,16 +79,65 @@ class ProfileScreen extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Avatar
-                      Container(
-                        width: 50,
-                        height: 50,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Colors.white,
-                          border: Border.all(color: Colors.white.withValues(alpha: 0.5), width: 2),
-                        ),
-                        child: const Icon(Icons.person, size: 28, color: AppColors.primaryPurple),
-                      ),
+                      Obx(() {
+                        final isLoggedIn = SessionManager.isUserLoggedInRx.value;
+                        final avatarUrl = controller.userAvatar.value.trim();
+                        final hasAvatar = avatarUrl.isNotEmpty &&
+                            (avatarUrl.startsWith('http://') ||
+                                avatarUrl.startsWith('https://'));
+                        final rawName = controller.userName.value.trim();
+                        final displayName = rawName.isNotEmpty
+                            ? rawName
+                            : (controller.buyerProfile.value?.displayName ??
+                                'USHU Member');
+                        final initials = _computeInitials(displayName);
+
+                        return Container(
+                          width: 50,
+                          height: 50,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white,
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.5),
+                              width: 2,
+                            ),
+                          ),
+                          child: !isLoggedIn
+                              ? const Icon(
+                                  Icons.person,
+                                  size: 28,
+                                  color: AppColors.primaryPurple,
+                                )
+                              : hasAvatar
+                                  ? ClipOval(
+                                      child: Image.network(
+                                        avatarUrl,
+                                        width: 46,
+                                        height: 46,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (_, __, ___) => Center(
+                                          child: Text(
+                                            initials,
+                                            style: AppTextStyles.extraBold.copyWith(
+                                              fontSize: 18,
+                                              color: AppColors.primaryPurple,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    )
+                                  : Center(
+                                      child: Text(
+                                        initials,
+                                        style: AppTextStyles.extraBold.copyWith(
+                                          fontSize: 18,
+                                          color: AppColors.primaryPurple,
+                                        ),
+                                      ),
+                                    ),
+                        );
+                      }),
                       const SizedBox(width: 16),
                       // User Info
                       Expanded(
@@ -69,26 +146,53 @@ class ProfileScreen extends StatelessWidget {
                           children: [
                             const SizedBox(height: 8),
                             Obx(() => Text(
-                              controller.userName.value,
+                              controller.userName.value.trim().isNotEmpty
+                                  ? controller.userName.value
+                                  : (controller.buyerProfile.value?.displayName ?? 'USHU Member'),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                               style: AppTextStyles.extraBold.copyWith(fontSize: 20, color: Colors.white),
                             )),
                             const SizedBox(height: 4),
                             Obx(() => Text(
                               controller.userEmail.value,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                               style: AppTextStyles.medium.copyWith(color: Colors.white.withValues(alpha: 0.8), fontSize: 13),
                             )),
                           ],
                         ),
                       ),
+                      Obx(() {
+                        if (!SessionManager.isUserLoggedInRx.value) {
+                          return const SizedBox.shrink();
+                        }
+                        return Container(
+                          width: 38,
+                          height: 38,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.18),
+                            shape: BoxShape.circle,
+                          ),
+                          child: IconButton(
+                            padding: EdgeInsets.zero,
+                            tooltip: 'Edit Profile',
+                            icon: const Icon(
+                              Icons.edit_outlined,
+                              color: Colors.white,
+                              size: 19,
+                            ),
+                            onPressed: () => Get.toNamed(AppRoutes.editProfile),
+                          ),
+                        );
+                      }),
                     ],
                   ),
                 ),
                 
                 // Floating Orders Card
-                Positioned(
-                  top: 150,
-                  left: 20,
-                  right: 20,
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 150, 20, 0),
                   child: Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
@@ -105,7 +209,7 @@ class ProfileScreen extends StatelessWidget {
                     child: Column(
                       children: [
                         GestureDetector(
-                          onTap: () => Get.toNamed('/my-orders'),
+                          onTap: () => Get.toNamed('/my-orders', arguments: {'tab': 'all'}),
                           behavior: HitTestBehavior.opaque,
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -166,8 +270,8 @@ class ProfileScreen extends StatelessWidget {
               ],
             ),
             
-            // Spacer for floating card
-            const SizedBox(height: 80),
+            // Spacer below floating orders card
+            const SizedBox(height: 16),
             
             // First Menu Group
             Padding(
@@ -211,6 +315,22 @@ class ProfileScreen extends StatelessWidget {
                 ),
                 child: Column(
                   children: [
+                    if (SessionManager.isLoggedIn) ...[
+                      _buildMenuTile(
+                        Icons.person_outline_rounded,
+                        'Edit Profile',
+                        '',
+                        onTap: () => Get.toNamed(AppRoutes.editProfile),
+                      ),
+                      _buildDivider(),
+                      _buildMenuTile(
+                        Icons.lock_outline_rounded,
+                        'Change Password',
+                        '',
+                        onTap: () => Get.toNamed(AppRoutes.changePassword),
+                      ),
+                      _buildDivider(),
+                    ],
                     _buildMenuTile(Icons.location_on_outlined, 'Shipping Addresses', '', onTap: () => _showAddAddressSheet(context)),
                     _buildDivider(),
                     _buildMenuTile(Icons.credit_card_outlined, 'Cash on Delivery', ''),
@@ -659,43 +779,46 @@ class ProfileScreen extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
-      child: Column(
-        children: [
-          Stack(
-            clipBehavior: Clip.none,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppColors.primaryPurple.withValues(alpha: 0.05),
-                  shape: BoxShape.circle,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+        child: Column(
+          children: [
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryPurple.withValues(alpha: 0.05),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(icon, size: 22, color: AppColors.primaryPurple),
                 ),
-                child: Icon(icon, size: 22, color: AppColors.primaryPurple),
-              ),
-              if (badge > 0)
-                Positioned(
-                  right: -2,
-                  top: -2,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                    decoration: BoxDecoration(
-                      color: AppColors.error,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: Colors.white, width: 1.5),
-                    ),
-                    constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
-                    child: Text(
-                      badge.toString(),
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                if (badge > 0)
+                  Positioned(
+                    right: -2,
+                    top: -2,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                      decoration: BoxDecoration(
+                        color: AppColors.error,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: Colors.white, width: 1.5),
+                      ),
+                      constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                      child: Text(
+                        badge.toString(),
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                      ),
                     ),
                   ),
-                ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          Text(label, style: AppTextStyles.bold.copyWith(fontSize: 12, color: AppColors.darkText)),
-        ],
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(label, style: AppTextStyles.bold.copyWith(fontSize: 12, color: AppColors.darkText)),
+          ],
+        ),
       ),
     );
   }

@@ -8,7 +8,9 @@ import '../../features/home/presentation/screens/product_detail_screen.dart';
 import '../../features/store/presentation/screens/store_screen.dart';
 import '../../features/wishlist/presentation/screens/wishlist_screen.dart';
 import '../../features/order/presentation/screens/my_orders_screen.dart';
+import '../../features/profile/presentation/screens/buyer_profile_screen.dart';
 import '../../features/profile/presentation/screens/contact_us_screen.dart';
+import '../../features/profile/presentation/screens/edit_profile_screen.dart';
 import '../../features/profile/presentation/screens/privacy_policy_screen.dart';
 import '../../features/profile/presentation/screens/about_us_screen.dart';
 import '../../features/review/presentation/screens/write_review_screen.dart';
@@ -84,6 +86,8 @@ class AppRoutes {
   static const String productDetail = '/product-detail';
   static const String store = '/store';
   static const String wishlist = '/wishlist';
+  static const String buyerProfile = '/buyer-profile';
+  static const String editProfile = '/edit-profile';
   static const String changePassword = '/change-password';
   static const String search = '/search';
   static const String myOrders = '/my-orders';
@@ -121,6 +125,9 @@ class AppRoutes {
     GetPage(name: productDetail, page: () => const ProductDetailScreen()),
     GetPage(name: store, page: () => const StoreScreen()),
     GetPage(name: wishlist, page: () => const WishlistScreen()),
+    GetPage(name: buyerProfile, page: () => const BuyerProfileScreen()),
+    GetPage(name: editProfile, page: () => const EditProfileScreen()),
+    GetPage(name: changePassword, page: () => const EditProfileScreen(initialTab: 1)),
     GetPage(name: myOrders, page: () => const MyOrdersScreen()),
     GetPage(name: contactUs, page: () => const ContactUsScreen()),
     GetPage(name: writeReview, page: () => const WriteReviewScreen()),

@@ -9,13 +9,34 @@ import '../../../../core/utils/session_manager.dart';
 import '../../../../core/widgets/report_modal_bottom_sheet.dart';
 import '../../data/models/order_model.dart';
 
-class MyOrdersScreen extends StatelessWidget {
+class MyOrdersScreen extends StatefulWidget {
   const MyOrdersScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final controller = Get.put(OrderController());
+  State<MyOrdersScreen> createState() => _MyOrdersScreenState();
+}
 
+class _MyOrdersScreenState extends State<MyOrdersScreen> {
+  late final OrderController controller;
+
+  @override
+  void initState() {
+    super.initState();
+    controller = Get.isRegistered<OrderController>()
+        ? Get.find<OrderController>()
+        : Get.put(OrderController());
+    controller.selectTabFromArgs(Get.arguments);
+    if (SessionManager.isLoggedIn && !controller.isLoading.value) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && SessionManager.isLoggedIn && !controller.isLoading.value) {
+          controller.fetchMyOrders();
+        }
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
       appBar: AppBar(

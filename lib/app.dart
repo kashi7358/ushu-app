@@ -9,6 +9,7 @@ import 'app/theme/app_theme.dart';
 
 import 'features/wishlist/presentation/controllers/wishlist_controller.dart';
 import 'features/cart/presentation/controllers/cart_controller.dart';
+import 'features/profile/presentation/controllers/profile_controller.dart';
 
 class InitialBindings extends Bindings {
   @override
@@ -16,6 +17,7 @@ class InitialBindings extends Bindings {
     Get.put(NetworkController(), permanent: true);
     Get.put(WishlistController(), permanent: true);
     Get.put(CartController(), permanent: true);
+    Get.put(ProfileController(), permanent: true);
   }
 }
 

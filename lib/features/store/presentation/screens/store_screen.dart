@@ -11,13 +11,42 @@ import '../../../cart/presentation/controllers/cart_controller.dart';
 import 'package:add_to_cart_animation/add_to_cart_animation.dart';
 import '../../../../core/widgets/report_modal_bottom_sheet.dart';
 
-class StoreScreen extends StatelessWidget {
+class StoreScreen extends StatefulWidget {
   const StoreScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final controller = Get.put(StoreController());
+  State<StoreScreen> createState() => _StoreScreenState();
+}
 
+class _StoreScreenState extends State<StoreScreen> {
+  late final String _storeId;
+  late final String _controllerTag;
+  late final StoreController controller;
+
+  @override
+  void initState() {
+    super.initState();
+    final args = Get.arguments;
+    _storeId = (args is Map)
+        ? (args['id']?.toString() ?? args['storeId']?.toString() ?? '')
+        : (args?.toString() ?? '');
+    _controllerTag = 'store_${_storeId}_${identityHashCode(this)}';
+    controller = Get.put(
+      StoreController(initialStoreId: _storeId),
+      tag: _controllerTag,
+    );
+  }
+
+  @override
+  void dispose() {
+    if (Get.isRegistered<StoreController>(tag: _controllerTag)) {
+      Get.delete<StoreController>(tag: _controllerTag, force: true);
+    }
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return AddToCartAnimation(
       cartKey: controller.cartKey,
       height: 30,
@@ -292,7 +321,12 @@ class StoreScreen extends StatelessWidget {
                       ),
                       delegate: SliverChildBuilderDelegate(
                         (context, index) {
-                          final productModel = ProductModel.fromJson(controller.productsData[index]);
+                          final rawItem = controller.productsData[index];
+                          final productModel = ProductModel.fromJson(
+                            rawItem is Map<String, dynamic>
+                                ? rawItem
+                                : Map<String, dynamic>.from(rawItem as Map),
+                          );
                           return ProductCard(
                             product: productModel,
                             onAddToCart: (imageKey) async {

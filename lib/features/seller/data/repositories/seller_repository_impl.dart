@@ -34,6 +34,16 @@ class SellerRepositoryImpl implements SellerRepository {
   }
 
   @override
+  Future<dynamic> getSellerProfile([String? token]) {
+    return remoteDataSource.getSellerProfile(token);
+  }
+
+  @override
+  Future<dynamic> updateSellerProfile(Map<String, dynamic> data, [String? token]) {
+    return remoteDataSource.updateSellerProfile(data, token);
+  }
+
+  @override
   Future<dynamic> forgetPassword(String email) {
     return remoteDataSource.forgetPassword(email);
   }

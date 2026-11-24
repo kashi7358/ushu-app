@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:math' as math;
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:lottie/lottie.dart';
@@ -18,69 +20,11 @@ class CustomPopup {
       Dialog(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        child: Center(
-          child: TweenAnimationBuilder<double>(
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeOutBack,
-            tween: Tween<double>(begin: 0.7, end: 1.0),
-            builder: (context, scale, child) {
-              return Transform.scale(scale: scale, child: child);
-            },
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 26),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF0F172A).withValues(alpha: 0.14),
-                    blurRadius: 32,
-                    offset: const Offset(0, 10),
-                  ),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  SizedBox(
-                    width: 48,
-                    height: 48,
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        CircularProgressIndicator(
-                          strokeWidth: 3.5,
-                          valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primaryPurple),
-                          backgroundColor: AppColors.primaryPurple.withValues(alpha: 0.12),
-                        ),
-                        Container(
-                          width: 20,
-                          height: 20,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: AppColors.primaryPurple.withValues(alpha: 0.15),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 18),
-                  Text(
-                    message,
-                    style: AppTextStyles.bold.copyWith(
-                      color: const Color(0xFF0F172A),
-                      fontSize: 14.5,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
+        insetPadding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+        child: _ProLoadingWidget(message: message),
       ),
       barrierDismissible: false,
-      barrierColor: Colors.black.withValues(alpha: 0.45),
+      barrierColor: Colors.black.withValues(alpha: 0.40),
     );
   }
 
@@ -199,6 +143,9 @@ class CustomPopup {
                 width: double.infinity,
                 margin: const EdgeInsets.only(top: 38),
                 padding: const EdgeInsets.fromLTRB(22, 54, 22, 22),
+                constraints: BoxConstraints(
+                  maxHeight: Get.height * 0.78,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(26),
@@ -222,18 +169,23 @@ class CustomPopup {
                       ),
                       textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: 10),
-                    Text(
-                      message,
-                      style: const TextStyle(
-                        fontSize: 13.5,
-                        color: Color(0xFF64748B),
-                        height: 1.45,
-                        fontWeight: FontWeight.w500,
+                    const SizedBox(height: 12),
+                    Flexible(
+                      child: SingleChildScrollView(
+                        physics: const BouncingScrollPhysics(),
+                        child: Text(
+                          message,
+                          style: const TextStyle(
+                            fontSize: 13.0,
+                            color: Color(0xFF64748B),
+                            height: 1.45,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
                       ),
-                      textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 20),
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
@@ -1007,4 +959,240 @@ class _FastLottieOverlayWidgetState extends State<_FastLottieOverlayWidget>
       ),
     );
   }
+}
+
+// =========================================================================
+// ULTRA-PREMIUM PROFESSIONAL LOADING WIDGET
+// =========================================================================
+
+class _ProLoadingWidget extends StatefulWidget {
+  final String message;
+  const _ProLoadingWidget({required this.message});
+
+  @override
+  State<_ProLoadingWidget> createState() => _ProLoadingWidgetState();
+}
+
+class _ProLoadingWidgetState extends State<_ProLoadingWidget>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _animController;
+
+  @override
+  void initState() {
+    super.initState();
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1400),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _animController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: TweenAnimationBuilder<double>(
+        duration: const Duration(milliseconds: 320),
+        curve: Curves.easeOutBack,
+        tween: Tween<double>(begin: 0.8, end: 1.0),
+        builder: (context, scale, child) {
+          return Transform.scale(scale: scale, child: child);
+        },
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(28),
+          child: BackdropFilter(
+            filter: ui.ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+            child: Container(
+              width: 270,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 26),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.95),
+                borderRadius: BorderRadius.circular(28),
+                border: Border.all(
+                  color: AppColors.primaryPurple.withValues(alpha: 0.12),
+                  width: 1.2,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF0F172A).withValues(alpha: 0.12),
+                    blurRadius: 36,
+                    offset: const Offset(0, 14),
+                  ),
+                  BoxShadow(
+                    color: AppColors.primaryPurple.withValues(alpha: 0.08),
+                    blurRadius: 20,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Animated Rotating Dual-Gradient Spinner
+                  SizedBox(
+                    width: 62,
+                    height: 62,
+                    child: AnimatedBuilder(
+                      animation: _animController,
+                      builder: (context, _) {
+                        return Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            // Custom Painter Arc
+                            CustomPaint(
+                              size: const Size(62, 62),
+                              painter: _DualRingSpinnerPainter(
+                                progress: _animController.value,
+                              ),
+                            ),
+                            // Pulsing Center Glowing Core
+                            Transform.scale(
+                              scale: 0.88 + 0.12 * math.sin(_animController.value * math.pi * 2),
+                              child: Container(
+                                width: 34,
+                                height: 34,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  gradient: const LinearGradient(
+                                    colors: [
+                                      Color(0xFF6B46C1),
+                                      Color(0xFF9333EA),
+                                    ],
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: const Color(0xFF6B46C1).withValues(alpha: 0.35),
+                                      blurRadius: 10,
+                                      spreadRadius: 1,
+                                    ),
+                                  ],
+                                ),
+                                child: const Center(
+                                  child: Icon(
+                                    Icons.bolt_rounded,
+                                    color: Colors.white,
+                                    size: 19,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+
+                  // Message Title
+                  Text(
+                    widget.message,
+                    style: AppTextStyles.bold.copyWith(
+                      color: const Color(0xFF0F172A),
+                      fontSize: 14.5,
+                      letterSpacing: -0.2,
+                    ),
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 6),
+
+                  // Animated Status / Subtitle with pulsing opacity
+                  AnimatedBuilder(
+                    animation: _animController,
+                    builder: (context, _) {
+                      final opacity = 0.45 + 0.55 * (0.5 + 0.5 * math.sin(_animController.value * math.pi * 2));
+                      return Opacity(
+                        opacity: opacity,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Container(
+                              width: 5,
+                              height: 5,
+                              decoration: const BoxDecoration(
+                                color: AppColors.primaryPurple,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              'Processing, please wait...',
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.grey.shade600,
+                                letterSpacing: 0.1,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// -------------------------------------------------------------------------
+// Custom Painter for 360 Sweep-Gradient Smooth Arc
+// -------------------------------------------------------------------------
+class _DualRingSpinnerPainter extends CustomPainter {
+  final double progress;
+  _DualRingSpinnerPainter({required this.progress});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = (size.width / 2) - 4;
+
+    // Subtle Track Ring
+    final trackPaint = Paint()
+      ..color = const Color(0xFF6B46C1).withValues(alpha: 0.10)
+      ..strokeWidth = 3.6
+      ..style = PaintingStyle.stroke;
+    canvas.drawCircle(center, radius, trackPaint);
+
+    // Glowing Gradient Arc
+    final rect = Rect.fromCircle(center: center, radius: radius);
+    final startAngle = progress * math.pi * 2;
+    const sweepAngle = math.pi * 1.55;
+
+    final gradient = SweepGradient(
+      startAngle: 0.0,
+      endAngle: math.pi * 2,
+      colors: const [
+        Color(0x006B46C1),
+        Color(0xFFC084FC),
+        Color(0xFF9333EA),
+        Color(0xFF6B46C1),
+      ],
+      stops: const [0.0, 0.4, 0.75, 1.0],
+      transform: GradientRotation(startAngle),
+    );
+
+    final arcPaint = Paint()
+      ..shader = gradient.createShader(rect)
+      ..strokeWidth = 4.0
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.stroke;
+
+    canvas.drawArc(rect, startAngle, sweepAngle, false, arcPaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _DualRingSpinnerPainter oldDelegate) =>
+      oldDelegate.progress != progress;
 }

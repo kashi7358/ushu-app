@@ -59,6 +59,11 @@ class SellerRepositoryImpl implements SellerRepository {
   }
 
   @override
+  Future<dynamic> bulkUploadProducts({required String storeId, required FormData formData, String? token}) {
+    return remoteDataSource.bulkUploadProducts(storeId: storeId, formData: formData, token: token);
+  }
+
+  @override
   Future<dynamic> updateProduct({required String productId, required FormData formData}) {
     return remoteDataSource.updateProduct(productId: productId, formData: formData);
   }

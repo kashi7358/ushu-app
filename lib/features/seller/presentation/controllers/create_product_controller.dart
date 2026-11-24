@@ -1,8 +1,11 @@
 import 'dart:io';
+import 'package:archive/archive.dart';
 import 'package:dio/dio.dart' as dio;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:lottie/lottie.dart';
 import '../../../../app/routes/app_routes.dart';
 import '../../../../core/errors/exception_handler.dart';
@@ -15,6 +18,14 @@ import '../../data/models/seller_product_model.dart';
 import '../../data/repositories/seller_repository_impl.dart';
 
 class CreateProductController extends GetxController {
+  // Mode Selection: 0 = Single Product, 1 = Bulk Upload (CSV)
+  final RxInt uploadMode = 0.obs; // 0: Single, 1: Bulk
+  final RxString selectedCsvPath = ''.obs;
+  final RxString selectedCsvName = ''.obs;
+  final RxList<String> bulkImagePaths = <String>[].obs;
+  final RxBool isBulkUploading = false.obs;
+  bool _isPickerActive = false;
+
   // Step Navigation
   final RxInt currentStep = 0.obs;
   final step1FormKey = GlobalKey<FormState>();
@@ -134,6 +145,10 @@ class CreateProductController extends GetxController {
     }
     if (storeId.isEmpty && SessionManager.sellerStoreId != null) {
       storeId = SessionManager.sellerStoreId!;
+    }
+
+    if (args is Map && args['initialMode'] != null) {
+      uploadMode.value = (args['initialMode'] as int) == 1 ? 1 : 0;
     }
   }
 
@@ -1218,6 +1233,413 @@ class CreateProductController extends GetxController {
       CustomPopup.showError('Update Failed', error.message);
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  // --- Bulk CSV & Images Upload in Create Product Screen ---
+  Future<void> pickBulkCsvFile() async {
+    if (_isPickerActive) return;
+    _isPickerActive = true;
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['csv', 'xlsx', 'xls'],
+      );
+
+      if (result != null && result.files.single.path != null) {
+        selectedCsvPath.value = result.files.single.path!;
+        selectedCsvName.value = result.files.single.name;
+      }
+    } catch (e) {
+      CustomPopup.showError('File Error', 'Failed to pick file: $e');
+    } finally {
+      _isPickerActive = false;
+    }
+  }
+
+  Future<void> pickBulkImages() async {
+    if (_isPickerActive) return;
+    _isPickerActive = true;
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        allowMultiple: true,
+        type: FileType.custom,
+        allowedExtensions: ['jpg', 'jpeg', 'png', 'webp', 'zip'],
+      );
+      if (result != null && result.paths.isNotEmpty) {
+        for (final path in result.paths) {
+          if (path != null && !bulkImagePaths.contains(path)) {
+            bulkImagePaths.add(path);
+          }
+        }
+      }
+    } catch (e) {
+      final str = e.toString().toLowerCase();
+      if (!str.contains('already_active') && !str.contains('cancelled')) {
+        CustomPopup.showError('Image Error', 'Failed to pick files: $e');
+      }
+    } finally {
+      _isPickerActive = false;
+    }
+  }
+
+  void removeBulkImage(int index) {
+    if (index >= 0 && index < bulkImagePaths.length) {
+      bulkImagePaths.removeAt(index);
+    }
+  }
+
+  void clearBulkUploadData() {
+    selectedCsvPath.value = '';
+    selectedCsvName.value = '';
+    bulkImagePaths.clear();
+  }
+
+  String _extractBulkErrorMessage(dynamic res) {
+    if (res is! Map) return 'No products were created. Please verify your CSV format and try again.';
+
+    final baseMsg = (res['message'] ?? res['msg'] ?? 'Bulk upload failed').toString();
+    List<String> details = [];
+
+    final rawErrors = res['errors'] ?? res['error'] ?? res['details'] ?? res['data']?['errors'] ?? res['failed'];
+    if (rawErrors is List && rawErrors.isNotEmpty) {
+      for (final item in rawErrors) {
+        if (item is Map) {
+          final row = item['row'] ?? item['line'] ?? item['index'];
+          final field = item['field'] ?? item['column'] ?? item['key'];
+          final msg = item['error'] ?? item['message'] ?? item['msg'] ?? item.toString();
+          final rowStr = row != null ? 'Row $row: ' : '';
+          final fieldStr = field != null ? '[$field] ' : '';
+          details.add('$rowStr$fieldStr$msg');
+        } else if (item != null && item.toString().trim().isNotEmpty) {
+          details.add(item.toString().trim());
+        }
+      }
+    } else if (rawErrors is Map && rawErrors.isNotEmpty) {
+      rawErrors.forEach((key, val) {
+        details.add('$key: $val');
+      });
+    } else if (rawErrors is String && rawErrors.trim().isNotEmpty && rawErrors != baseMsg) {
+      details.add(rawErrors.trim());
+    }
+
+    if (details.isNotEmpty) {
+      final shown = details.take(6).map((d) => '• $d').join('\n');
+      final more = details.length > 6 ? '\n...and ${details.length - 6} more issues' : '';
+      return '$baseMsg\n\nSpecific Errors:\n$shown$more\n\nHint: Verify CSV columns: name, description, price, category, subCategory, brand, stock, sku.';
+    }
+
+    return '$baseMsg\n\nPlease ensure your CSV file contains required columns:\n• name, description, price, category, subCategory, brand, stock, sku';
+  }
+
+  void showCsvFormatGuide(BuildContext context) {
+    Get.dialog(
+      Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        backgroundColor: Colors.white,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+        child: Container(
+          padding: const EdgeInsets.all(22),
+          constraints: BoxConstraints(maxHeight: Get.height * 0.78),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF6B46C1).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(Icons.table_chart_rounded, color: Color(0xFF6B46C1), size: 24),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: const [
+                        Text(
+                          'CSV Format Guidelines',
+                          style: TextStyle(fontSize: 16.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                        ),
+                        SizedBox(height: 2),
+                        Text(
+                          'Required column headers for product import',
+                          style: TextStyle(fontSize: 12, color: Colors.grey),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded, color: Colors.grey),
+                    onPressed: () => Get.back(),
+                  ),
+                ],
+              ),
+              const Divider(height: 24),
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Required Columns (Row 1 Headers):',
+                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                      ),
+                      const SizedBox(height: 8),
+                      _buildHeaderTag('name', 'Product title (e.g. Wireless Earbuds)'),
+                      _buildHeaderTag('description', 'Detailed description of the product'),
+                      _buildHeaderTag('sku', 'Unique product code (e.g. EAR-001)'),
+                      _buildHeaderTag('price', 'Numeric price in PKR (e.g. 2499)'),
+                      _buildHeaderTag('category', 'Category name (e.g. Electronics)'),
+                      _buildHeaderTag('subCategory', 'Sub-category name (e.g. Audio)'),
+                      _buildHeaderTag('brand', 'Brand name (e.g. Sony)'),
+                      _buildHeaderTag('stock', 'Quantity in stock (e.g. 50)'),
+                      const SizedBox(height: 14),
+                      const Text(
+                        'Optional Columns:',
+                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                      ),
+                      const SizedBox(height: 8),
+                      _buildHeaderTag('condition', 'new or used (defaults to new)'),
+                      _buildHeaderTag('tags', 'Comma-separated keywords (e.g. audio,wireless)'),
+                      _buildHeaderTag('weight', 'Weight in grams or kg (e.g. 0.5)'),
+                      const SizedBox(height: 14),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF1F5F9),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: const [
+                            Text(
+                              'Sample CSV Header Row:',
+                              style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF475569)),
+                            ),
+                            SizedBox(height: 4),
+                            SelectableText(
+                              'name,description,sku,price,category,subCategory,brand,stock,condition,tags',
+                              style: TextStyle(fontSize: 11, fontFamily: 'monospace', color: Color(0xFF0F172A)),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Clipboard.setData(const ClipboardData(
+                      text: 'name,description,sku,price,category,subCategory,brand,stock,condition,tags\nWireless Bluetooth Earbuds,High bass noise cancelling earbuds,USHO-001,2499,Electronics,Audio,USHO,50,new,audio,wireless,earbuds',
+                    ));
+                    Get.back();
+                    CustomPopup.showSuccess(
+                      'Headers Copied',
+                      'Sample CSV headers & row copied to clipboard! You can paste them into Excel or Notepad.',
+                      buttonText: 'OK',
+                    );
+                  },
+                  icon: const Icon(Icons.copy_rounded, size: 18),
+                  label: const Text('Copy Sample CSV Template', style: TextStyle(fontWeight: FontWeight.bold)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF6B46C1),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 13),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeaderTag(String header, String desc) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+            decoration: BoxDecoration(
+              color: const Color(0xFF6B46C1).withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Text(
+              header,
+              style: const TextStyle(
+                fontFamily: 'monospace',
+                fontSize: 11.5,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF6B46C1),
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              desc,
+              style: TextStyle(fontSize: 11.5, color: Colors.grey.shade700, height: 1.3),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> submitBulkUpload() async {
+    if (selectedCsvPath.value.isEmpty) {
+      CustomPopup.showError('CSV Required', 'Please select a CSV or Excel file containing products');
+      return;
+    }
+
+    if (storeId.isEmpty && SessionManager.sellerStoreId != null) {
+      storeId = SessionManager.sellerStoreId!;
+    }
+
+    if (storeId.isEmpty) {
+      CustomPopup.showError(
+        'Store Required',
+        'Store ID is missing. Please select or create your store first.',
+      );
+      return;
+    }
+
+    try {
+      isBulkUploading.value = true;
+      CustomPopup.showLoading('Uploading bulk products...');
+
+      final formData = dio.FormData();
+
+      // 1. Add CSV/Excel file (body field: 'file')
+      final csvFileName = selectedCsvName.value.isNotEmpty
+          ? selectedCsvName.value
+          : selectedCsvPath.value.split(RegExp(r'[/\\]')).last;
+
+      formData.files.add(MapEntry(
+        'file',
+        await dio.MultipartFile.fromFile(
+          selectedCsvPath.value,
+          filename: csvFileName,
+        ),
+      ));
+
+      // 2. Add Images / ZIP archive
+      if (bulkImagePaths.isNotEmpty) {
+        final zipCandidates = bulkImagePaths.where((p) => p.toLowerCase().endsWith('.zip')).toList();
+        if (zipCandidates.isNotEmpty) {
+          final zipPath = zipCandidates.first;
+          final zipName = zipPath.split(RegExp(r'[/\\]')).last;
+          formData.files.add(MapEntry(
+            'images',
+            await dio.MultipartFile.fromFile(zipPath, filename: zipName),
+          ));
+          formData.files.add(MapEntry(
+            'zip',
+            await dio.MultipartFile.fromFile(zipPath, filename: zipName),
+          ));
+        } else {
+          // Send loose images as individual files
+          for (final imgPath in bulkImagePaths) {
+            final imgName = imgPath.split(RegExp(r'[/\\]')).last;
+            formData.files.add(MapEntry(
+              'images',
+              await dio.MultipartFile.fromFile(imgPath, filename: imgName),
+            ));
+          }
+
+          // In parallel, also zip them in-memory and send as 'zip' (and fallback zip)
+          try {
+            final archive = Archive();
+            for (final imgPath in bulkImagePaths) {
+              final file = File(imgPath);
+              if (await file.exists()) {
+                final bytes = await file.readAsBytes();
+                final fileName = imgPath.split(RegExp(r'[/\\]')).last;
+                archive.addFile(ArchiveFile(fileName, bytes.length, bytes));
+                // Add with 'Camera Roll/' prefix in case CSV references that folder
+                archive.addFile(ArchiveFile('Camera Roll/$fileName', bytes.length, bytes));
+              }
+            }
+            final zipBytes = ZipEncoder().encode(archive);
+            if (zipBytes != null && zipBytes.isNotEmpty) {
+              formData.files.add(MapEntry(
+                'zip',
+                dio.MultipartFile.fromBytes(zipBytes, filename: 'images.zip'),
+              ));
+            }
+          } catch (zipErr) {
+            debugPrint('ZIP creation fallback: $zipErr');
+          }
+        }
+      }
+
+      final response = await _repository.bulkUploadProducts(
+        storeId: storeId,
+        formData: formData,
+        token: SessionManager.sellerToken,
+      );
+
+      debugPrint('=== BULK UPLOAD RESPONSE ===\n$response');
+      CustomPopup.hideLoading();
+
+      bool isFailed = false;
+      if (response is Map) {
+        if (response['success'] == false) {
+          isFailed = true;
+        } else if (response['createdCount'] != null &&
+            (response['createdCount'] == 0 || response['createdCount'] == '0')) {
+          isFailed = true;
+        } else if (response['productsCreated'] != null &&
+            (response['productsCreated'] == 0 || response['productsCreated'] == '0')) {
+          isFailed = true;
+        }
+      }
+
+      if (isFailed) {
+        final err = _extractBulkErrorMessage(response);
+        CustomPopup.showError('Upload Failed', err);
+        return;
+      }
+
+      final successMsg = (response is Map && response['message'] != null)
+          ? response['message'].toString()
+          : 'Bulk products uploaded successfully';
+
+      CustomPopup.showSuccess(
+        'Bulk Upload Complete',
+        successMsg,
+        buttonText: 'View Products',
+        barrierDismissible: false,
+        onConfirm: () {
+          clearBulkUploadData();
+          Get.back(result: true);
+        },
+      );
+    } catch (e) {
+      CustomPopup.hideLoading();
+      debugPrint('Bulk upload error: $e');
+      if (e is dio.DioException && e.response?.data != null) {
+        final err = _extractBulkErrorMessage(e.response!.data);
+        CustomPopup.showError('Upload Failed', err);
+      } else {
+        final error = ExceptionHandler.handle(e);
+        CustomPopup.showError('Upload Failed', error.message);
+      }
+    } finally {
+      isBulkUploading.value = false;
     }
   }
 }

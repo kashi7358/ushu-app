@@ -17,10 +17,14 @@ class CreateProductScreen extends StatelessWidget {
     final controller = Get.put(CreateProductController());
 
     return PopScope(
-      canPop: controller.currentStep.value == 0,
+      canPop: controller.uploadMode.value == 1 || controller.currentStep.value == 0,
       onPopInvokedWithResult: (didPop, result) {
         if (didPop) return;
-        controller.previousStep();
+        if (controller.uploadMode.value == 1) {
+          controller.uploadMode.value = 0;
+        } else {
+          controller.previousStep();
+        }
       },
       child: Scaffold(
         backgroundColor: Colors.white,
@@ -29,151 +33,281 @@ class CreateProductScreen extends StatelessWidget {
           elevation: 0,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.darkText, size: 20),
-            onPressed: controller.previousStep,
+            onPressed: () {
+              if (controller.uploadMode.value == 1) {
+                controller.uploadMode.value = 0;
+              } else {
+                controller.previousStep();
+              }
+            },
           ),
           title: Obx(() => Text(
-            controller.isEditMode.value ? 'Edit Product' : 'Add New Product',
+            controller.isEditMode.value
+                ? 'Edit Product'
+                : (controller.uploadMode.value == 1 ? 'Bulk Upload Products' : 'Add New Product'),
             style: AppTextStyles.bold.copyWith(color: AppColors.darkText, fontSize: 17),
           )),
           centerTitle: true,
         ),
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Step Indicator
-            Obx(
-              () => SellerStepIndicator(
-                currentStep: controller.currentStep.value,
-                steps: const ['Basic Info', 'Stock & Price', 'Media & Variants'],
-              ),
-            ),
-            const Divider(height: 1),
-
-            // Step Body
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 130),
-                child: Obx(() {
-                  switch (controller.currentStep.value) {
-                    case 0:
-                      return _buildStep1BasicInfo(controller);
-                    case 1:
-                      return _buildStep2StockAndPricing(controller);
-                    case 2:
-                    default:
-                      return _buildStep3MediaAndVariants(context, controller);
-                  }
-                }),
-              ),
-            ),
-
-            // Bottom Navigation Bar
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.04),
-                    blurRadius: 8,
-                    offset: const Offset(0, -3),
+        body: SafeArea(
+          child: Column(
+            children: [
+              // Mode Switcher Tab Bar (Single Product vs Bulk Upload)
+              Obx(() {
+                if (controller.isEditMode.value) return const SizedBox.shrink();
+                return Container(
+                  margin: const EdgeInsets.fromLTRB(16, 6, 16, 8),
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF1F5F9),
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                ],
-              ),
-              child: Obx(() {
-                final isLastStep = controller.currentStep.value == 2;
-                return SizedBox(
-                  height: 46,
                   child: Row(
                     children: [
-                      if (controller.currentStep.value > 0) ...[
-                        Expanded(
-                          flex: 1,
-                          child: OutlinedButton(
-                            onPressed: controller.previousStep,
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: AppColors.primaryPurple,
-                              side: const BorderSide(color: AppColors.primaryPurple, width: 1.2),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              padding: EdgeInsets.zero,
+                      Expanded(
+                        child: InkWell(
+                          onTap: () => controller.uploadMode.value = 0,
+                          borderRadius: BorderRadius.circular(10),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            padding: const EdgeInsets.symmetric(vertical: 9),
+                            decoration: BoxDecoration(
+                              color: controller.uploadMode.value == 0 ? Colors.white : Colors.transparent,
+                              borderRadius: BorderRadius.circular(10),
+                              boxShadow: controller.uploadMode.value == 0
+                                  ? [
+                                      BoxShadow(
+                                        color: Colors.black.withValues(alpha: 0.05),
+                                        blurRadius: 4,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ]
+                                  : [],
                             ),
-                            child: Text(
-                              'Back',
-                              style: AppTextStyles.bold.copyWith(color: AppColors.primaryPurple, fontSize: 14),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.add_circle_outline_rounded,
+                                  size: 16,
+                                  color: controller.uploadMode.value == 0 ? AppColors.primaryPurple : Colors.grey.shade600,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  'Add Single Product',
+                                  style: TextStyle(
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.bold,
+                                    color: controller.uploadMode.value == 0 ? AppColors.primaryPurple : Colors.grey.shade600,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ),
-                        const SizedBox(width: 12),
-                      ],
+                      ),
+                      const SizedBox(width: 6),
                       Expanded(
-                        flex: controller.currentStep.value > 0 ? 2 : 1,
-                        child: ElevatedButton(
-                          onPressed: controller.isLoading.value
-                              ? null
-                              : (isLastStep ? controller.createProduct : controller.nextStep),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primaryPurple,
-                            foregroundColor: Colors.white,
-                            elevation: 0,
-                            padding: EdgeInsets.zero,
-                            shape: RoundedRectangleBorder(
+                        child: InkWell(
+                          onTap: () => controller.uploadMode.value = 1,
+                          borderRadius: BorderRadius.circular(10),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            padding: const EdgeInsets.symmetric(vertical: 9),
+                            decoration: BoxDecoration(
+                              color: controller.uploadMode.value == 1 ? Colors.white : Colors.transparent,
                               borderRadius: BorderRadius.circular(10),
+                              boxShadow: controller.uploadMode.value == 1
+                                  ? [
+                                      BoxShadow(
+                                        color: Colors.black.withValues(alpha: 0.05),
+                                        blurRadius: 4,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ]
+                                  : [],
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.upload_file_rounded,
+                                  size: 16,
+                                  color: controller.uploadMode.value == 1 ? AppColors.primaryPurple : Colors.grey.shade600,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  'Bulk Upload (CSV)',
+                                  style: TextStyle(
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.bold,
+                                    color: controller.uploadMode.value == 1 ? AppColors.primaryPurple : Colors.grey.shade600,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                          child: controller.isLoading.value
-                              ? const SizedBox(
-                                  height: 20,
-                                  width: 20,
-                                  child: CircularProgressIndicator(
-                                    color: Colors.white,
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                              : Text(
-                                  isLastStep
-                                      ? (controller.isEditMode.value ? 'Update Product' : 'Publish Product')
-                                      : 'Next Step',
-                                  style: AppTextStyles.bold.copyWith(color: Colors.white, fontSize: 14),
-                                ),
                         ),
                       ),
                     ],
                   ),
                 );
               }),
-            ),
-          ],
+
+              // Conditional View based on uploadMode
+              Expanded(
+                child: Obx(() {
+                  if (controller.uploadMode.value == 1 && !controller.isEditMode.value) {
+                    return _buildBulkUploadView(context, controller);
+                  }
+                  return _buildSingleProductStepperView(context, controller);
+                }),
+              ),
+            ],
+          ),
         ),
-      ),
-      floatingActionButton: Padding(
-        padding: const EdgeInsets.only(bottom: 18.0, right: 1.0),
-        child: GestureDetector(
-          onTap: () => controller.startCopilotFlow(context),
-          child: SizedBox(
-            width: 100,
-            height: 100,
-            child: Lottie.asset(
-              'assets/lotties/chatbot.json',
-              fit: BoxFit.contain,
-              errorBuilder: (context, error, stackTrace) => Container(
-                padding: const EdgeInsets.all(16),
-                decoration: const BoxDecoration(
-                  color: Color(0xFF6B46C1),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.smart_toy_outlined,
-                  color: Colors.white,
-                  size: 42,
+        floatingActionButton: Obx(() {
+          if (controller.uploadMode.value == 1) return const SizedBox.shrink();
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 18.0, right: 1.0),
+            child: GestureDetector(
+              onTap: () => controller.startCopilotFlow(context),
+              child: SizedBox(
+                width: 100,
+                height: 100,
+                child: Lottie.asset(
+                  'assets/lotties/chatbot.json',
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) => Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF6B46C1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.smart_toy_outlined,
+                      color: Colors.white,
+                      size: 42,
+                    ),
+                  ),
                 ),
               ),
             ),
+          );
+        }),
+      ),
+    );
+  }
+
+  Widget _buildSingleProductStepperView(BuildContext context, CreateProductController controller) {
+    return Column(
+      children: [
+        // Step Indicator
+        Obx(
+          () => SellerStepIndicator(
+            currentStep: controller.currentStep.value,
+            steps: const ['Basic Info', 'Stock & Price', 'Media & Variants'],
           ),
         ),
-      ),
-    ));
+        const Divider(height: 1),
+
+        // Step Body
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 130),
+            child: Obx(() {
+              switch (controller.currentStep.value) {
+                case 0:
+                  return _buildStep1BasicInfo(controller);
+                case 1:
+                  return _buildStep2StockAndPricing(controller);
+                case 2:
+                default:
+                  return _buildStep3MediaAndVariants(context, controller);
+              }
+            }),
+          ),
+        ),
+
+        // Bottom Navigation Bar
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.04),
+                blurRadius: 8,
+                offset: const Offset(0, -3),
+              ),
+            ],
+          ),
+          child: Obx(() {
+            final isLastStep = controller.currentStep.value == 2;
+            return SizedBox(
+              height: 46,
+              child: Row(
+                children: [
+                  if (controller.currentStep.value > 0) ...[
+                    Expanded(
+                      flex: 1,
+                      child: OutlinedButton(
+                        onPressed: controller.previousStep,
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.primaryPurple,
+                          side: const BorderSide(color: AppColors.primaryPurple, width: 1.2),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          padding: EdgeInsets.zero,
+                        ),
+                        child: Text(
+                          'Back',
+                          style: AppTextStyles.bold.copyWith(color: AppColors.primaryPurple, fontSize: 14),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                  ],
+                  Expanded(
+                    flex: controller.currentStep.value > 0 ? 2 : 1,
+                    child: ElevatedButton(
+                      onPressed: controller.isLoading.value
+                          ? null
+                          : (isLastStep ? controller.createProduct : controller.nextStep),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryPurple,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        padding: EdgeInsets.zero,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      child: controller.isLoading.value
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : Text(
+                              isLastStep
+                                  ? (controller.isEditMode.value ? 'Update Product' : 'Publish Product')
+                                  : 'Next Step',
+                              style: AppTextStyles.bold.copyWith(color: Colors.white, fontSize: 14),
+                            ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
+        ),
+      ],
+    );
   }
 
   // STEP 1: Basic Information
@@ -922,6 +1056,303 @@ class CreateProductScreen extends StatelessWidget {
           }).toList(),
           onChanged: onChanged,
         ),
+      ),
+    );
+  }
+
+  // --- Bulk Upload View ---
+  Widget _buildBulkUploadView(BuildContext context, CreateProductController controller) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 30),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Informative Banner
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  AppColors.primaryPurple.withValues(alpha: 0.08),
+                  const Color(0xFF6366F1).withValues(alpha: 0.05),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppColors.primaryPurple.withValues(alpha: 0.2)),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryPurple.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.table_chart_rounded, color: AppColors.primaryPurple, size: 22),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Fast Catalog Import',
+                        style: AppTextStyles.bold.copyWith(fontSize: 14, color: AppColors.primaryPurple),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Import multiple products at once via CSV or Excel sheet with matching product photos.',
+                        style: TextStyle(fontSize: 11.5, color: Colors.grey.shade700, height: 1.35),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 22),
+
+          // 1. CSV File Picker Box
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Expanded(
+                child: _buildSectionHeader(
+                  title: '1. Select Products Spreadsheet *',
+                  subtitle: 'Upload .csv or .xlsx file containing titles, SKUs, prices, stock, etc.',
+                ),
+              ),
+              InkWell(
+                onTap: () => controller.showCsvFormatGuide(context),
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryPurple.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: const [
+                      Icon(Icons.help_outline_rounded, size: 14, color: AppColors.primaryPurple),
+                      SizedBox(width: 4),
+                      Text(
+                        'CSV Guide',
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.primaryPurple,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Obx(() {
+            final hasFile = controller.selectedCsvPath.value.isNotEmpty;
+            return InkWell(
+              onTap: controller.pickBulkCsvFile,
+              borderRadius: BorderRadius.circular(16),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                decoration: BoxDecoration(
+                  color: hasFile
+                      ? AppColors.primaryPurple.withValues(alpha: 0.04)
+                      : const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: hasFile ? AppColors.primaryPurple : const Color(0xFFE2E8F0),
+                    width: hasFile ? 1.5 : 1,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: hasFile
+                            ? AppColors.primaryPurple.withValues(alpha: 0.12)
+                            : Colors.grey.shade200,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        hasFile ? Icons.description_rounded : Icons.file_upload_outlined,
+                        color: hasFile ? AppColors.primaryPurple : Colors.grey.shade600,
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            hasFile
+                                ? controller.selectedCsvName.value
+                                : 'Tap to browse and select file',
+                            style: TextStyle(
+                              fontSize: 13.5,
+                              fontWeight: hasFile ? FontWeight.bold : FontWeight.w600,
+                              color: hasFile ? AppColors.primaryPurple : Colors.grey.shade800,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            hasFile ? 'File attached • ready for upload' : 'Supports .CSV, .XLSX, and .XLS format',
+                            style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (hasFile)
+                      IconButton(
+                        icon: const Icon(Icons.delete_outline_rounded, color: Colors.red, size: 22),
+                        onPressed: () {
+                          controller.selectedCsvPath.value = '';
+                          controller.selectedCsvName.value = '';
+                        },
+                      ),
+                  ],
+                ),
+              ),
+            );
+          }),
+          const SizedBox(height: 22),
+
+          // 2. Images Picker Box
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: _buildSectionHeader(
+                  title: '2. Product Images (Optional)',
+                  subtitle: 'Select multiple photos referenced in your CSV',
+                ),
+              ),
+              Obx(() => Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryPurple.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  '${controller.bulkImagePaths.length} selected',
+                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primaryPurple),
+                ),
+              )),
+            ],
+          ),
+          const SizedBox(height: 10),
+          InkWell(
+            onTap: controller.pickBulkImages,
+            borderRadius: BorderRadius.circular(16),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: const [
+                  Icon(Icons.add_photo_alternate_outlined, color: AppColors.primaryPurple, size: 22),
+                  SizedBox(width: 8),
+                  Text(
+                    'Select Product Images',
+                    style: TextStyle(fontSize: 13.5, color: AppColors.primaryPurple, fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // Thumbnails Strip
+          Obx(() {
+            if (controller.bulkImagePaths.isEmpty) {
+              return const SizedBox.shrink();
+            }
+            return SizedBox(
+              height: 70,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: controller.bulkImagePaths.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 8),
+                itemBuilder: (context, idx) {
+                  return Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      Container(
+                        width: 70,
+                        height: 70,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.grey.shade300),
+                          image: DecorationImage(
+                            image: FileImage(File(controller.bulkImagePaths[idx])),
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        top: -4,
+                        right: -4,
+                        child: InkWell(
+                          onTap: () => controller.removeBulkImage(idx),
+                          child: Container(
+                            padding: const EdgeInsets.all(3),
+                            decoration: const BoxDecoration(
+                              color: Colors.red,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.close_rounded, size: 12, color: Colors.white),
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            );
+          }),
+          const SizedBox(height: 28),
+
+          // Submit Bulk Button
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: Obx(() => ElevatedButton(
+              onPressed: controller.isBulkUploading.value
+                  ? null
+                  : controller.submitBulkUpload,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryPurple,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: controller.isBulkUploading.value
+                  ? const SizedBox(
+                      height: 22,
+                      width: 22,
+                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.2),
+                    )
+                  : const Text(
+                      'Upload Products to Store',
+                      style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.bold),
+                    ),
+            )),
+          ),
+        ],
       ),
     );
   }

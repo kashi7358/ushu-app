@@ -46,6 +46,7 @@ class SellerRegisterController extends GetxController {
   final accountHolderController = TextEditingController();
 
   final RxString selectedBankName = 'BOK'.obs;
+  final RxBool acceptedTerms = true.obs;
 
   void setBusinessType(String val) {
     selectedBusinessType.value = val;
@@ -97,7 +98,7 @@ class SellerRegisterController extends GetxController {
     'Punjab',
     'Sindh',
     'Balochistan',
-    'Islamabad Capital Territory',
+    'Islamabad ',
     'Gilgit-Baltistan',
     'Azad Jammu & Kashmir',
   ];
@@ -237,6 +238,11 @@ class SellerRegisterController extends GetxController {
       return;
     }
 
+    if (!acceptedTerms.value) {
+      CustomPopup.showError('Agreement Required', 'You must accept the seller agreement to register');
+      return;
+    }
+
     try {
       isLoading.value = true;
       CustomPopup.showLoading('Submitting seller application...');
@@ -265,6 +271,12 @@ class SellerRegisterController extends GetxController {
 
       final response = await _repository.registerSeller(model);
       CustomPopup.hideLoading();
+
+      if (response is Map && response['success'] == false) {
+        final errMsg = response['message']?.toString() ?? 'Registration failed. Please check your details.';
+        CustomPopup.showError('Registration Failed', errMsg);
+        return;
+      }
 
       String? sellerId;
       String message = 'Application submitted. Please verify OTP sent to your email.';

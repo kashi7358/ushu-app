@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shimmer/shimmer.dart';
@@ -56,6 +57,11 @@ class ManageProductsScreen extends StatelessWidget {
           ],
         )),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.upload_file_rounded, color: AppColors.primaryPurple, size: 22),
+            onPressed: () => _showBulkUploadDialog(context, controller),
+            tooltip: 'Bulk Upload CSV',
+          ),
           IconButton(
             icon: const Icon(Icons.refresh_rounded, color: AppColors.darkText, size: 21),
             onPressed: controller.fetchProducts,
@@ -635,6 +641,286 @@ class ManageProductsScreen extends StatelessWidget {
             borderRadius: BorderRadius.circular(16),
           ),
         ),
+      ),
+    );
+  }
+
+  // --- Bulk CSV & Images Upload Dialog ---
+  void _showBulkUploadDialog(BuildContext context, ManageProductsController controller) {
+    controller.clearBulkUploadData();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (sheetContext, setSheetState) {
+          return Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(sheetContext).viewInsets.bottom,
+            ),
+            child: Container(
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+              ),
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Handle Bar
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 4.5,
+                        margin: const EdgeInsets.only(bottom: 14),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade300,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                    ),
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryPurple.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(
+                            Icons.upload_file_rounded,
+                            color: AppColors.primaryPurple,
+                            size: 20,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Bulk Upload Products',
+                                style: AppTextStyles.bold.copyWith(fontSize: 16),
+                              ),
+                              Text(
+                                'Upload CSV spreadsheet and product images',
+                                style: TextStyle(fontSize: 11.5, color: Colors.grey.shade600),
+                              ),
+                            ],
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: () => Navigator.of(sheetContext).pop(),
+                          icon: const Icon(Icons.close_rounded, size: 20),
+                          visualDensity: VisualDensity.compact,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 18),
+
+                    // 1. CSV File Picker Box
+                    Text(
+                      '1. Select CSV / Excel File *',
+                      style: AppTextStyles.bold.copyWith(fontSize: 13, color: AppColors.darkText),
+                    ),
+                    const SizedBox(height: 8),
+                    Obx(() {
+                      final hasFile = controller.selectedCsvPath.value.isNotEmpty;
+                      return InkWell(
+                        onTap: () async {
+                          await controller.pickCsvFile();
+                          setSheetState(() {});
+                        },
+                        borderRadius: BorderRadius.circular(14),
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                          decoration: BoxDecoration(
+                            color: hasFile
+                                ? AppColors.primaryPurple.withValues(alpha: 0.05)
+                                : const Color(0xFFF8FAFC),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                              color: hasFile ? AppColors.primaryPurple : const Color(0xFFE2E8F0),
+                              width: hasFile ? 1.4 : 1,
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                hasFile ? Icons.description_rounded : Icons.file_upload_outlined,
+                                color: hasFile ? AppColors.primaryPurple : Colors.grey.shade600,
+                                size: 24,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      hasFile
+                                          ? controller.selectedCsvName.value
+                                          : 'Tap to select .csv file',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: hasFile ? FontWeight.bold : FontWeight.w500,
+                                        color: hasFile ? AppColors.primaryPurple : Colors.grey.shade700,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    Text(
+                                      hasFile ? 'File attached successfully' : 'Supports CSV & Excel format',
+                                      style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              if (hasFile)
+                                IconButton(
+                                  icon: const Icon(Icons.delete_outline_rounded, color: Colors.red, size: 20),
+                                  onPressed: () {
+                                    controller.selectedCsvPath.value = '';
+                                    controller.selectedCsvName.value = '';
+                                    setSheetState(() {});
+                                  },
+                                ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }),
+                    const SizedBox(height: 18),
+
+                    // 2. Images Picker Box
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          '2. Select Product Images (Optional)',
+                          style: AppTextStyles.bold.copyWith(fontSize: 13, color: AppColors.darkText),
+                        ),
+                        Obx(() => Text(
+                          '${controller.selectedImagePaths.length} selected',
+                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primaryPurple),
+                        )),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    InkWell(
+                      onTap: () async {
+                        await controller.pickBulkImages();
+                        setSheetState(() {});
+                      },
+                      borderRadius: BorderRadius.circular(14),
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF8FAFC),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: const [
+                            Icon(Icons.add_photo_alternate_outlined, color: AppColors.primaryPurple, size: 20),
+                            SizedBox(width: 8),
+                            Text(
+                              'Choose Product Images',
+                              style: TextStyle(fontSize: 13, color: AppColors.primaryPurple, fontWeight: FontWeight.bold),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+
+                    // Thumbnails list
+                    Obx(() {
+                      if (controller.selectedImagePaths.isEmpty) {
+                        return const SizedBox.shrink();
+                      }
+                      return SizedBox(
+                        height: 64,
+                        child: ListView.separated(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: controller.selectedImagePaths.length,
+                          separatorBuilder: (_, __) => const SizedBox(width: 8),
+                          itemBuilder: (context, idx) {
+                            return Stack(
+                              clipBehavior: Clip.none,
+                              children: [
+                                Container(
+                                  width: 64,
+                                  height: 64,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(color: Colors.grey.shade300),
+                                    image: DecorationImage(
+                                      image: FileImage(File(controller.selectedImagePaths[idx])),
+                                      fit: BoxFit.cover,
+                                      onError: (_, __) {},
+                                    ),
+                                  ),
+                                ),
+                                Positioned(
+                                  top: -4,
+                                  right: -4,
+                                  child: InkWell(
+                                    onTap: () {
+                                      controller.removeSelectedImage(idx);
+                                      setSheetState(() {});
+                                    },
+                                    child: Container(
+                                      padding: const EdgeInsets.all(2),
+                                      decoration: const BoxDecoration(
+                                        color: Colors.red,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: const Icon(Icons.close_rounded, size: 12, color: Colors.white),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
+                        ),
+                      );
+                    }),
+                    const SizedBox(height: 22),
+
+                    // Upload Button
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () async {
+                          final success = await controller.uploadBulkProducts();
+                          if (success && sheetContext.mounted) {
+                            Navigator.of(sheetContext).pop();
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primaryPurple,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 13),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        child: const Text(
+                          'Upload Products to Store',
+                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
       ),
     );
   }

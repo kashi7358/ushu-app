@@ -1,5 +1,10 @@
+import 'dart:io';
+import 'package:archive/archive.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:get/get.dart' hide FormData, MultipartFile;
+import 'package:file_picker/file_picker.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:dio/dio.dart';
 import '../../../../app/routes/app_routes.dart';
 import '../../../../core/errors/exception_handler.dart';
 import '../../../../core/network/api_client.dart';
@@ -15,6 +20,11 @@ class ManageProductsController extends GetxController {
   final RxList<SellerProductModel> filteredProducts = <SellerProductModel>[].obs;
   final RxBool isLoading = false.obs;
   final RxBool isDeleting = false.obs;
+  final RxBool isBulkUploading = false.obs;
+  bool _isPickerActive = false;
+  final RxString selectedCsvPath = ''.obs;
+  final RxString selectedCsvName = ''.obs;
+  final RxList<String> selectedImagePaths = <String>[].obs;
   final RxString errorMessage = ''.obs;
   final RxString searchQuery = ''.obs;
   final TextEditingController searchController = TextEditingController();
@@ -245,5 +255,234 @@ class ManageProductsController extends GetxController {
         fetchProducts();
       }
     });
+  }
+
+  // --- Bulk CSV & Images Upload ---
+  Future<void> pickCsvFile() async {
+    if (_isPickerActive) return;
+    _isPickerActive = true;
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['csv', 'xlsx', 'xls'],
+      );
+
+      if (result != null && result.files.single.path != null) {
+        selectedCsvPath.value = result.files.single.path!;
+        selectedCsvName.value = result.files.single.name;
+      }
+    } catch (e) {
+      CustomPopup.showError('File Error', 'Failed to pick file: $e');
+    } finally {
+      _isPickerActive = false;
+    }
+  }
+
+  Future<void> pickBulkImages() async {
+    if (_isPickerActive) return;
+    _isPickerActive = true;
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        allowMultiple: true,
+        type: FileType.custom,
+        allowedExtensions: ['jpg', 'jpeg', 'png', 'webp', 'zip'],
+      );
+      if (result != null && result.paths.isNotEmpty) {
+        for (final path in result.paths) {
+          if (path != null && !selectedImagePaths.contains(path)) {
+            selectedImagePaths.add(path);
+          }
+        }
+      }
+    } catch (e) {
+      final str = e.toString().toLowerCase();
+      if (!str.contains('already_active') && !str.contains('cancelled')) {
+        CustomPopup.showError('Image Error', 'Failed to pick files: $e');
+      }
+    } finally {
+      _isPickerActive = false;
+    }
+  }
+
+  void removeSelectedImage(int index) {
+    if (index >= 0 && index < selectedImagePaths.length) {
+      selectedImagePaths.removeAt(index);
+    }
+  }
+
+  void clearBulkUploadData() {
+    selectedCsvPath.value = '';
+    selectedCsvName.value = '';
+    selectedImagePaths.clear();
+  }
+
+  String _extractBulkErrorMessage(dynamic res) {
+    if (res is! Map) return 'No products were created. Please verify your CSV format and try again.';
+
+    final baseMsg = (res['message'] ?? res['msg'] ?? 'Bulk upload failed').toString();
+    List<String> details = [];
+
+    final rawErrors = res['errors'] ?? res['error'] ?? res['details'] ?? res['data']?['errors'] ?? res['failed'];
+    if (rawErrors is List && rawErrors.isNotEmpty) {
+      for (final item in rawErrors) {
+        if (item is Map) {
+          final row = item['row'] ?? item['line'] ?? item['index'];
+          final field = item['field'] ?? item['column'] ?? item['key'];
+          final msg = item['error'] ?? item['message'] ?? item['msg'] ?? item.toString();
+          final rowStr = row != null ? 'Row $row: ' : '';
+          final fieldStr = field != null ? '[$field] ' : '';
+          details.add('$rowStr$fieldStr$msg');
+        } else if (item != null && item.toString().trim().isNotEmpty) {
+          details.add(item.toString().trim());
+        }
+      }
+    } else if (rawErrors is Map && rawErrors.isNotEmpty) {
+      rawErrors.forEach((key, val) {
+        details.add('$key: $val');
+      });
+    } else if (rawErrors is String && rawErrors.trim().isNotEmpty && rawErrors != baseMsg) {
+      details.add(rawErrors.trim());
+    }
+
+    if (details.isNotEmpty) {
+      final shown = details.take(6).map((d) => '• $d').join('\n');
+      final more = details.length > 6 ? '\n...and ${details.length - 6} more issues' : '';
+      return '$baseMsg\n\nSpecific Errors:\n$shown$more\n\nHint: Verify CSV columns: name, description, price, category, subCategory, brand, stock, sku.';
+    }
+
+    return '$baseMsg\n\nPlease ensure your CSV file contains required columns:\n• name, description, price, category, subCategory, brand, stock, sku';
+  }
+
+  Future<bool> uploadBulkProducts() async {
+    if (selectedCsvPath.value.isEmpty) {
+      CustomPopup.showError('CSV Required', 'Please select a CSV or Excel file containing products');
+      return false;
+    }
+
+    if (currentStoreId.isEmpty) {
+      currentStoreId = SessionManager.sellerStoreId ?? '';
+    }
+
+    if (currentStoreId.isEmpty) {
+      CustomPopup.showError('Store Required', 'Store ID is missing. Please select or create your store first.');
+      return false;
+    }
+
+    try {
+      isBulkUploading.value = true;
+      CustomPopup.showLoading('Uploading bulk products...');
+
+      final formData = FormData();
+
+      // 1. Add CSV/Excel file (body field: 'file')
+      final csvFileName = selectedCsvName.value.isNotEmpty
+          ? selectedCsvName.value
+          : selectedCsvPath.value.split(RegExp(r'[/\\]')).last;
+
+      formData.files.add(MapEntry(
+        'file',
+        await MultipartFile.fromFile(
+          selectedCsvPath.value,
+          filename: csvFileName,
+        ),
+      ));
+
+      // 2. Add Images / ZIP archive
+      if (selectedImagePaths.isNotEmpty) {
+        final zipCandidates = selectedImagePaths.where((p) => p.toLowerCase().endsWith('.zip')).toList();
+        if (zipCandidates.isNotEmpty) {
+          final zipPath = zipCandidates.first;
+          final zipName = zipPath.split(RegExp(r'[/\\]')).last;
+          formData.files.add(MapEntry(
+            'images',
+            await MultipartFile.fromFile(zipPath, filename: zipName),
+          ));
+          formData.files.add(MapEntry(
+            'zip',
+            await MultipartFile.fromFile(zipPath, filename: zipName),
+          ));
+        } else {
+          for (final imgPath in selectedImagePaths) {
+            final imgName = imgPath.split(RegExp(r'[/\\]')).last;
+            formData.files.add(MapEntry(
+              'images',
+              await MultipartFile.fromFile(imgPath, filename: imgName),
+            ));
+          }
+
+          try {
+            final archive = Archive();
+            for (final imgPath in selectedImagePaths) {
+              final file = File(imgPath);
+              if (await file.exists()) {
+                final bytes = await file.readAsBytes();
+                final fileName = imgPath.split(RegExp(r'[/\\]')).last;
+                archive.addFile(ArchiveFile(fileName, bytes.length, bytes));
+                archive.addFile(ArchiveFile('Camera Roll/$fileName', bytes.length, bytes));
+              }
+            }
+            final zipBytes = ZipEncoder().encode(archive);
+            if (zipBytes != null && zipBytes.isNotEmpty) {
+              formData.files.add(MapEntry(
+                'zip',
+                MultipartFile.fromBytes(zipBytes, filename: 'images.zip'),
+              ));
+            }
+          } catch (zipErr) {
+            debugPrint('ZIP creation fallback: $zipErr');
+          }
+        }
+      }
+
+      final response = await _repository.bulkUploadProducts(
+        storeId: currentStoreId,
+        formData: formData,
+        token: SessionManager.sellerToken,
+      );
+
+      debugPrint('=== BULK UPLOAD RESPONSE ===\n$response');
+      CustomPopup.hideLoading();
+
+      bool isFailed = false;
+      if (response is Map) {
+        if (response['success'] == false) {
+          isFailed = true;
+        } else if (response['createdCount'] != null &&
+            (response['createdCount'] == 0 || response['createdCount'] == '0')) {
+          isFailed = true;
+        } else if (response['productsCreated'] != null &&
+            (response['productsCreated'] == 0 || response['productsCreated'] == '0')) {
+          isFailed = true;
+        }
+      }
+
+      if (isFailed) {
+        final err = _extractBulkErrorMessage(response);
+        CustomPopup.showError('Upload Failed', err);
+        return false;
+      }
+
+      final successMsg = (response is Map && response['message'] != null)
+          ? response['message'].toString()
+          : 'Bulk products uploaded successfully';
+
+      CustomPopup.showSuccess('Bulk Upload Complete', successMsg);
+      clearBulkUploadData();
+      await fetchProducts();
+      return true;
+    } catch (e) {
+      CustomPopup.hideLoading();
+      debugPrint('Bulk upload error: $e');
+      if (e is DioException && e.response?.data != null) {
+        final err = _extractBulkErrorMessage(e.response!.data);
+        CustomPopup.showError('Upload Failed', err);
+      } else {
+        final error = ExceptionHandler.handle(e);
+        CustomPopup.showError('Upload Failed', error.message);
+      }
+      return false;
+    } finally {
+      isBulkUploading.value = false;
+    }
   }
 }

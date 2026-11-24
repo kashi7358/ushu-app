@@ -45,34 +45,44 @@ class SellerRegistrationModel {
   });
 
   Future<FormData> toFormData() async {
-    final Map<String, dynamic> map = {
-      'fullName': fullName,
-      'DisplayName': displayName,
-      'Email': email,
-      'Phone_Number': phoneNumber,
-      'Password': password,
-      'Confirm_Password': confirmPassword,
-      'Role': role,
-      'StoreName': storeName,
-      'BusinessType': businessType,
-      'City': city,
-      'Province': province,
-      'Business_Address': businessAddress,
-      'Monthly_Sales_Estimate': monthlySalesEstimate,
-      'CNIC': cnic,
-      'IBAN_Number': ibanNumber,
-      'BankName': bankName,
-      'AccountHolder': accountHolder,
-    };
+    final formData = FormData();
+
+    // Text Fields
+    formData.fields.addAll([
+      MapEntry('fullName', fullName),
+      MapEntry('DisplayName', displayName),
+      MapEntry('Email', email),
+      MapEntry('Phone_Number', phoneNumber),
+      MapEntry('Password', password),
+      MapEntry('Confirm_Password', confirmPassword),
+      MapEntry('Role', role),
+      MapEntry('StoreName', storeName),
+      MapEntry('BusinessType', businessType),
+      MapEntry('City', city),
+      MapEntry('Province', province),
+      MapEntry('Business_Address', businessAddress),
+      MapEntry('Monthly_Sales_Estimate', monthlySalesEstimate),
+      MapEntry('CNIC', cnic),
+      MapEntry('IBAN_Number', ibanNumber),
+      MapEntry('BankName', bankName),
+      MapEntry('AccountHolder', accountHolder),
+      const MapEntry('agreementAccepted', 'true'),
+      const MapEntry('agreementVersion', '1.1'),
+      const MapEntry('sellerAgreement', 'true'),
+      const MapEntry('SellerAgreement', 'true'),
+    ]);
 
     if (cnicFrontPhotoPath != null && cnicFrontPhotoPath!.isNotEmpty) {
       final file = File(cnicFrontPhotoPath!);
       if (await file.exists()) {
         final filename = cnicFrontPhotoPath!.split(Platform.pathSeparator).last;
-        map['CNIC_frontPhoto'] = await MultipartFile.fromFile(
-          cnicFrontPhotoPath!,
-          filename: filename,
-        );
+        formData.files.add(MapEntry(
+          'CNIC_frontPhoto',
+          await MultipartFile.fromFile(
+            cnicFrontPhotoPath!,
+            filename: filename,
+          ),
+        ));
       }
     }
 
@@ -80,13 +90,16 @@ class SellerRegistrationModel {
       final file = File(cnicBackPhotoPath!);
       if (await file.exists()) {
         final filename = cnicBackPhotoPath!.split(Platform.pathSeparator).last;
-        map['CNIC_backphoto'] = await MultipartFile.fromFile(
-          cnicBackPhotoPath!,
-          filename: filename,
-        );
+        formData.files.add(MapEntry(
+          'CNIC_backphoto',
+          await MultipartFile.fromFile(
+            cnicBackPhotoPath!,
+            filename: filename,
+          ),
+        ));
       }
     }
 
-    return FormData.fromMap(map);
+    return formData;
   }
 }

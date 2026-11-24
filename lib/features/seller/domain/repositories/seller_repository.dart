@@ -17,6 +17,7 @@ abstract class SellerRepository {
   Future<dynamic> createStore(CreateStoreRequestModel model);
   Future<dynamic> updateStore(Map<String, dynamic> updateData);
   Future<dynamic> createProduct({required String storeId, required CreateProductRequestModel model});
+  Future<dynamic> bulkUploadProducts({required String storeId, required FormData formData, String? token});
   Future<dynamic> updateProduct({required String productId, required FormData formData});
   Future<dynamic> getProductsByStore(String storeId);
   Future<dynamic> deleteProduct(String productId);

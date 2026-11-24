@@ -87,6 +87,7 @@ class ApiEndpoints {
 
   // Manage Products
   static String createProduct(String storeId) => '$baseUrl/product/create/$storeId';
+  static String bulkUploadProducts(String storeId) => '$baseUrl/bulk/stores/$storeId/products';
   static String getAllProductsByStore(String storeId) => '$baseUrl/product/all/$storeId';
   static String deleteProduct(String productId) => '$baseUrl/product/delete/$productId';
   static String updateProduct(String productId) => '$baseUrl/product/update-product/$productId';

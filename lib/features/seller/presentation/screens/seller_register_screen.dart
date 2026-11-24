@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import '../../../../app/routes/app_routes.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_text_styles.dart';
 import '../../../../core/utils/validators.dart';
@@ -145,34 +144,6 @@ class SellerRegisterScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-            margin: const EdgeInsets.only(bottom: 16),
-            decoration: BoxDecoration(
-              color: AppColors.primaryPurple.withValues(alpha: 0.05),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.primaryPurple.withValues(alpha: 0.2)),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.shopping_bag_outlined, color: AppColors.primaryPurple, size: 20),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    'Looking to buy products instead?',
-                    style: TextStyle(fontSize: 12.5, color: Colors.grey.shade700, fontWeight: FontWeight.w500),
-                  ),
-                ),
-                GestureDetector(
-                  onTap: () => Get.offNamed(AppRoutes.signup),
-                  child: const Text(
-                    'Buyer Sign Up',
-                    style: TextStyle(fontSize: 12.5, color: AppColors.primaryPurple, fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ],
-            ),
-          ),
           _buildSectionHeader(
             title: 'Seller Account Details',
             subtitle: 'Provide your personal and login credentials',
@@ -266,6 +237,36 @@ class SellerRegisterScreen extends StatelessWidget {
                 size: 20,
               ),
               onPressed: controller.toggleConfirmPasswordVisibility,
+            ),
+          )),
+          const SizedBox(height: 18),
+          Obx(() => InkWell(
+            onTap: () => controller.acceptedTerms.value = !controller.acceptedTerms.value,
+            borderRadius: BorderRadius.circular(8),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: Checkbox(
+                    value: controller.acceptedTerms.value,
+                    activeColor: AppColors.primaryPurple,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                    onChanged: (val) => controller.acceptedTerms.value = val ?? false,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'I accept the Seller Agreement, Terms and Conditions',
+                    style: AppTextStyles.medium.copyWith(
+                      fontSize: 13,
+                      color: AppColors.darkText,
+                    ),
+                  ),
+                ),
+              ],
             ),
           )),
           const SizedBox(height: 24),
@@ -437,6 +438,36 @@ class SellerRegisterScreen extends StatelessWidget {
             imagePath: controller.cnicBackPhotoPath.value,
             onImageSelected: (source) => controller.pickCnicImage(isFront: false, source: source),
             onRemove: () => controller.removeCnicImage(isFront: false),
+          )),
+          const SizedBox(height: 20),
+          Obx(() => InkWell(
+            onTap: () => controller.acceptedTerms.value = !controller.acceptedTerms.value,
+            borderRadius: BorderRadius.circular(8),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: Checkbox(
+                    value: controller.acceptedTerms.value,
+                    activeColor: AppColors.primaryPurple,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                    onChanged: (val) => controller.acceptedTerms.value = val ?? false,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'I accept the Seller Agreement, Terms and Conditions',
+                    style: AppTextStyles.medium.copyWith(
+                      fontSize: 13,
+                      color: AppColors.darkText,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           )),
           const SizedBox(height: 24),
         ],

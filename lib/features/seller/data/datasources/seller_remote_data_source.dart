@@ -20,6 +20,7 @@ abstract class SellerRemoteDataSource {
   Future<dynamic> createStore(CreateStoreRequestModel model);
   Future<dynamic> updateStore(Map<String, dynamic> updateData);
   Future<dynamic> createProduct({required String storeId, required CreateProductRequestModel model});
+  Future<dynamic> bulkUploadProducts({required String storeId, required FormData formData, String? token});
   Future<dynamic> updateProduct({required String productId, required FormData formData});
   Future<dynamic> getProductsByStore(String storeId);
   Future<dynamic> deleteProduct(String productId);
@@ -54,9 +55,7 @@ class SellerRemoteDataSourceImpl implements SellerRemoteDataSource {
       ApiEndpoints.createSeller,
       data: formData,
       options: Options(
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
+        validateStatus: (status) => status != null && status < 500,
       ),
     );
 
@@ -170,6 +169,20 @@ class SellerRemoteDataSourceImpl implements SellerRemoteDataSource {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
+      ),
+    );
+
+    return response.data;
+  }
+
+  @override
+  Future<dynamic> bulkUploadProducts({required String storeId, required FormData formData, String? token}) async {
+    final response = await apiClient.dio.post(
+      ApiEndpoints.bulkUploadProducts(storeId),
+      data: formData,
+      options: Options(
+        headers: token != null && token.isNotEmpty ? {'Authorization': 'Bearer $token'} : null,
+        validateStatus: (status) => status != null && status < 500,
       ),
     );
 

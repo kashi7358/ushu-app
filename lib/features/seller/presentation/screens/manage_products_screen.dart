@@ -851,21 +851,61 @@ class ManageProductsScreen extends StatelessWidget {
                           itemCount: controller.selectedImagePaths.length,
                           separatorBuilder: (_, __) => const SizedBox(width: 8),
                           itemBuilder: (context, idx) {
+                            final path = controller.selectedImagePaths[idx];
+                            final isZip = path.toLowerCase().endsWith('.zip');
+                            final name = path.split(RegExp(r'[/\\]')).last;
+
                             return Stack(
                               clipBehavior: Clip.none,
                               children: [
                                 Container(
-                                  width: 64,
+                                  width: isZip ? 150 : 64,
                                   height: 64,
+                                  padding: isZip ? const EdgeInsets.symmetric(horizontal: 8, vertical: 6) : EdgeInsets.zero,
                                   decoration: BoxDecoration(
+                                    color: isZip ? AppColors.primaryPurple.withValues(alpha: 0.08) : Colors.white,
                                     borderRadius: BorderRadius.circular(10),
-                                    border: Border.all(color: Colors.grey.shade300),
-                                    image: DecorationImage(
-                                      image: FileImage(File(controller.selectedImagePaths[idx])),
-                                      fit: BoxFit.cover,
-                                      onError: (_, __) {},
+                                    border: Border.all(
+                                      color: isZip ? AppColors.primaryPurple.withValues(alpha: 0.3) : Colors.grey.shade300,
                                     ),
+                                    image: isZip
+                                        ? null
+                                        : DecorationImage(
+                                            image: FileImage(File(path)),
+                                            fit: BoxFit.cover,
+                                            onError: (_, __) {},
+                                          ),
                                   ),
+                                  child: isZip
+                                      ? Row(
+                                          children: [
+                                            const Icon(Icons.folder_zip_rounded, color: AppColors.primaryPurple, size: 24),
+                                            const SizedBox(width: 6),
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                mainAxisAlignment: MainAxisAlignment.center,
+                                                children: [
+                                                  Text(
+                                                    name,
+                                                    style: const TextStyle(
+                                                      fontSize: 11,
+                                                      fontWeight: FontWeight.bold,
+                                                      color: AppColors.primaryPurple,
+                                                    ),
+                                                    maxLines: 1,
+                                                    overflow: TextOverflow.ellipsis,
+                                                  ),
+                                                  const Text(
+                                                    'ZIP Images',
+                                                    style: TextStyle(fontSize: 9.5, color: Colors.grey),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                        )
+                                      : null,
                                 ),
                                 Positioned(
                                   top: -4,

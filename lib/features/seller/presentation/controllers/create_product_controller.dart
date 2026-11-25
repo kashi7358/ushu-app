@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:archive/archive.dart';
 import 'package:dio/dio.dart' as dio;
@@ -8,6 +9,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:lottie/lottie.dart';
 import '../../../../app/routes/app_routes.dart';
+import '../../../../app/theme/app_colors.dart';
 import '../../../../core/errors/exception_handler.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/utils/custom_popup.dart';
@@ -1300,36 +1302,61 @@ class CreateProductController extends GetxController {
 
     final baseMsg = (res['message'] ?? res['msg'] ?? 'Bulk upload failed').toString();
     List<String> details = [];
+    bool hasImageErrors = false;
 
     final rawErrors = res['errors'] ?? res['error'] ?? res['details'] ?? res['data']?['errors'] ?? res['failed'];
     if (rawErrors is List && rawErrors.isNotEmpty) {
       for (final item in rawErrors) {
         if (item is Map) {
           final row = item['row'] ?? item['line'] ?? item['index'];
+          final sku = item['sku'];
           final field = item['field'] ?? item['column'] ?? item['key'];
-          final msg = item['error'] ?? item['message'] ?? item['msg'] ?? item.toString();
-          final rowStr = row != null ? 'Row $row: ' : '';
-          final fieldStr = field != null ? '[$field] ' : '';
-          details.add('$rowStr$fieldStr$msg');
+          String msg = (item['message'] ?? item['error'] ?? item['msg'] ?? item.toString()).toString();
+
+          final isImgError = msg.toLowerCase().contains('not found in the zip') ||
+              msg.toLowerCase().contains('not a url');
+          if (isImgError) {
+            hasImageErrors = true;
+            if (msg.contains('"')) {
+              final parts = msg.split('"');
+              if (parts.length >= 2 && parts[1].isNotEmpty) {
+                msg = 'Image file "${parts[1]}" missing (not in ZIP)';
+              }
+            }
+          }
+
+          final rowStr = row != null ? 'Row $row' : '';
+          final skuStr = (sku != null && sku.toString().isNotEmpty) ? ' ($sku)' : '';
+          final fieldStr = (field != null && field.toString().isNotEmpty && !isImgError) ? ' [$field]' : '';
+          final prefix = (rowStr.isNotEmpty || skuStr.isNotEmpty) ? '$rowStr$skuStr: ' : '';
+
+          details.add('• $prefix$msg');
         } else if (item != null && item.toString().trim().isNotEmpty) {
-          details.add(item.toString().trim());
+          final str = item.toString().trim();
+          if (str.toLowerCase().contains('not found in the zip') || str.toLowerCase().contains('not a url')) {
+            hasImageErrors = true;
+          }
+          details.add('• $str');
         }
       }
     } else if (rawErrors is Map && rawErrors.isNotEmpty) {
       rawErrors.forEach((key, val) {
-        details.add('$key: $val');
+        details.add('• $key: $val');
       });
-    } else if (rawErrors is String && rawErrors.trim().isNotEmpty && rawErrors != baseMsg) {
-      details.add(rawErrors.trim());
     }
 
     if (details.isNotEmpty) {
-      final shown = details.take(6).map((d) => '• $d').join('\n');
-      final more = details.length > 6 ? '\n...and ${details.length - 6} more issues' : '';
-      return '$baseMsg\n\nSpecific Errors:\n$shown$more\n\nHint: Verify CSV columns: name, description, price, category, subCategory, brand, stock, sku.';
+      final shown = details.take(6).join('\n');
+      final more = details.length > 6 ? '\n...and ${details.length - 6} more errors' : '';
+
+      if (hasImageErrors) {
+        return 'Image names in CSV file do not match the photos in the ZIP file.';
+      }
+
+      return 'Required product fields are missing or format is invalid in your CSV file.';
     }
 
-    return '$baseMsg\n\nPlease ensure your CSV file contains required columns:\n• name, description, price, category, subCategory, brand, stock, sku';
+    return 'Required product columns are missing in your CSV file.';
   }
 
   void showCsvFormatGuide(BuildContext context) {
@@ -1499,7 +1526,287 @@ class CreateProductController extends GetxController {
     );
   }
 
-  Future<void> submitBulkUpload() async {
+  List<String> _parseCsvLine(String line) {
+    final List<String> result = [];
+    final StringBuffer sb = StringBuffer();
+    bool insideQuotes = false;
+
+    for (int i = 0; i < line.length; i++) {
+      final char = line[i];
+      if (char == '"') {
+        insideQuotes = !insideQuotes;
+      } else if (char == ',' && !insideQuotes) {
+        result.add(sb.toString().trim());
+        sb.clear();
+      } else {
+        sb.write(char);
+      }
+    }
+    result.add(sb.toString().trim());
+    return result;
+  }
+
+  String _formatCsvLine(List<String> cols) {
+    return cols.map((col) {
+      if (col.contains(',') || col.contains('"') || col.contains('\n')) {
+        return '"${col.replaceAll('"', '""')}"';
+      }
+      return col;
+    }).join(',');
+  }
+
+  Future<String> _prepareCsvFileForUpload(String originalPath, {bool forceStripLocalImages = false}) async {
+    // Only sanitize if it is a .csv file
+    if (!originalPath.toLowerCase().endsWith('.csv')) {
+      return originalPath;
+    }
+
+    // If not forcing, and user provided a ZIP file, keep original
+    if (!forceStripLocalImages && bulkImagePaths.isNotEmpty) {
+      final hasZip = bulkImagePaths.any((p) => p.toLowerCase().endsWith('.zip'));
+      if (hasZip) {
+        return originalPath;
+      }
+    }
+
+    try {
+      final file = File(originalPath);
+      if (!await file.exists()) return originalPath;
+
+      final content = await file.readAsString();
+      final lines = content.split('\n');
+      if (lines.isEmpty) return originalPath;
+
+      final headers = _parseCsvLine(lines.first);
+      final List<int> imageColIndices = [];
+      for (int i = 0; i < headers.length; i++) {
+        final h = headers[i].toLowerCase().trim().replaceAll('"', '').replaceAll("'", '');
+        if (h.contains('image') || h.contains('img') || h.contains('photo')) {
+          imageColIndices.add(i);
+        }
+      }
+
+      if (imageColIndices.isEmpty) return originalPath;
+
+      // Check if any row has non-URL local image paths (e.g. "Camera Roll/Image-1.jpg")
+      bool hasLocalPaths = false;
+      for (int i = 1; i < lines.length; i++) {
+        if (lines[i].trim().isEmpty) continue;
+        final cols = _parseCsvLine(lines[i]);
+        for (final colIdx in imageColIndices) {
+          if (cols.length > colIdx) {
+            final val = cols[colIdx].trim().replaceAll('"', '').replaceAll("'", '');
+            if (val.isNotEmpty && !val.startsWith('http://') && !val.startsWith('https://')) {
+              hasLocalPaths = true;
+              break;
+            }
+          }
+        }
+        if (hasLocalPaths) break;
+      }
+
+      if (!hasLocalPaths) return originalPath;
+
+      // Clean local image references so backend creates products instead of failing with missing ZIP error
+      final cleanLines = <String>[];
+      cleanLines.add(lines.first);
+
+      for (int i = 1; i < lines.length; i++) {
+        if (lines[i].trim().isEmpty) {
+          cleanLines.add(lines[i]);
+          continue;
+        }
+        final cols = _parseCsvLine(lines[i]);
+        for (final colIdx in imageColIndices) {
+          if (cols.length > colIdx) {
+            final val = cols[colIdx].trim().replaceAll('"', '').replaceAll("'", '');
+            if (val.isNotEmpty && !val.startsWith('http://') && !val.startsWith('https://')) {
+              cols[colIdx] = '';
+            }
+          }
+        }
+        cleanLines.add(_formatCsvLine(cols));
+      }
+
+      final tempDir = Directory.systemTemp;
+      final tempFile = File('${tempDir.path}/clean_${DateTime.now().millisecondsSinceEpoch}.csv');
+      await tempFile.writeAsString(cleanLines.join('\n'));
+      debugPrint('Sanitized CSV created for upload: ${tempFile.path}');
+      return tempFile.path;
+    } catch (e) {
+      debugPrint('CSV sanitization fallback: $e');
+      return originalPath;
+    }
+  }
+
+  void showBulkUploadIssueDialog(dynamic res) {
+    dynamic parsed = res;
+    if (parsed is String) {
+      try {
+        parsed = jsonDecode(parsed);
+      } catch (_) {}
+    }
+
+    bool hasImageIssues = false;
+    bool hasDataIssues = false;
+
+    if (parsed is Map) {
+      final rawErrors = parsed['errors'] ?? parsed['error'] ?? parsed['details'] ?? parsed['data']?['errors'] ?? parsed['failed'];
+      if (rawErrors is List && rawErrors.isNotEmpty) {
+        for (final item in rawErrors) {
+          final msg = (item is Map ? (item['message'] ?? item['error'] ?? item['msg'] ?? item.toString()) : item.toString()).toLowerCase();
+          if (msg.contains('not found in the zip') || msg.contains('not a url') || msg.contains('image')) {
+            hasImageIssues = true;
+          } else {
+            hasDataIssues = true;
+          }
+        }
+      } else if (rawErrors != null) {
+        final str = rawErrors.toString().toLowerCase();
+        if (str.contains('not found in the zip') || str.contains('not a url') || str.contains('image')) {
+          hasImageIssues = true;
+        } else {
+          hasDataIssues = true;
+        }
+      }
+    } else {
+      hasDataIssues = true;
+    }
+
+    if (!hasImageIssues && !hasDataIssues) {
+      hasDataIssues = true;
+    }
+
+    // Friendly simplified texts requested by user:
+    String title = 'Upload Issue';
+    String message = 'Please review your uploaded files and try again.';
+    IconData icon = Icons.error_outline_rounded;
+    Color accentColor = const Color(0xFFEF4444);
+
+    if (hasImageIssues && !hasDataIssues) {
+      title = 'Images Not Matched';
+      message = 'Image names in CSV file do not match the photos in the ZIP file.';
+      icon = Icons.broken_image_rounded;
+      accentColor = const Color(0xFFF59E0B);
+    } else if (hasDataIssues && !hasImageIssues) {
+      title = 'Issue in CSV File';
+      message = 'Required product fields are missing or format is invalid in your CSV file.';
+      icon = Icons.description_outlined;
+      accentColor = const Color(0xFFEF4444);
+    } else {
+      title = 'Issues in CSV & Images';
+      message = 'Required fields are missing in CSV and image names do not match the ZIP file.';
+      icon = Icons.warning_amber_rounded;
+      accentColor = const Color(0xFFEF4444);
+    }
+
+    Get.dialog(
+      Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+        backgroundColor: Colors.white,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+        child: Padding(
+          padding: const EdgeInsets.all(22),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 58,
+                height: 58,
+                decoration: BoxDecoration(
+                  color: accentColor.withValues(alpha: 0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, color: accentColor, size: 30),
+              ),
+              const SizedBox(height: 14),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF0F172A),
+                ),
+              ),
+              const SizedBox(height: 10),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                child: Text(
+                  message,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.grey.shade700,
+                    height: 1.45,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 18),
+              if (hasImageIssues) ...[
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      Get.back();
+                      submitBulkUpload(forceStripLocalImages: true);
+                    },
+                    icon: const Icon(Icons.flash_on_rounded, size: 18),
+                    label: const Text(
+                      'Upload Without Images',
+                      style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryPurple,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 13),
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  child: TextButton(
+                    onPressed: () => Get.back(),
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.grey.shade700,
+                      padding: const EdgeInsets.symmetric(vertical: 11),
+                    ),
+                    child: const Text('Cancel', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                  ),
+                ),
+              ] else ...[
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => Get.back(),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryPurple,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 13),
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    ),
+                    child: const Text('Okay', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+      barrierDismissible: true,
+    );
+  }
+
+  Future<void> submitBulkUpload({bool forceStripLocalImages = false}) async {
     if (selectedCsvPath.value.isEmpty) {
       CustomPopup.showError('CSV Required', 'Please select a CSV or Excel file containing products');
       return;
@@ -1509,10 +1816,27 @@ class CreateProductController extends GetxController {
       storeId = SessionManager.sellerStoreId!;
     }
 
+    // Auto-rehydrate storeId from backend if missing
+    if (storeId.isEmpty) {
+      try {
+        final stats = await _repository.getDashboardStats();
+        if (stats is Map) {
+          final dynamic storeObj = stats['store'];
+          final foundId = stats['storeId'] ??
+              (storeObj is Map ? (storeObj['_id'] ?? storeObj['id']) : null) ??
+              stats['data']?['storeId'];
+          if (foundId != null && foundId.toString().isNotEmpty) {
+            storeId = foundId.toString();
+            await SessionManager.saveSellerStoreId(storeId);
+          }
+        }
+      } catch (_) {}
+    }
+
     if (storeId.isEmpty) {
       CustomPopup.showError(
         'Store Required',
-        'Store ID is missing. Please select or create your store first.',
+        'Store ID is missing. Please ensure your store is active.',
       );
       return;
     }
@@ -1524,6 +1848,10 @@ class CreateProductController extends GetxController {
       final formData = dio.FormData();
 
       // 1. Add CSV/Excel file (body field: 'file')
+      final uploadCsvPath = await _prepareCsvFileForUpload(
+        selectedCsvPath.value,
+        forceStripLocalImages: forceStripLocalImages,
+      );
       final csvFileName = selectedCsvName.value.isNotEmpty
           ? selectedCsvName.value
           : selectedCsvPath.value.split(RegExp(r'[/\\]')).last;
@@ -1531,36 +1859,26 @@ class CreateProductController extends GetxController {
       formData.files.add(MapEntry(
         'file',
         await dio.MultipartFile.fromFile(
-          selectedCsvPath.value,
+          uploadCsvPath,
           filename: csvFileName,
         ),
       ));
 
-      // 2. Add Images / ZIP archive
-      if (bulkImagePaths.isNotEmpty) {
+      // 2. Add Images (body field: 'images') - only if not forcing strip
+      if (!forceStripLocalImages && bulkImagePaths.isNotEmpty) {
         final zipCandidates = bulkImagePaths.where((p) => p.toLowerCase().endsWith('.zip')).toList();
         if (zipCandidates.isNotEmpty) {
           final zipPath = zipCandidates.first;
           final zipName = zipPath.split(RegExp(r'[/\\]')).last;
           formData.files.add(MapEntry(
             'images',
-            await dio.MultipartFile.fromFile(zipPath, filename: zipName),
-          ));
-          formData.files.add(MapEntry(
-            'zip',
-            await dio.MultipartFile.fromFile(zipPath, filename: zipName),
+            await dio.MultipartFile.fromFile(
+              zipPath,
+              filename: zipName,
+            ),
           ));
         } else {
-          // Send loose images as individual files
-          for (final imgPath in bulkImagePaths) {
-            final imgName = imgPath.split(RegExp(r'[/\\]')).last;
-            formData.files.add(MapEntry(
-              'images',
-              await dio.MultipartFile.fromFile(imgPath, filename: imgName),
-            ));
-          }
-
-          // In parallel, also zip them in-memory and send as 'zip' (and fallback zip)
+          // Multiple image photos selected: package them into a single images.zip archive
           try {
             final archive = Archive();
             for (final imgPath in bulkImagePaths) {
@@ -1569,19 +1887,29 @@ class CreateProductController extends GetxController {
                 final bytes = await file.readAsBytes();
                 final fileName = imgPath.split(RegExp(r'[/\\]')).last;
                 archive.addFile(ArchiveFile(fileName, bytes.length, bytes));
-                // Add with 'Camera Roll/' prefix in case CSV references that folder
                 archive.addFile(ArchiveFile('Camera Roll/$fileName', bytes.length, bytes));
               }
             }
             final zipBytes = ZipEncoder().encode(archive);
             if (zipBytes != null && zipBytes.isNotEmpty) {
               formData.files.add(MapEntry(
-                'zip',
-                dio.MultipartFile.fromBytes(zipBytes, filename: 'images.zip'),
+                'images',
+                dio.MultipartFile.fromBytes(
+                  zipBytes,
+                  filename: 'images.zip',
+                ),
               ));
             }
           } catch (zipErr) {
             debugPrint('ZIP creation fallback: $zipErr');
+            if (bulkImagePaths.length == 1) {
+              final imgPath = bulkImagePaths.first;
+              final imgName = imgPath.split(RegExp(r'[/\\]')).last;
+              formData.files.add(MapEntry(
+                'images',
+                await dio.MultipartFile.fromFile(imgPath, filename: imgName),
+              ));
+            }
           }
         }
       }
@@ -1599,6 +1927,13 @@ class CreateProductController extends GetxController {
       if (response is Map) {
         if (response['success'] == false) {
           isFailed = true;
+        } else if (response['summary'] != null && response['summary'] is Map) {
+          final s = response['summary'] as Map;
+          final created = s['created'];
+          final failed = s['failed'];
+          if (created != null && (created == 0 || created == '0') && failed != null && failed > 0) {
+            isFailed = true;
+          }
         } else if (response['createdCount'] != null &&
             (response['createdCount'] == 0 || response['createdCount'] == '0')) {
           isFailed = true;
@@ -1609,14 +1944,27 @@ class CreateProductController extends GetxController {
       }
 
       if (isFailed) {
-        final err = _extractBulkErrorMessage(response);
-        CustomPopup.showError('Upload Failed', err);
+        showBulkUploadIssueDialog(response);
         return;
       }
 
-      final successMsg = (response is Map && response['message'] != null)
-          ? response['message'].toString()
-          : 'Bulk products uploaded successfully';
+      // Build friendly success message
+      String successMsg = 'Bulk products uploaded successfully';
+      if (response is Map) {
+        if (response['message'] != null && response['message'].toString().trim().isNotEmpty) {
+          successMsg = response['message'].toString();
+        }
+        if (response['summary'] != null && response['summary'] is Map) {
+          final s = response['summary'] as Map;
+          final created = s['created'] ?? 0;
+          final total = s['totalProducts'] ?? s['totalRows'] ?? created;
+          final failed = s['failed'] ?? 0;
+          successMsg = '$created of $total products created successfully!';
+          if (failed > 0) {
+            successMsg += '\n($failed failed due to errors)';
+          }
+        }
+      }
 
       CustomPopup.showSuccess(
         'Bulk Upload Complete',
@@ -1632,8 +1980,7 @@ class CreateProductController extends GetxController {
       CustomPopup.hideLoading();
       debugPrint('Bulk upload error: $e');
       if (e is dio.DioException && e.response?.data != null) {
-        final err = _extractBulkErrorMessage(e.response!.data);
-        CustomPopup.showError('Upload Failed', err);
+        showBulkUploadIssueDialog(e.response!.data);
       } else {
         final error = ExceptionHandler.handle(e);
         CustomPopup.showError('Upload Failed', error.message);

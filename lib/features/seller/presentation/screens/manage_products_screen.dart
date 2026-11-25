@@ -722,9 +722,40 @@ class ManageProductsScreen extends StatelessWidget {
                     const SizedBox(height: 18),
 
                     // 1. CSV File Picker Box
-                    Text(
-                      '1. Select CSV / Excel File *',
-                      style: AppTextStyles.bold.copyWith(fontSize: 13, color: AppColors.darkText),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          '1. Select CSV / Excel File *',
+                          style: AppTextStyles.bold.copyWith(fontSize: 13, color: AppColors.darkText),
+                        ),
+                        InkWell(
+                          onTap: controller.downloadSampleCsvTemplate,
+                          borderRadius: BorderRadius.circular(8),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF10B981).withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: const [
+                                Icon(Icons.download_rounded, size: 14, color: Color(0xFF059669)),
+                                SizedBox(width: 3),
+                                Text(
+                                  'Sample CSV',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF059669),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 8),
                     Obx(() {

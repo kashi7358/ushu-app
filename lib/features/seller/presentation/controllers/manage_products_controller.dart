@@ -6,6 +6,7 @@ import 'package:get/get.dart' hide FormData, MultipartFile;
 import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:dio/dio.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:uhsu_buy/app/theme/app_colors.dart';
 import '../../../../app/routes/app_routes.dart';
 import '../../../../core/errors/exception_handler.dart';
@@ -822,6 +823,30 @@ class ManageProductsController extends GetxController {
       return false;
     } finally {
       isBulkUploading.value = false;
+    }
+  }
+
+  Future<void> downloadSampleCsvTemplate() async {
+    try {
+      const sampleCsv = 'name,description,sku,price,category,subCategory,brand,stock,condition,tags\n'
+          '"Wireless Bluetooth Earbuds","High bass noise cancelling earbuds with fast charging",EAR-WL-01,2499,Electronics,Audio,Sony,50,new,"audio,wireless,earbuds"\n'
+          '"Mechanical Gaming Keyboard","RGB backlit mechanical keyboard with blue switches",KB-RGB-01,5999,Electronics,Accessories,Redragon,30,new,"gaming,keyboard,rgb"\n'
+          '"Men Cotton Casual T-Shirt","100% breathable premium cotton slim fit casual polo shirt",TS-POLO-01,1499,Fashion,Men Clothing,Polo,100,new,"fashion,clothing,men"\n';
+
+      final tempDir = Directory.systemTemp;
+      final file = File('${tempDir.path}/sample_products_template.csv');
+      await file.writeAsString(sampleCsv);
+
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [XFile(file.path)],
+          subject: 'Sample Products Template CSV',
+          text: 'Use this template to prepare products for bulk upload on Ushu.',
+        ),
+      );
+    } catch (e) {
+      debugPrint('Error sharing sample template: $e');
+      CustomPopup.showError('Export Failed', 'Could not export sample template: $e');
     }
   }
 }

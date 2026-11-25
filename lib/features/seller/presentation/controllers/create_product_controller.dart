@@ -8,6 +8,7 @@ import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:lottie/lottie.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../../../app/routes/app_routes.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../core/errors/exception_handler.dart';
@@ -1465,8 +1466,27 @@ class CreateProductController extends GetxController {
                 width: double.infinity,
                 child: ElevatedButton.icon(
                   onPressed: () {
+                    Get.back();
+                    downloadSampleCsvTemplate();
+                  },
+                  icon: const Icon(Icons.file_download_outlined, size: 19),
+                  label: const Text('Download Sample CSV Template', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryPurple,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 13),
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () {
                     Clipboard.setData(const ClipboardData(
-                      text: 'name,description,sku,price,category,subCategory,brand,stock,condition,tags\nWireless Bluetooth Earbuds,High bass noise cancelling earbuds,USHO-001,2499,Electronics,Audio,USHO,50,new,audio,wireless,earbuds',
+                      text: 'name,description,sku,price,category,subCategory,brand,stock,condition,tags\nWireless Bluetooth Earbuds,High bass noise cancelling earbuds,USHO-001,2499,Electronics,Audio,Sony,50,new,"audio,wireless,earbuds"',
                     ));
                     Get.back();
                     CustomPopup.showSuccess(
@@ -1475,12 +1495,12 @@ class CreateProductController extends GetxController {
                       buttonText: 'OK',
                     );
                   },
-                  icon: const Icon(Icons.copy_rounded, size: 18),
-                  label: const Text('Copy Sample CSV Template', style: TextStyle(fontWeight: FontWeight.bold)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF6B46C1),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 13),
+                  icon: const Icon(Icons.copy_rounded, size: 16),
+                  label: const Text('Copy to Clipboard', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.grey.shade700,
+                    side: BorderSide(color: Colors.grey.shade300),
+                    padding: const EdgeInsets.symmetric(vertical: 11),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                   ),
                 ),
@@ -1490,6 +1510,30 @@ class CreateProductController extends GetxController {
         ),
       ),
     );
+  }
+
+  Future<void> downloadSampleCsvTemplate() async {
+    try {
+      const sampleCsv = 'name,description,sku,price,category,subCategory,brand,stock,condition,tags\n'
+          '"Wireless Bluetooth Earbuds","High bass noise cancelling earbuds with fast charging",EAR-WL-01,2499,Electronics,Audio,Sony,50,new,"audio,wireless,earbuds"\n'
+          '"Mechanical Gaming Keyboard","RGB backlit mechanical keyboard with blue switches",KB-RGB-01,5999,Electronics,Accessories,Redragon,30,new,"gaming,keyboard,rgb"\n'
+          '"Men Cotton Casual T-Shirt","100% breathable premium cotton slim fit casual polo shirt",TS-POLO-01,1499,Fashion,Men Clothing,Polo,100,new,"fashion,clothing,men"\n';
+
+      final tempDir = Directory.systemTemp;
+      final file = File('${tempDir.path}/sample_products_template.csv');
+      await file.writeAsString(sampleCsv);
+
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [XFile(file.path)],
+          subject: 'Sample Products Template CSV',
+          text: 'Use this template to prepare products for bulk upload on Ushu.',
+        ),
+      );
+    } catch (e) {
+      debugPrint('Error sharing sample template: $e');
+      CustomPopup.showError('Export Failed', 'Could not export sample template: $e');
+    }
   }
 
   Widget _buildHeaderTag(String header, String desc) {
